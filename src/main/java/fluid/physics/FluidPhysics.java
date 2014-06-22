@@ -49,9 +49,15 @@ public class FluidPhysics {
          *  diffusion
          */
 
+
         applyPressure(entities);
         forwardAdvection(entities);
         reverseAdvection(entities);
+
+        // A fan
+        entities[0][0].setDeltaX(25);
+        entities[0][0].setDeltaY(10);
+
 
         // finally timestep
         IntStream.range(0, entities.length).forEach(x -> {
@@ -77,7 +83,6 @@ public class FluidPhysics {
                     otherEntity = entities[x - 1][y];
                     if (entity.getMass() > otherEntity.getMass()) {
                         otherEntity.addDeltaX(-(entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
-                        //entity.transfer(otherEntity, (entity.getMass() - otherEntity.getMass()) *DENSITY_TO_VELOCITY_SCALE);
                     }
                 }
 
@@ -156,21 +161,37 @@ public class FluidPhysics {
         if (deltaX >= 0) {
             t1x = x + xIndexOffset;
         } else {
-            t1x = x + xIndexOffset - 1;
+            t1x = x + xIndexOffset - 2;
         }
         if (deltaY >= 0) {
             t1y = y + yIndexOffset;
         } else {
-            t1y = y + yIndexOffset - 1;
+            t1y = y + yIndexOffset - 2;
         }
+
+        // Deal with border conditions
+        if (t1x < 0) {
+            t1x = 0;
+        }
+        if (t1x + 1 >= d1) {
+            t1x = d1 - 2;
+        }
+        if (t1y < 0) {
+            t1y = 0;
+        }
+        if (t1y + 1 >= d2) {
+            t1y = d2 - 2;
+        }
+
         int t2x = t1x + 1;
         int t2y = t1y + 1;
 
-        // If vector is beyond the border of the grid, exit
+        // If vector is beyond the border of the grid, exit, should never be called
         if (!(t1x >= 0 && t2x >= 0 &&
                 t1x < d1 && t2x < d1 &&
                 t1y >= 0 && t2y >= 0 &&
                 t1y < d2 && t2y < d2)) {
+            System.out.println("Border gone past!");
             return;
         }
 
@@ -180,18 +201,35 @@ public class FluidPhysics {
         FluidEntity topRight = entities[t2x][t2y];
 
         FluidEntity nextLocation = entity.getNextLocationAsFluidEntity();
+        double nextX = nextLocation.getX();
+        double nextY = nextLocation.getY();
+
+        // This should only happen in border locations where t1x/y was reset, and should be impossible otherwise
+        if (nextX < bottomLeft.getX()) {
+            nextX = bottomLeft.getX();
+        }
+        if (nextX > bottomRight.getX()) {
+            nextX = bottomRight.getX();
+        }
+        if (nextY < bottomLeft.getY()) {
+            nextY = bottomLeft.getY();
+        }
+        if (nextY > topLeft.getY()) {
+            nextY = topLeft.getY();
+        }
+
 
         // Area of top right
-        double bottomLeftAreaInversion = (topRight.getX() - nextLocation.getX()) * (topRight.getY() - nextLocation.getY());
+        double bottomLeftAreaInversion = (topRight.getX() - nextX) * (topRight.getY() - nextY);
 
         // area of top left
-        double bottomRightAreaInversion = (nextLocation.getX() - topLeft.getX()) * (topLeft.getY() - nextLocation.getY());
+        double bottomRightAreaInversion = (nextX - topLeft.getX()) * (topLeft.getY() - nextY);
 
         // area of bottom right
-        double topLeftAreaInversion = (bottomRight.getX() - nextLocation.getX()) * (nextLocation.getY() - bottomRight.getY());
+        double topLeftAreaInversion = (bottomRight.getX() - nextX) * (nextY - bottomRight.getY());
 
         // area of bottom left
-        double topRightAreaInversion = (nextLocation.getX() - bottomLeft.getX()) * (nextLocation.getY() - bottomLeft.getY());
+        double topRightAreaInversion = (nextX - bottomLeft.getX()) * (nextY - bottomLeft.getY());
 
         double bottomLeftRatio = bottomLeftAreaInversion / CELL_AREA;
         double bottomRightRatio = bottomRightAreaInversion / CELL_AREA;
@@ -236,6 +274,21 @@ public class FluidPhysics {
         } else {
             t1y = y + yIndexOffset - 1;
         }
+
+        // Deal with border conditions
+        if (t1x < 0) {
+            t1x = 0;
+        }
+        if (t1x + 1 >= d1) {
+            t1x = d1 - 2;
+        }
+        if (t1y < 0) {
+            t1y = 0;
+        }
+        if (t1y + 1 >= d2) {
+            t1y = d2 - 2;
+        }
+
         int t2x = t1x + 1;
         int t2y = t1y + 1;
 
@@ -244,6 +297,7 @@ public class FluidPhysics {
                 t1x < d1 && t2x < d1 &&
                 t1y >= 0 && t2y >= 0 &&
                 t1y < d2 && t2y < d2)) {
+            System.out.println("Border gone past!");
             return;
         }
 
@@ -253,18 +307,34 @@ public class FluidPhysics {
         FluidEntity topRight = entities[t2x][t2y];
 
         FluidEntity previousLocation = entity.getPreviousLocationAsFluidEntity();
+        double previousX = previousLocation.getX();
+        double previousY = previousLocation.getY();
+
+        // This should only happen in border locations where t1x/y was reset, and should be impossible otherwise
+        if (previousX < bottomLeft.getX()) {
+            previousX = bottomLeft.getX();
+        }
+        if (previousX > bottomRight.getX()) {
+            previousX = bottomRight.getX();
+        }
+        if (previousY < bottomLeft.getY()) {
+            previousY = bottomLeft.getY();
+        }
+        if (previousY > topLeft.getY()) {
+            previousY = topLeft.getY();
+        }
 
         // Area of top right
-        double bottomLeftAreaInversion = (topRight.getX() - previousLocation.getX()) * (topRight.getY() - previousLocation.getY());
+        double bottomLeftAreaInversion = (topRight.getX() - previousX) * (topRight.getY() - previousY);
 
         // area of top left
-        double bottomRightAreaInversion = (previousLocation.getX() - topLeft.getX()) * (topLeft.getY() - previousLocation.getY());
+        double bottomRightAreaInversion = (previousX - topLeft.getX()) * (topLeft.getY() - previousY);
 
         // area of bottom right
-        double topLeftAreaInversion = (bottomRight.getX() - previousLocation.getX()) * (previousLocation.getY() - bottomRight.getY());
+        double topLeftAreaInversion = (bottomRight.getX() - previousX) * (previousY - bottomRight.getY());
 
         // area of bottom left
-        double topRightAreaInversion = (previousLocation.getX() - bottomLeft.getX()) * (previousLocation.getY() - bottomLeft.getY());
+        double topRightAreaInversion = (previousX - bottomLeft.getX()) * (previousY - bottomLeft.getY());
 
         double bottomLeftRatio = bottomLeftAreaInversion / CELL_AREA;
         double bottomRightRatio = bottomRightAreaInversion / CELL_AREA;
@@ -296,33 +366,4 @@ public class FluidPhysics {
         topRight.transfer(entity, topRightRatio);
     }
 
-
-    /**
-     * This function takes a difference in mass between a point and its neighbors, and translates that into velocity
-     *
-     */
-//    private static void applyPressure(FluidEntity entity) {
-//        for (FluidEntity otherEntity : entity.getConnections()) {
-//            if (entity.getMass() > otherEntity.getMass()) {
-//                // And now I'm seeing that doing this with an array would be a lot more efficient than using the connections...
-//                if (entity.getX() < otherEntity.getX()) {
-//                    otherEntity.addNextDeltaX((entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
-//                } else if (entity.getX() > otherEntity.getX()) {
-//                    otherEntity.addNextDeltaX(-(entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
-//                }
-//
-//                if (entity.getY() < otherEntity.getY()) {
-//                    otherEntity.addNextDeltaY((entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
-//                } else if (entity.getY() > otherEntity.getY()) {
-//                    otherEntity.addNextDeltaY(-(entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
-//                }
-//
-//                if (entity.getZ() < otherEntity.getZ()) {
-//                    otherEntity.addNextDeltaZ((entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
-//                } else if (entity.getZ() > otherEntity.getZ()) {
-//                    otherEntity.addNextDeltaZ(-(entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
-//                }
-//            }
-//        }
-//    }
 }

@@ -35,10 +35,10 @@ public class Setup {
             });
         });
 
-        entitiesArray[0][0].setMass(40);
+        //entitiesArray[0][0].setMass(400);
         //entitiesArray[SIZE / 2][SIZE / 2].setMass(100);
-        entitiesArray[0][0].setDeltaX(7);
-        entitiesArray[0][0].setDeltaY(7);
+        //entitiesArray[0][0].setDeltaX(18);
+        //entitiesArray[0][0].setDeltaY(18);
 
         return entitiesArray;
     }
