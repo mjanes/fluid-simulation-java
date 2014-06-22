@@ -11,13 +11,13 @@ public class Setup {
 
     private static double sZDistance = 5000;
 
-    private static final int SIZE = 3;
+    private static final int SIZE = 5;
     public static FluidEntity[][] create() {
         return grid(SIZE);
     }
 
     private static FluidEntity[][] grid(int numEntitiesOnSide) {
-        FluidEntity[][] entitiesArray = new FluidEntity[numEntitiesOnSide][numEntitiesOnSide];
+        FluidEntity[][] entities = new FluidEntity[numEntitiesOnSide][numEntitiesOnSide];
 
         IntStream.range(0, numEntitiesOnSide).forEach(i -> {
 
@@ -31,15 +31,18 @@ public class Setup {
                 double z = sZDistance;
 
                 FluidEntity entity = new FluidEntity(x, y, z, 10);
-                entitiesArray[i][j] = entity;
+                entities[i][j] = entity;
             });
         });
 
-        //entitiesArray[0][0].setMass(400);
-        //entitiesArray[SIZE / 2][SIZE / 2].setMass(100);
-        entitiesArray[0][0].setDeltaX(5);
-        entitiesArray[0][0].setDeltaY(5);
+        //entities[0][0].setMass(400);
+        //entities[SIZE / 2][SIZE / 2].setMass(100);
 
-        return entitiesArray;
+        for (int i = 0; i < entities.length; i ++) {
+            entities[i][0].setDeltaX(5);
+            entities[i][0].setDeltaY(5);
+        }
+
+        return entities;
     }
 }

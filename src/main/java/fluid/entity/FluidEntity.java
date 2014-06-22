@@ -143,7 +143,7 @@ public class FluidEntity implements IDimensionalEntity {
 
     public void addNextMass(double deltaMass) {
         if (mNextMass + deltaMass < 0) {
-            System.out.println("Mass went to less than 0");
+            mNextMass = 0;
         }
 
         mNextMass += deltaMass;
@@ -163,31 +163,35 @@ public class FluidEntity implements IDimensionalEntity {
 
     /** Stepping from to the next increment of the simulation */
 
-    public void incrementTimestep() {
+    public void incrementStep() {
+        mMass = mNextMass;
         mDeltaX = mNextDeltaX;
         mDeltaY = mNextDeltaY;
         mDeltaZ = mNextDeltaZ;
-        mMass = mNextMass;
     }
 
     public void transfer(FluidEntity otherEntity, double ratio) {
-        double massTransfer = mNextMass * ratio;
+        double massTransfer = mMass * ratio;
         if (massTransfer < 0) {
             System.out.println("Mass transfer less than 0, somehow");
             return;
         }
-        if (mNextMass - massTransfer < 0) {
+        if (mNextMass - massTransfer < -.00001) { // rounding with doubles
             System.out.println("mNextMass would have gone to less than 0");
             return;
         }
-
         addNextMass(-massTransfer);
         otherEntity.addNextMass(massTransfer);
 
-        addNextDeltaX(-mNextDeltaX * ratio);
-        otherEntity.addNextDeltaX(mNextDeltaX * ratio);
-        addNextDeltaY(-mNextDeltaY * ratio);
-        otherEntity.addNextDeltaY(mNextDeltaY * ratio);
+        double deltaXTransfer = mDeltaX * ratio;
+        addNextDeltaX(-deltaXTransfer);
+        otherEntity.addNextDeltaX(deltaXTransfer);
+
+        double deltaYTransfer = mDeltaY * ratio;
+        addNextDeltaY(-deltaYTransfer);
+        otherEntity.addNextDeltaY(deltaYTransfer);
+
+
         //addNextDeltaZ(-getDeltaZ() * ratio);
         //otherEntity.addNextDeltaZ(getDeltaZ() * ratio);
     }

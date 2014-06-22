@@ -18,49 +18,9 @@ public class FluidPhysics {
     public static void incrementFluid(FluidEntity[][] entities) {
         if (entities == null) return;
 
-        /* Ok, as this is currently written, we have some issues. I have written the fluid entities with connections,
-         * but with no regards to their grid, this makes things slighly more flexible, and not fixed to a grid, but
-         * it will make computation more expensive, especially given that our connections... don't really take into
-         * account direction
-         *
-         * If I'm reading this correctly... which, well, I still need to reread:
-         * http://cowboyprogramming.com/2008/04/01/practical-fluid-mechanics/
-         *
-         * What needs to happen is...
-         *
-         * Step 1: advection
-         *  Take the velocity vector from each point, figure out where it would move to, and then move that to the
-         *  nearest points. By 'that' I believe this paper means all quantities contained in the fluid, both
-         *  velocity, density, heat, etc, but I am not certain.
-         *
-         *  Also, as http://cowboyprogramming.com/2008/04/01/practical-fluid-mechanics/ notes, they are doing that
-         *  a combiination of forward and reverse advection
-         *
-         * Step 2: apply pressure
-         *  I believe at this step, you take the various densities at each cell, and if there are differences
-         *  between neighboring cells, translate that to velocity flowing from the higher pressure cell to the
-         *  lower.
-         *
-         * Step 3: heat
-         *  Heat increases pressure, decreases density. Or just creates an upwards motion.
-         *
-         * Other potential steps:
-         *  friction
-         *  diffusion
-         */
-
-
         applyPressure(entities);
         forwardAdvection(entities);
         reverseAdvection(entities);
-
-
-        // finally timestep
-        IntStream.range(0, entities.length).forEach(x -> {
-            IntStream.range(0, entities[0].length).forEach(y -> {
-                entities[x][y].incrementTimestep();
-            });
-        });
     }
 
     private static void applyPressure(FluidEntity[][] entities) {
@@ -78,7 +38,7 @@ public class FluidPhysics {
                 if (x > 0) {
                     otherEntity = entities[x - 1][y];
                     if (entity.getMass() > otherEntity.getMass()) {
-                        otherEntity.addDeltaX(-(entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
+                        otherEntity.addNextDeltaX(-(entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
                     }
                 }
 
@@ -86,7 +46,7 @@ public class FluidPhysics {
                 if (x + 1 < d1) {
                     otherEntity = entities[x + 1][y];
                     if (entity.getMass() > otherEntity.getMass()) {
-                        otherEntity.addDeltaX((entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
+                        otherEntity.addNextDeltaX((entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
                     }
                 }
 
@@ -94,7 +54,7 @@ public class FluidPhysics {
                 if (y > 0) {
                     otherEntity = entities[x][y - 1];
                     if (entity.getMass() > otherEntity.getMass()) {
-                        otherEntity.addDeltaY(-(entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
+                        otherEntity.addNextDeltaY(-(entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
                     }
                 }
 
@@ -102,94 +62,70 @@ public class FluidPhysics {
                 if (y + 1 < d2) {
                     otherEntity = entities[x][y + 1];
                     if (entity.getMass() > otherEntity.getMass()) {
-                        otherEntity.addDeltaY((entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
+                        otherEntity.addNextDeltaY((entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
                     }
                 }
             });
         });
+
+        applyStep(entities);
     }
 
     /**
      * Advection moves the quantities from point to its connections/neighbors. Quantities include velocity/mass/heat/etc.
      * The amount moved from one point to another is based on the given point's velocity.
-     *
-     * Not dealing with Stam's reverse advection yet.
      */
     private static void forwardAdvection(FluidEntity[][] entities) {
-
-        // forward advection
         IntStream.range(0, entities.length).forEach(x -> {
             IntStream.range(0, entities[0].length).forEach(y -> {
                 forwardAdvectionCellTransfer(entities, x, y);
             });
         });
+
+        applyStep(entities);
     }
 
     private static void reverseAdvection(FluidEntity[][] entities) {
-
-        // forward advection
         IntStream.range(0, entities.length).forEach(x -> {
             IntStream.range(0, entities[0].length).forEach(y -> {
                 reverseAdvectionCellTransfer(entities, x, y);
             });
         });
+
+        applyStep(entities);
     }
 
+    private static void applyStep(FluidEntity[][] entities) {
+        IntStream.range(0, entities.length).forEach(x -> {
+            IntStream.range(0, entities[0].length).forEach(y -> {
+                entities[x][y].incrementStep();
+            });
+        });
+    }
 
     /**
      * https://en.wikipedia.org/wiki/Bilinear_interpolation
      */
-    private static void forwardAdvectionCellTransfer(FluidEntity[][] entities, int x, int y) {
+    private static void forwardAdvectionCellTransfer(FluidEntity[][] entities, int xIndex, int yIndex) {
 
         final int d1 = entities.length;
         final int d2 = entities[0].length;
 
-        FluidEntity entity = entities[x][y];
+        FluidEntity entity = entities[xIndex][yIndex];
         double deltaX = entity.getDeltaX();
         double deltaY = entity.getDeltaY();
+
+        if (deltaX == 0 && deltaY == 0) return;
 
         int xIndexOffset = (int) deltaX / FluidEntity.SPACE;
         int yIndexOffset = (int) deltaY / FluidEntity.SPACE;
 
-        int t1x;
-        int t1y;
 
-        if (deltaX >= 0) {
-            t1x = x + xIndexOffset;
-        } else {
-            t1x = x + xIndexOffset - 2;
-        }
-        if (deltaY >= 0) {
-            t1y = y + yIndexOffset;
-        } else {
-            t1y = y + yIndexOffset - 2;
-        }
-
-        // Deal with border conditions
-        if (t1x < 0) {
-            t1x = 0;
-        }
-        if (t1x + 1 >= d1) {
-            t1x = d1 - 2;
-        }
-        if (t1y < 0) {
-            t1y = 0;
-        }
-        if (t1y + 1 >= d2) {
-            t1y = d2 - 2;
-        }
+        int t1x = getLesserTargetIndex(xIndex, d1, xIndexOffset, deltaX > 0);
+        int t1y = getLesserTargetIndex(yIndex, d2, yIndexOffset, deltaY > 0);
 
         int t2x = t1x + 1;
         int t2y = t1y + 1;
-
-        // If vector is beyond the border of the grid, exit, should never be called
-        if (!(t1x >= 0 && t2x >= 0 &&
-                t1x < d1 && t2x < d1 &&
-                t1y >= 0 && t2y >= 0 &&
-                t1y < d2 && t2y < d2)) {
-            System.out.println("Border gone past!");
-            return;
-        }
 
         FluidEntity bottomLeft = entities[t1x][t1y];
         FluidEntity bottomRight = entities[t2x][t1y];
@@ -245,57 +181,25 @@ public class FluidPhysics {
     /**
      * https://en.wikipedia.org/wiki/Bilinear_interpolation
      */
-    private static void reverseAdvectionCellTransfer(FluidEntity[][] entities, int x, int y) {
+    private static void reverseAdvectionCellTransfer(FluidEntity[][] entities, int xIndex, int yIndex) {
 
         final int d1 = entities.length;
         final int d2 = entities[0].length;
 
-        FluidEntity entity = entities[x][y];
+        FluidEntity entity = entities[xIndex][yIndex];
         double negativeDeltaX = -entity.getDeltaX();
         double negativeDeltaY = -entity.getDeltaY();
+
+        if (negativeDeltaX == 0 && negativeDeltaY == 0) return;
 
         int xIndexOffset = (int) negativeDeltaX / FluidEntity.SPACE;
         int yIndexOffset = (int) negativeDeltaY / FluidEntity.SPACE;
 
-        int t1x;
-        int t1y;
-
-        if (negativeDeltaX >= 0) {
-            t1x = x + xIndexOffset;
-        } else {
-            t1x = x + xIndexOffset - 1;
-        }
-        if (negativeDeltaY >= 0) {
-            t1y = y + yIndexOffset;
-        } else {
-            t1y = y + yIndexOffset - 1;
-        }
-
-        // Deal with border conditions
-        if (t1x < 0) {
-            t1x = 0;
-        }
-        if (t1x + 1 >= d1) {
-            t1x = d1 - 2;
-        }
-        if (t1y < 0) {
-            t1y = 0;
-        }
-        if (t1y + 1 >= d2) {
-            t1y = d2 - 2;
-        }
+        int t1x = getLesserTargetIndex(xIndex, d1, xIndexOffset, negativeDeltaX > 0);
+        int t1y = getLesserTargetIndex(yIndex, d2, yIndexOffset, negativeDeltaY > 0);
 
         int t2x = t1x + 1;
         int t2y = t1y + 1;
-
-        // If vector is beyond the border of the grid, exit
-        if (!(t1x >= 0 && t2x >= 0 &&
-                t1x < d1 && t2x < d1 &&
-                t1y >= 0 && t2y >= 0 &&
-                t1y < d2 && t2y < d2)) {
-            System.out.println("Border gone past!");
-            return;
-        }
 
         FluidEntity bottomLeft = entities[t1x][t1y];
         FluidEntity bottomRight = entities[t2x][t1y];
@@ -360,6 +264,28 @@ public class FluidPhysics {
         bottomRight.transfer(entity, bottomRightRatio);
         topLeft.transfer(entity, topLeftRatio);
         topRight.transfer(entity, topRightRatio);
+    }
+
+
+    private static int getLesserTargetIndex(int sourceIndex, int dimension, int indexOffset, boolean directionPositive) {
+
+        int targetIndex;
+
+        if (directionPositive) {
+            targetIndex = sourceIndex + indexOffset;
+        } else {
+            targetIndex = sourceIndex + indexOffset - 1;
+        }
+
+        // Deal with border conditions
+        if (targetIndex < 0) {
+            targetIndex = 0;
+        }
+        if (targetIndex + 1 >= dimension) {
+            targetIndex = dimension - 2;
+        }
+
+        return targetIndex;
     }
 
 }

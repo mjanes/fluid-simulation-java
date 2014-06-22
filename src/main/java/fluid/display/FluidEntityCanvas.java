@@ -24,15 +24,17 @@ public class FluidEntityCanvas extends Canvas {
     }
 
     public void drawEntities(FluidEntity[][] entities) {
-        double width = getWidth();
-        double height = getHeight();
+        double canvasWidth = getWidth();
+        double canvasHeight = getHeight();
         GraphicsContext gc = getGraphicsContext2D();
+        gc.clearRect(0, 0, canvasWidth, canvasHeight);
+
 
         int d1 = entities.length;
         int d2 = entities[0].length;
         IntStream.range(0, d1).forEach(x -> {
              IntStream.range(0, d2).forEach(y -> {
-                 drawEntity(gc, mCamera, entities[x][y], width, height);
+                 drawEntity(gc, mCamera, entities[x][y], canvasWidth, canvasHeight);
              });
         });
     }
