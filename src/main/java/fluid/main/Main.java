@@ -9,22 +9,22 @@ import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Main extends Application {
 
-    private int mFrameDelay = 80;
+    private int mFrameDelay = 500;
     private boolean mRunning = true;
 
-    protected List<FluidEntity> mEntities;
+    protected FluidEntity[][] mEntities;
     private FluidEntityCanvas mCanvas;
     private Camera mCamera;
 
@@ -66,14 +66,6 @@ public class Main extends Application {
 
     public void runSimulation() {
         mExecutorService = Executors.newSingleThreadExecutor();
-//        mCycleTime = System.currentTimeMillis();
-
-//        while (isRunning())  {
-//            increment();
-//
-//            // Wait an appropriate amount of time, so that the frame rate is progressing constantly.
-//            syncFrameRate();
-//        }
 
         Timeline timeline = new Timeline();
         timeline.setCycleCount(Animation.INDEFINITE);
@@ -90,29 +82,34 @@ public class Main extends Application {
             SimulationTask incrementStep = new SimulationTask(mEntities);
             incrementStep.setOnSucceeded(e -> {
                 mEntities = incrementStep.getValue();
+
+                Platform.runLater(() -> {
+                    // TODO: Perhaps create a separate pause camera button?
+                    mCamera.move();
+
+                    // tell graphics to repaint
+                    mCanvas.drawEntities(mEntities);
+                });
+            });
+
+            incrementStep.setOnFailed(e ->  {
+                System.out.println(e.toString());
             });
             mExecutorService.submit(incrementStep);
         }
-
-        // Sections of code interacting with the UI thread, thus... Platform.performLater?
-        // TODO: Perhaps create a separate pause camera button?
-        mCamera.move();
-
-        // tell graphics to repaint
-        mCanvas.drawEntities(mEntities);
     }
 
 
-    private static class SimulationTask extends Task<List<FluidEntity>> {
+    private static class SimulationTask extends Task<FluidEntity[][]> {
 
-        List<FluidEntity> mEntities;
+        FluidEntity[][] mEntities;
 
-        public SimulationTask(List<FluidEntity> entities) {
+        public SimulationTask(FluidEntity[][] entities) {
             mEntities = entities;
         }
 
         @Override
-        protected List<FluidEntity> call() throws Exception {
+        protected FluidEntity[][] call() throws Exception {
             return UniversePhysics.updateUniverseState(mEntities);
         }
     }

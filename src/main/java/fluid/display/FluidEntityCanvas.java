@@ -8,7 +8,7 @@ import javafx.scene.paint.Color;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 
 import java.awt.geom.Point2D;
-import java.util.List;
+import java.util.stream.IntStream;
 
 public class FluidEntityCanvas extends Canvas {
 
@@ -23,12 +23,18 @@ public class FluidEntityCanvas extends Canvas {
         mCamera = camera;
     }
 
-    public void drawEntities(List<FluidEntity> entities) {
+    public void drawEntities(FluidEntity[][] entities) {
         double width = getWidth();
         double height = getHeight();
         GraphicsContext gc = getGraphicsContext2D();
 
-        entities.stream().forEach(e -> drawEntity(gc, mCamera, e, width, height));
+        int d1 = entities.length;
+        int d2 = entities[0].length;
+        IntStream.range(0, d1).forEach(x -> {
+             IntStream.range(0, d2).forEach(y -> {
+                 drawEntity(gc, mCamera, entities[x][y], width, height);
+             });
+        });
     }
 
     private void drawEntity(GraphicsContext gc, Camera camera, FluidEntity entity, double canvasWidth, double canvasHeight) {
@@ -42,7 +48,14 @@ public class FluidEntityCanvas extends Canvas {
         // entity.Entity color
         gc.setFill(Color.BLACK);
         // Subtract half the radius from the projection point, because g.fillOval does not surround the center point
-        gc.fillOval((int) xP - RADIUS / 2, (int) yP - RADIUS / 2, RADIUS, RADIUS);
+
+        double radius = Math.sqrt(entity.getMass()) / 3;
+        gc.fillOval((int) xP - radius / 2, (int) yP - radius / 2, radius, radius);
+
+        FluidEntity vector = entity.getNextLocationAsFluidEntity();
+        Point2D.Double vectorPoint = getCanvasLocation(camera, canvasWidth, canvasHeight, vector);
+        gc.setStroke(Color.RED);
+        gc.strokeLine(xP, yP, vectorPoint.getX(), vectorPoint.getY());
     }
 
     /**

@@ -2,8 +2,6 @@ package fluid.setup;
 
 import fluid.entity.FluidEntity;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.IntStream;
 
 /**
@@ -13,56 +11,35 @@ public class Setup {
 
     private static double sZDistance = 5000;
 
-    public static List<FluidEntity> create() {
-        ArrayList<FluidEntity> entities = new ArrayList<>();
-
-        entities.addAll(grid(10));
-
-        return entities;
+    private static final int SIZE = 50;
+    public static FluidEntity[][] create() {
+        return grid(SIZE);
     }
 
-    private static List<FluidEntity> grid(int numEntitiesOnSide) {
-        FluidEntity[][][] entitiesArray = new FluidEntity[numEntitiesOnSide][numEntitiesOnSide][numEntitiesOnSide];
-        ArrayList<FluidEntity> entitiesList = new ArrayList<>();
-
-        final int SPACE = 10;
+    private static FluidEntity[][] grid(int numEntitiesOnSide) {
+        FluidEntity[][] entitiesArray = new FluidEntity[numEntitiesOnSide][numEntitiesOnSide];
 
         IntStream.range(0, numEntitiesOnSide).forEach(i -> {
 
-                double x = (i - numEntitiesOnSide / 2) * SPACE;
+            double x = (i - numEntitiesOnSide / 2) * FluidEntity.SPACE;
+            //double x = i * FluidEntity.SPACE;
 
-                IntStream.range(0, numEntitiesOnSide).forEach(j -> {
-                        double y = (j - numEntitiesOnSide / 2) * SPACE;
+            IntStream.range(0, numEntitiesOnSide).forEach(j -> {
+                double y = (j - numEntitiesOnSide / 2) * FluidEntity.SPACE;
+                //double y = j * FluidEntity.SPACE;
 
-                        IntStream.range(0, numEntitiesOnSide).forEach(k -> {
+                double z = sZDistance;
 
-                                double z = sZDistance + (k - numEntitiesOnSide / 2) * SPACE;
+                FluidEntity entity = new FluidEntity(x, y, z, 10);
+                entitiesArray[i][j] = entity;
+            });
+        });
 
-                                FluidEntity entity = new FluidEntity(x, y, z);
-                                entitiesArray[i][j][k] = entity;
+        entitiesArray[0][0].setMass(40);
+        //entitiesArray[SIZE / 2][SIZE / 2].setMass(100);
+        entitiesArray[0][0].setDeltaX(7);
+        entitiesArray[0][0].setDeltaY(7);
 
-                                if (i > 0) {
-                                    entity.addConnection(entitiesArray[i - 1][j][k]);
-                                    entitiesArray[i - 1][j][k].addConnection(entity);
-                                }
-                                if (j > 0) {
-                                    entity.addConnection(entitiesArray[i][j - 1][k]);
-                                    entitiesArray[i][j - 1][k].addConnection(entity);
-                                }
-                                if (k > 0) {
-                                    entity.addConnection(entitiesArray[i][j][k - 1]);
-                                    entitiesArray[i][j][k - 1].addConnection(entity);
-                                }
-
-                                entitiesList.add(entity);
-                            }
-                        );
-                    }
-                );
-            }
-        );
-
-
-        return entitiesList;
+        return entitiesArray;
     }
 }
