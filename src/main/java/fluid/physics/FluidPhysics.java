@@ -54,10 +54,6 @@ public class FluidPhysics {
         forwardAdvection(entities);
         reverseAdvection(entities);
 
-        // A fan
-        entities[0][0].setDeltaX(25);
-        entities[0][0].setDeltaY(10);
-
 
         // finally timestep
         IntStream.range(0, entities.length).forEach(x -> {
