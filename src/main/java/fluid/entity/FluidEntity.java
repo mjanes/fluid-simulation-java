@@ -11,7 +11,7 @@ import java.util.ArrayList;
  */
 public class FluidEntity implements IDimensionalEntity {
 
-    public static final int SPACE = 10; // spacing between entities, currently writing this that they must be placed on a grid
+    public static final int SPACE = 5; // spacing between entities, currently writing this that they must be placed on a grid
 
     protected double mX;
     protected double mY;

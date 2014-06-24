@@ -19,8 +19,15 @@ public class FluidPhysics {
         if (entities == null) return;
 
         entities[0][0].setMass(400);
-        entities[0][0].addDeltaX(12);
-        entities[0][0].addDeltaY(6);
+        entities[0][0].addDeltaX(22);
+        entities[0][0].addDeltaY(16);
+        entities[1][0].setMass(400);
+        entities[1][0].addDeltaX(22);
+        entities[1][0].addDeltaY(16);
+        entities[0][1].setMass(400);
+        entities[0][1].addDeltaX(22);
+        entities[0][1].addDeltaY(16);
+
 
         applyPressure(entities);
         forwardAdvection(entities);
