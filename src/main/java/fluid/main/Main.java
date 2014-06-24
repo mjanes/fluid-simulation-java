@@ -21,7 +21,7 @@ import java.util.concurrent.Executors;
 
 public class Main extends Application {
 
-    private int mFrameDelay = 500;
+    private int mFrameDelay = 40;
     private boolean mRunning = true;
 
     protected FluidEntity[][] mEntities;
@@ -44,7 +44,7 @@ public class Main extends Application {
         mCamera = new Camera(0, 0, 0);
 
         Group root = new Group();
-        mCanvas = new FluidEntityCanvas(1200, 800, mCamera);
+        mCanvas = new FluidEntityCanvas(1600, 1000, mCamera);
 
         root.getChildren().add(mCanvas);
         stage.setScene(new Scene(root));

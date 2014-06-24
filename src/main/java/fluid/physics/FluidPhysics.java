@@ -18,9 +18,13 @@ public class FluidPhysics {
     public static void incrementFluid(FluidEntity[][] entities) {
         if (entities == null) return;
 
+        entities[0][0].setMass(400);
+        entities[0][0].addDeltaX(12);
+        entities[0][0].addDeltaY(6);
+
         applyPressure(entities);
         forwardAdvection(entities);
-        //reverseAdvection(entities);
+        reverseAdvection(entities);
     }
 
     private static void applyPressure(FluidEntity[][] entities) {
@@ -38,7 +42,7 @@ public class FluidPhysics {
                 if (x > 0) {
                     otherEntity = entities[x - 1][y];
                     if (entity.getMass() > otherEntity.getMass()) {
-                        otherEntity.addNextDeltaX(-(entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
+                        otherEntity.addDeltaX(-(entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
                     }
                 }
 
@@ -46,7 +50,7 @@ public class FluidPhysics {
                 if (x + 1 < d1) {
                     otherEntity = entities[x + 1][y];
                     if (entity.getMass() > otherEntity.getMass()) {
-                        otherEntity.addNextDeltaX((entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
+                        otherEntity.addDeltaX((entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
                     }
                 }
 
@@ -54,7 +58,7 @@ public class FluidPhysics {
                 if (y > 0) {
                     otherEntity = entities[x][y - 1];
                     if (entity.getMass() > otherEntity.getMass()) {
-                        otherEntity.addNextDeltaY(-(entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
+                        otherEntity.addDeltaY(-(entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
                     }
                 }
 
@@ -62,7 +66,7 @@ public class FluidPhysics {
                 if (y + 1 < d2) {
                     otherEntity = entities[x][y + 1];
                     if (entity.getMass() > otherEntity.getMass()) {
-                        otherEntity.addNextDeltaY((entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
+                        otherEntity.addDeltaY((entity.getMass() - otherEntity.getMass()) * DENSITY_TO_VELOCITY_SCALE);
                     }
                 }
             });
@@ -242,7 +246,7 @@ public class FluidPhysics {
             targetEntity = entities[targetXIndex][targetYIndex];
         }
 
-        entity.transferTo(targetEntity, ratio);
+        entity.recordTransferTo(targetEntity, ratio);
     }
 
     private static void transferFrom(FluidEntity entity, FluidEntity[][] entities, int originXIndex, int originYIndex, double ratio) {
@@ -250,7 +254,7 @@ public class FluidPhysics {
         if (originYIndex < 0) return;
         if (originXIndex >= entities.length) return;
         if (originYIndex >= entities[originXIndex].length) return;
-        entities[originXIndex][originYIndex].transferTo(entity, ratio);
+        entities[originXIndex][originYIndex].recordTransferTo(entity, ratio);
     }
 
 

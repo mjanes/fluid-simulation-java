@@ -2,6 +2,8 @@ package fluid.entity;
 
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 
+import java.util.ArrayList;
+
 /**
  * http://cowboyprogramming.com/2008/04/01/practical-fluid-mechanics/
  *
@@ -17,16 +19,12 @@ public class FluidEntity implements IDimensionalEntity {
 
     protected Array2DRowRealMatrix r4Matrix = new Array2DRowRealMatrix(new double[] {0, 0, 0, 1});
 
-    // All of these are going to require next values, and changes will be applied to the values in the next timestep.
     protected double mDeltaX;
     protected double mDeltaY;
     protected double mDeltaZ;
     protected double mMass;
 
-    protected double mNextDeltaX;
-    protected double mNextDeltaY;
-    protected double mNextDeltaZ;
-    protected double mNextMass;    // I suppose I'm presuming space is constant, so density scales linearly with mass.
+    protected ArrayList<TransferRecord> mTransferRecords = new ArrayList<>();
 
 
     public FluidEntity(double x, double y, double z, double mass) {
@@ -84,15 +82,10 @@ public class FluidEntity implements IDimensionalEntity {
 
     public void setDeltaX(double deltaX) {
         mDeltaX = deltaX;
-        mNextDeltaX = deltaX;
     }
 
     public void addDeltaX(double deltaDeltaX) {
         mDeltaX += deltaDeltaX;
-    }
-
-    public void addNextDeltaX(double deltaDeltaX) {
-        mNextDeltaX += deltaDeltaX;
     }
 
     public double getDeltaX() {
@@ -101,15 +94,10 @@ public class FluidEntity implements IDimensionalEntity {
 
     public void setDeltaY(double deltaY) {
         mDeltaY = deltaY;
-        mNextDeltaY = deltaY;
     }
 
     public void addDeltaY(double deltaDeltaY) {
         mDeltaY += deltaDeltaY;
-    }
-
-    public void addNextDeltaY(double deltaDeltaY) {
-        mNextDeltaY += deltaDeltaY;
     }
 
     public double getDeltaY() {
@@ -118,11 +106,6 @@ public class FluidEntity implements IDimensionalEntity {
 
     public void setDeltaZ(double deltaZ) {
         mDeltaZ = deltaZ;
-        mNextDeltaZ = deltaZ;
-    }
-
-    public void addNextDeltaZ(double deltaDeltaZ) {
-        mNextDeltaZ += deltaDeltaZ;
     }
 
     public double getDeltaZ() {
@@ -134,29 +117,29 @@ public class FluidEntity implements IDimensionalEntity {
 
     public void setMass(double mass) {
         mMass = mass;
-        mNextMass = mass;
     }
 
     public double getMass() {
         return mMass;
     }
 
-    public void addNextMass(double deltaMass) {
-        if (mNextMass + deltaMass < 0) {
-            mNextMass = 0;
+    public void addMass(double deltaMass) {
+        if (mMass + deltaMass < 0) {
+            System.out.println("Mass being set to less than 0");
+            return;
         }
-
-        mNextMass += deltaMass;
+        mMass += deltaMass;
     }
+
 
     /** For display */
 
     public FluidEntity getNextLocationAsFluidEntity() {
-        return new FluidEntity(mX + mDeltaX, mY + mDeltaY, mZ + mDeltaZ, mNextMass);
+        return new FluidEntity(mX + mDeltaX, mY + mDeltaY, mZ + mDeltaZ, mMass);
     }
 
     public FluidEntity getPreviousLocationAsFluidEntity() {
-        return new FluidEntity(mX - mDeltaX, mY - mDeltaY, mZ - mDeltaZ, mNextMass);
+        return new FluidEntity(mX - mDeltaX, mY - mDeltaY, mZ - mDeltaZ, mMass);
     }
 
 
@@ -164,41 +147,58 @@ public class FluidEntity implements IDimensionalEntity {
     /** Stepping from to the next increment of the simulation */
 
     public void incrementStep() {
-        mMass = mNextMass;
-        mDeltaX = mNextDeltaX;
-        mDeltaY = mNextDeltaY;
-        mDeltaZ = mNextDeltaZ;
+        double totalToRatio = 0;
+        for (TransferRecord transferRecord : mTransferRecords) {
+            totalToRatio += transferRecord.getRatio();
+        }
+
+        for (TransferRecord transferRecord : mTransferRecords) {
+            if (totalToRatio > 1) {
+                transferTo(transferRecord.getTargetEntity(), transferRecord.getRatio() / totalToRatio);
+            } else {
+                transferTo(transferRecord.getTargetEntity(), transferRecord.getRatio());
+            }
+        }
+
+        mTransferRecords.clear();
     }
 
-    public void transferTo(FluidEntity targetEntity, double ratio) {
+    public void recordTransferTo(FluidEntity targetEntity, double ratio) {
         if (ratio < 0 || ratio > 1) {
             System.out.println("Error, ratio = " + ratio);
             return;
         }
+        mTransferRecords.add(new TransferRecord(targetEntity, ratio));
+    }
 
+
+    private void transferTo(FluidEntity targetEntity, double ratio) {
         double massTransfer = mMass * ratio;
-        if (mNextMass - massTransfer < -.00001) { // rounding with doubles
-            System.out.println("mNextMass would have gone to less than 0");
-            return;
-        }
-        addNextMass(-massTransfer);
-        if (targetEntity != null) {
-            targetEntity.addNextMass(massTransfer);
-        }
-
         double deltaXTransfer = mDeltaX * ratio;
-        addNextDeltaX(-deltaXTransfer);
-        if (targetEntity != null) {
-            targetEntity.addNextDeltaX(deltaXTransfer);
-        }
-
         double deltaYTransfer = mDeltaY * ratio;
-        addNextDeltaY(-deltaYTransfer);
+
+        addMass(-massTransfer);
+        addDeltaX(-deltaXTransfer);
+        addDeltaY(-deltaYTransfer);
+
         if (targetEntity != null) {
-            targetEntity.addNextDeltaY(deltaYTransfer);
+            targetEntity.addMass(massTransfer);
+            targetEntity.addDeltaX(deltaXTransfer);
+            targetEntity.addDeltaY(deltaYTransfer);
+        }
+    }
+
+    private static class TransferRecord {
+        private FluidEntity mTargetEntity;
+        private double mRatio;
+
+        public TransferRecord(FluidEntity targetEntity, double ratio) {
+            mTargetEntity = targetEntity;
+            mRatio = ratio;
         }
 
-        //addNextDeltaZ(-getDeltaZ() * ratio);
-        //otherEntity.addNextDeltaZ(getDeltaZ() * ratio);
+        public FluidEntity getTargetEntity() { return mTargetEntity; }
+
+        public double getRatio() { return mRatio; }
     }
 }
