@@ -20,7 +20,7 @@ public class FluidPhysics {
 
         applyPressure(entities);
         forwardAdvection(entities);
-        reverseAdvection(entities);
+        //reverseAdvection(entities);
     }
 
     private static void applyPressure(FluidEntity[][] entities) {
@@ -108,83 +108,54 @@ public class FluidPhysics {
      */
     private static void forwardAdvectionCellTransfer(FluidEntity[][] entities, int xIndex, int yIndex) {
 
-        final int d1 = entities.length;
-        final int d2 = entities[0].length;
-
         FluidEntity entity = entities[xIndex][yIndex];
         double deltaX = entity.getDeltaX();
         double deltaY = entity.getDeltaY();
 
-        if (deltaX == 0 && deltaY == 0) return;
+        if (deltaX == 0 && deltaY == 0) return; // unsure this is needed
 
         int xIndexOffset = (int) deltaX / FluidEntity.SPACE;
         int yIndexOffset = (int) deltaY / FluidEntity.SPACE;
 
+        boolean dxPositive = deltaX > 0;
+        boolean dyPositive = deltaY > 0;
 
-        int t1x = getLesserTargetIndex(xIndex, d1, xIndexOffset, deltaX > 0);
-        int t1y = getLesserTargetIndex(yIndex, d2, yIndexOffset, deltaY > 0);
+        int t1x = getLesserTargetIndex(xIndex, xIndexOffset, dxPositive);
+        int t1y = getLesserTargetIndex(yIndex, yIndexOffset, dyPositive);
 
         int t2x = t1x + 1;
         int t2y = t1y + 1;
 
-        FluidEntity bottomLeft = entities[t1x][t1y];
-        FluidEntity bottomRight = entities[t2x][t1y];
-        FluidEntity topLeft = entities[t1x][t2y];
-        FluidEntity topRight = entities[t2x][t2y];
-
-        FluidEntity nextLocation = entity.getNextLocationAsFluidEntity();
-        double nextX = nextLocation.getX();
-        double nextY = nextLocation.getY();
-
-        // This should only happen in border locations where t1x/y was reset, and should be impossible otherwise
-        if (nextX < bottomLeft.getX()) {
-            nextX = bottomLeft.getX();
-        }
-        if (nextX > bottomRight.getX()) {
-            nextX = bottomRight.getX();
-        }
-        if (nextY < bottomLeft.getY()) {
-            nextY = bottomLeft.getY();
-        }
-        if (nextY > topLeft.getY()) {
-            nextY = topLeft.getY();
-        }
-
+        double xPosInCell = dxPositive ? entity.getDeltaX() % FluidEntity.SPACE : FluidEntity.SPACE + entity.getDeltaX() % FluidEntity.SPACE;
+        double yPosInCell = dyPositive ? entity.getDeltaY() % FluidEntity.SPACE : FluidEntity.SPACE + entity.getDeltaY() % FluidEntity.SPACE;
 
         // Area of top right
-        double bottomLeftAreaInversion = (topRight.getX() - nextX) * (topRight.getY() - nextY);
+        double bottomLeftAreaInversion = (FluidEntity.SPACE - xPosInCell) * (FluidEntity.SPACE - yPosInCell);
 
         // area of top left
-        double bottomRightAreaInversion = (nextX - topLeft.getX()) * (topLeft.getY() - nextY);
+        double bottomRightAreaInversion = xPosInCell * (FluidEntity.SPACE - yPosInCell);
 
         // area of bottom right
-        double topLeftAreaInversion = (bottomRight.getX() - nextX) * (nextY - bottomRight.getY());
+        double topLeftAreaInversion = (FluidEntity.SPACE - xPosInCell) * yPosInCell;
 
         // area of bottom left
-        double topRightAreaInversion = (nextX - bottomLeft.getX()) * (nextY - bottomLeft.getY());
+        double topRightAreaInversion = xPosInCell * yPosInCell;
 
         double bottomLeftRatio = bottomLeftAreaInversion / CELL_AREA;
         double bottomRightRatio = bottomRightAreaInversion / CELL_AREA;
         double topLeftRatio = topLeftAreaInversion / CELL_AREA;
         double topRightRatio = topRightAreaInversion / CELL_AREA;
 
-        if ((bottomLeftRatio + bottomRightRatio + topLeftRatio + topRightRatio) - 1 > .001) {
-            System.out.println("Math problem!");
-        }
-
-        entity.transfer(bottomLeft, bottomLeftRatio);
-        entity.transfer(bottomRight, bottomRightRatio);
-        entity.transfer(topLeft, topLeftRatio);
-        entity.transfer(topRight, topRightRatio);
+        transferTo(entity, entities, t1x, t1y, bottomLeftRatio);
+        transferTo(entity, entities, t2x, t1y, bottomRightRatio);
+        transferTo(entity, entities, t1x, t2y, topLeftRatio);
+        transferTo(entity, entities, t2x, t2y, topRightRatio);
     }
 
     /**
      * https://en.wikipedia.org/wiki/Bilinear_interpolation
      */
     private static void reverseAdvectionCellTransfer(FluidEntity[][] entities, int xIndex, int yIndex) {
-
-        final int d1 = entities.length;
-        final int d2 = entities[0].length;
 
         FluidEntity entity = entities[xIndex][yIndex];
         double negativeDeltaX = -entity.getDeltaX();
@@ -195,46 +166,30 @@ public class FluidPhysics {
         int xIndexOffset = (int) negativeDeltaX / FluidEntity.SPACE;
         int yIndexOffset = (int) negativeDeltaY / FluidEntity.SPACE;
 
-        int t1x = getLesserTargetIndex(xIndex, d1, xIndexOffset, negativeDeltaX > 0);
-        int t1y = getLesserTargetIndex(yIndex, d2, yIndexOffset, negativeDeltaY > 0);
+        boolean negativeDxPositive = negativeDeltaX > 0;
+        boolean negativeDyPositive = negativeDeltaY > 0;
+
+        int t1x = getLesserTargetIndex(xIndex, xIndexOffset, negativeDxPositive);
+        int t1y = getLesserTargetIndex(yIndex, yIndexOffset, negativeDyPositive);
 
         int t2x = t1x + 1;
         int t2y = t1y + 1;
 
-        FluidEntity bottomLeft = entities[t1x][t1y];
-        FluidEntity bottomRight = entities[t2x][t1y];
-        FluidEntity topLeft = entities[t1x][t2y];
-        FluidEntity topRight = entities[t2x][t2y];
+        double xPosInCell = negativeDxPositive ? entity.getDeltaX() % FluidEntity.SPACE : FluidEntity.SPACE + entity.getDeltaX() % FluidEntity.SPACE;
+        double yPosInCell = negativeDyPositive ? entity.getDeltaY() % FluidEntity.SPACE : FluidEntity.SPACE + entity.getDeltaY() % FluidEntity.SPACE;
 
-        FluidEntity previousLocation = entity.getPreviousLocationAsFluidEntity();
-        double previousX = previousLocation.getX();
-        double previousY = previousLocation.getY();
-
-        // This should only happen in border locations where t1x/y was reset, and should be impossible otherwise
-        if (previousX < bottomLeft.getX()) {
-            previousX = bottomLeft.getX();
-        }
-        if (previousX > bottomRight.getX()) {
-            previousX = bottomRight.getX();
-        }
-        if (previousY < bottomLeft.getY()) {
-            previousY = bottomLeft.getY();
-        }
-        if (previousY > topLeft.getY()) {
-            previousY = topLeft.getY();
-        }
 
         // Area of top right
-        double bottomLeftAreaInversion = (topRight.getX() - previousX) * (topRight.getY() - previousY);
+        double bottomLeftAreaInversion = (FluidEntity.SPACE - xPosInCell) * (FluidEntity.SPACE - yPosInCell);
 
         // area of top left
-        double bottomRightAreaInversion = (previousX - topLeft.getX()) * (topLeft.getY() - previousY);
+        double bottomRightAreaInversion = xPosInCell * (FluidEntity.SPACE - yPosInCell);
 
         // area of bottom right
-        double topLeftAreaInversion = (bottomRight.getX() - previousX) * (previousY - bottomRight.getY());
+        double topLeftAreaInversion = (FluidEntity.SPACE - xPosInCell) * yPosInCell;
 
         // area of bottom left
-        double topRightAreaInversion = (previousX - bottomLeft.getX()) * (previousY - bottomLeft.getY());
+        double topRightAreaInversion = xPosInCell * yPosInCell;
 
         double bottomLeftRatio = bottomLeftAreaInversion / CELL_AREA;
         double bottomRightRatio = bottomRightAreaInversion / CELL_AREA;
@@ -260,14 +215,14 @@ public class FluidPhysics {
          * this case as it will lead to significant errors.
          */
 
-        bottomLeft.transfer(entity, bottomLeftRatio);
-        bottomRight.transfer(entity, bottomRightRatio);
-        topLeft.transfer(entity, topLeftRatio);
-        topRight.transfer(entity, topRightRatio);
+        transferFrom(entity, entities, t1x, t1y, bottomLeftRatio);
+        transferFrom(entity, entities, t2x, t1y, bottomRightRatio);
+        transferFrom(entity, entities, t1x, t2y, topLeftRatio);
+        transferFrom(entity, entities, t2x, t2y, topRightRatio);
     }
 
 
-    private static int getLesserTargetIndex(int sourceIndex, int dimension, int indexOffset, boolean directionPositive) {
+    private static int getLesserTargetIndex(int sourceIndex, int indexOffset, boolean directionPositive) {
 
         int targetIndex;
 
@@ -277,15 +232,26 @@ public class FluidPhysics {
             targetIndex = sourceIndex + indexOffset - 1;
         }
 
-        // Deal with border conditions
-        if (targetIndex < 0) {
-            targetIndex = 0;
-        }
-        if (targetIndex + 1 >= dimension) {
-            targetIndex = dimension - 2;
-        }
-
         return targetIndex;
     }
+
+    private static void transferTo(FluidEntity entity, FluidEntity[][] entities, int targetXIndex, int targetYIndex, double ratio) {
+        FluidEntity targetEntity = null;
+
+        if (!(targetXIndex < 0 || targetYIndex < 0 || targetXIndex >= entities.length || targetYIndex >= entities[targetXIndex].length)) {
+            targetEntity = entities[targetXIndex][targetYIndex];
+        }
+
+        entity.transferTo(targetEntity, ratio);
+    }
+
+    private static void transferFrom(FluidEntity entity, FluidEntity[][] entities, int originXIndex, int originYIndex, double ratio) {
+        if (originXIndex < 0) return;
+        if (originYIndex < 0) return;
+        if (originXIndex >= entities.length) return;
+        if (originYIndex >= entities[originXIndex].length) return;
+        entities[originXIndex][originYIndex].transferTo(entity, ratio);
+    }
+
 
 }

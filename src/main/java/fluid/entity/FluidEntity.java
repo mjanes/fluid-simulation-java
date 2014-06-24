@@ -170,27 +170,33 @@ public class FluidEntity implements IDimensionalEntity {
         mDeltaZ = mNextDeltaZ;
     }
 
-    public void transfer(FluidEntity otherEntity, double ratio) {
-        double massTransfer = mMass * ratio;
-        if (massTransfer < 0) {
-            System.out.println("Mass transfer less than 0, somehow");
+    public void transferTo(FluidEntity targetEntity, double ratio) {
+        if (ratio < 0 || ratio > 1) {
+            System.out.println("Error, ratio = " + ratio);
             return;
         }
+
+        double massTransfer = mMass * ratio;
         if (mNextMass - massTransfer < -.00001) { // rounding with doubles
             System.out.println("mNextMass would have gone to less than 0");
             return;
         }
         addNextMass(-massTransfer);
-        otherEntity.addNextMass(massTransfer);
+        if (targetEntity != null) {
+            targetEntity.addNextMass(massTransfer);
+        }
 
         double deltaXTransfer = mDeltaX * ratio;
         addNextDeltaX(-deltaXTransfer);
-        otherEntity.addNextDeltaX(deltaXTransfer);
+        if (targetEntity != null) {
+            targetEntity.addNextDeltaX(deltaXTransfer);
+        }
 
         double deltaYTransfer = mDeltaY * ratio;
         addNextDeltaY(-deltaYTransfer);
-        otherEntity.addNextDeltaY(deltaYTransfer);
-
+        if (targetEntity != null) {
+            targetEntity.addNextDeltaY(deltaYTransfer);
+        }
 
         //addNextDeltaZ(-getDeltaZ() * ratio);
         //otherEntity.addNextDeltaZ(getDeltaZ() * ratio);
