@@ -22,16 +22,18 @@ public class FluidEntity implements IDimensionalEntity {
     protected double mDeltaX;
     protected double mDeltaY;
     protected double mDeltaZ;
-    protected double mMass;
+    protected double mMass;     // TODO: Add density in addition to mass.
+    protected double mHeat;
 
     protected ArrayList<TransferRecord> mTransferRecords = new ArrayList<>();
 
 
-    public FluidEntity(double x, double y, double z, double mass) {
+    public FluidEntity(double x, double y, double z, double mass, double heat) {
         setX(x);
         setY(y);
         setZ(z);
         setMass(mass);
+        setHeat(heat);
     }
 
     @Override
@@ -132,14 +134,34 @@ public class FluidEntity implements IDimensionalEntity {
     }
 
 
+    // TODO: Force = mass * velocity
+
+    // TODO: Force
+
+
+    /** Heat */
+
+    public void setHeat(double heat) {
+        mHeat = heat;
+    }
+
+    public double getHeat() {
+        return mHeat;
+    }
+
+    public void addHeat(double deltaHeat) {
+        mHeat += deltaHeat;
+    }
+
+
     /** For display */
 
     public FluidEntity getNextLocationAsFluidEntity() {
-        return new FluidEntity(mX + mDeltaX, mY + mDeltaY, mZ + mDeltaZ, mMass);
+        return new FluidEntity(mX + mDeltaX, mY + mDeltaY, mZ + mDeltaZ, mMass, mHeat);
     }
 
     public FluidEntity getPreviousLocationAsFluidEntity() {
-        return new FluidEntity(mX - mDeltaX, mY - mDeltaY, mZ - mDeltaZ, mMass);
+        return new FluidEntity(mX - mDeltaX, mY - mDeltaY, mZ - mDeltaZ, mMass, mHeat);
     }
 
 
@@ -176,15 +198,18 @@ public class FluidEntity implements IDimensionalEntity {
         double massTransfer = mMass * ratio;
         double deltaXTransfer = mDeltaX * ratio;
         double deltaYTransfer = mDeltaY * ratio;
+        double heatTransfer = mHeat * ratio;
 
         addMass(-massTransfer);
         addDeltaX(-deltaXTransfer);
         addDeltaY(-deltaYTransfer);
+        addHeat(-heatTransfer);
 
         if (targetEntity != null) {
             targetEntity.addMass(massTransfer);
             targetEntity.addDeltaX(deltaXTransfer);
             targetEntity.addDeltaY(deltaYTransfer);
+            targetEntity.addHeat(heatTransfer);
         }
     }
 

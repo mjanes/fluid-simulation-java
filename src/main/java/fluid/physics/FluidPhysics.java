@@ -18,20 +18,43 @@ public class FluidPhysics {
     public static void incrementFluid(FluidEntity[][] entities) {
         if (entities == null) return;
 
-        entities[0][0].setMass(400);
-        entities[0][0].addDeltaX(22);
-        entities[0][0].addDeltaY(16);
-        entities[1][0].setMass(400);
-        entities[1][0].addDeltaX(22);
-        entities[1][0].addDeltaY(16);
-        entities[0][1].setMass(400);
-        entities[0][1].addDeltaX(22);
-        entities[0][1].addDeltaY(16);
+        applyInput(entities);
 
-
+        applyHeat(entities);
         applyPressure(entities);
         forwardAdvection(entities);
         reverseAdvection(entities);
+    }
+
+    private static void applyInput(FluidEntity[][] entities) {
+
+        entities[0][0].setMass(500);
+        entities[0][0].addDeltaX(28);
+        entities[0][0].addDeltaY(17);
+        entities[0][0].setHeat(1);
+
+        entities[1][0].setMass(500);
+        entities[1][0].addDeltaX(22);
+        entities[1][0].addDeltaY(16);
+        entities[1][0].setHeat(1);
+
+        entities[0][1].setMass(500);
+        entities[0][1].addDeltaX(22);
+        entities[0][1].addDeltaY(16);
+        entities[0][1].setHeat(1);
+
+        entities[1][1].setMass(500);
+        entities[1][1].addDeltaX(23);
+        entities[1][1].addDeltaY(14);
+        entities[1][1].setHeat(1);
+    }
+
+    private static void applyHeat(FluidEntity[][] entities) {
+        IntStream.range(0, entities.length).forEach(x -> {
+            IntStream.range(0, entities[0].length).forEach(y -> {
+                entities[x][y].addDeltaY(entities[x][y].getHeat());
+            });
+        });
     }
 
     private static void applyPressure(FluidEntity[][] entities) {
@@ -186,8 +209,8 @@ public class FluidPhysics {
         int t2x = t1x + 1;
         int t2y = t1y + 1;
 
-        double xPosInCell = negativeDxPositive ? entity.getDeltaX() % FluidEntity.SPACE : FluidEntity.SPACE + entity.getDeltaX() % FluidEntity.SPACE;
-        double yPosInCell = negativeDyPositive ? entity.getDeltaY() % FluidEntity.SPACE : FluidEntity.SPACE + entity.getDeltaY() % FluidEntity.SPACE;
+        double xPosInCell = negativeDxPositive ? -entity.getDeltaX() % FluidEntity.SPACE : FluidEntity.SPACE + (-entity.getDeltaX() % FluidEntity.SPACE);
+        double yPosInCell = negativeDyPositive ? -entity.getDeltaY() % FluidEntity.SPACE : FluidEntity.SPACE + (-entity.getDeltaY() % FluidEntity.SPACE);
 
 
         // Area of top right
