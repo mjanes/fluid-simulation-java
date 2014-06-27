@@ -51,13 +51,13 @@ public class FluidEntityCanvas extends Canvas {
         gc.setFill(Color.BLACK);
         // Subtract half the radius from the projection point, because g.fillOval does not surround the center point
 
-        double radius = Math.sqrt(entity.getMass()) / 3;
+        double radius = entity.getRadius();
         gc.fillOval((int) xP - radius / 2, (int) yP - radius / 2, radius, radius);
 
-        FluidEntity vector = entity.getNextLocationAsFluidEntity();
-        Point2D.Double vectorPoint = getCanvasLocation(camera, canvasWidth, canvasHeight, vector);
-        gc.setStroke(Color.RED);
-        gc.strokeLine(xP, yP, vectorPoint.getX(), vectorPoint.getY());
+//        FluidEntity vector = entity.getNextLocationAsFluidEntity();
+//        Point2D.Double vectorPoint = getCanvasLocation(camera, canvasWidth, canvasHeight, vector);
+//        gc.setStroke(Color.RED);
+//        gc.strokeLine(xP, yP, vectorPoint.getX(), vectorPoint.getY());
     }
 
     /**

@@ -88,7 +88,10 @@ public class Main extends Application {
                     mCamera.move();
 
                     // tell graphics to repaint
+
+                    double time = System.currentTimeMillis();
                     mCanvas.drawEntities(mEntities);
+                    System.out.println("Time to draw entities: " + (System.currentTimeMillis() - time));
                 });
             });
 

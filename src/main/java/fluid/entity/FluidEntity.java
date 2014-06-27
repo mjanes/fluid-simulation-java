@@ -27,6 +27,7 @@ public class FluidEntity implements IDimensionalEntity {
 
     protected ArrayList<TransferRecord> mTransferRecords = new ArrayList<>();
 
+    protected double mRadius; // Display Radius
 
     public FluidEntity(double x, double y, double z, double mass, double heat) {
         setX(x);
@@ -82,31 +83,31 @@ public class FluidEntity implements IDimensionalEntity {
 
     /** Velocity */
 
-    public void setDeltaX(double deltaX) {
+    public synchronized void setDeltaX(double deltaX) {
         mDeltaX = deltaX;
     }
 
-    public void addDeltaX(double deltaDeltaX) {
-        mDeltaX += deltaDeltaX;
+    public synchronized void addDeltaX(double deltaDeltaX) {
+        setDeltaX(mDeltaX + deltaDeltaX);
     }
 
     public double getDeltaX() {
         return mDeltaX;
     }
 
-    public void setDeltaY(double deltaY) {
+    public synchronized void setDeltaY(double deltaY) {
         mDeltaY = deltaY;
     }
 
-    public void addDeltaY(double deltaDeltaY) {
-        mDeltaY += deltaDeltaY;
+    public synchronized void addDeltaY(double deltaDeltaY) {
+        setDeltaY(mDeltaY + deltaDeltaY);
     }
 
     public double getDeltaY() {
         return mDeltaY;
     }
 
-    public void setDeltaZ(double deltaZ) {
+    public synchronized void setDeltaZ(double deltaZ) {
         mDeltaZ = deltaZ;
     }
 
@@ -117,22 +118,37 @@ public class FluidEntity implements IDimensionalEntity {
 
     /** Mass */
 
-    public void setMass(double mass) {
+    public synchronized void setMass(double mass) {
         mMass = mass;
+        setRadius();
     }
 
     public double getMass() {
         return mMass;
     }
 
-    public void addMass(double deltaMass) {
+    public synchronized void addMass(double deltaMass) {
         if (mMass + deltaMass < 0) {
             System.out.println("Mass being set to less than 0");
             return;
         }
-        mMass += deltaMass;
+        setMass(mMass + deltaMass);
     }
 
+
+    /** Radius */
+
+
+    public double getRadius() {
+        return mRadius;
+    }
+
+    /**
+     * Currently done in 2d
+     */
+    private void setRadius() {
+        mRadius = Math.sqrt(mMass);
+    }
 
     // TODO: Force = mass * velocity
 
@@ -141,7 +157,7 @@ public class FluidEntity implements IDimensionalEntity {
 
     /** Heat */
 
-    public void setHeat(double heat) {
+    public synchronized void setHeat(double heat) {
         mHeat = heat;
     }
 
@@ -149,7 +165,7 @@ public class FluidEntity implements IDimensionalEntity {
         return mHeat;
     }
 
-    public void addHeat(double deltaHeat) {
+    public synchronized void addHeat(double deltaHeat) {
         mHeat += deltaHeat;
     }
 
@@ -160,15 +176,11 @@ public class FluidEntity implements IDimensionalEntity {
         return new FluidEntity(mX + mDeltaX, mY + mDeltaY, mZ + mDeltaZ, mMass, mHeat);
     }
 
-    public FluidEntity getPreviousLocationAsFluidEntity() {
-        return new FluidEntity(mX - mDeltaX, mY - mDeltaY, mZ - mDeltaZ, mMass, mHeat);
-    }
-
 
 
     /** Stepping from to the next increment of the simulation */
 
-    public void incrementStep() {
+    public synchronized void incrementStep() {
         double totalToRatio = 0;
         for (TransferRecord transferRecord : mTransferRecords) {
             totalToRatio += transferRecord.getRatio();
@@ -185,7 +197,7 @@ public class FluidEntity implements IDimensionalEntity {
         mTransferRecords.clear();
     }
 
-    public void recordTransferTo(FluidEntity targetEntity, double ratio) {
+    public synchronized void recordTransferTo(FluidEntity targetEntity, double ratio) {
         if (ratio < 0 || ratio > 1) {
             System.out.println("Error, ratio = " + ratio);
             return;

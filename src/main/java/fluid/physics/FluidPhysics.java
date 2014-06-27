@@ -15,6 +15,9 @@ public class FluidPhysics {
     private static final double CELL_AREA = Math.pow(FluidEntity.SPACE, 2);
     private static final double DENSITY_TO_VELOCITY_SCALE = .01;
 
+    private static int timestep = 0;
+
+
     public static void incrementFluid(FluidEntity[][] entities) {
         if (entities == null) return;
 
@@ -24,33 +27,39 @@ public class FluidPhysics {
         applyPressure(entities);
         forwardAdvection(entities);
         reverseAdvection(entities);
+
+        timestep++;
     }
+
 
     private static void applyInput(FluidEntity[][] entities) {
 
-        entities[0][0].setMass(500);
-        entities[0][0].addDeltaX(28);
-        entities[0][0].addDeltaY(17);
-        entities[0][0].setHeat(1);
+        double factor = Math.abs(Math.sin(Math.toRadians(timestep * 10)));
+        System.out.println("Factor: " + factor);
 
-        entities[1][0].setMass(500);
-        entities[1][0].addDeltaX(22);
-        entities[1][0].addDeltaY(16);
+        entities[0][0].setMass(factor * 600 + 400);
+        entities[0][0].addDeltaX(factor * 28);
+        entities[0][0].addDeltaY(factor * 17);
+        entities[0][0].setHeat(factor);
+
+        entities[1][0].setMass(factor * 500 + 100);
+        entities[1][0].addDeltaX(factor * 22);
+        entities[1][0].addDeltaY(factor * 16);
         entities[1][0].setHeat(1);
 
-        entities[0][1].setMass(500);
+        entities[0][1].setMass(factor * 500 + 100);
         entities[0][1].addDeltaX(22);
         entities[0][1].addDeltaY(16);
         entities[0][1].setHeat(1);
 
-        entities[1][1].setMass(500);
+        entities[1][1].setMass(factor * 200 + 200);
         entities[1][1].addDeltaX(23);
         entities[1][1].addDeltaY(14);
-        entities[1][1].setHeat(1);
+        entities[1][1].setHeat(factor * 1);
     }
 
     private static void applyHeat(FluidEntity[][] entities) {
-        IntStream.range(0, entities.length).forEach(x -> {
+        IntStream.range(0, entities.length).parallel().forEach(x -> {
             IntStream.range(0, entities[0].length).forEach(y -> {
                 entities[x][y].addDeltaY(entities[x][y].getHeat());
             });
@@ -63,7 +72,7 @@ public class FluidPhysics {
         int d2 = entities[0].length;
 
         // pressure
-        IntStream.range(0, d1).forEach(x -> {
+        IntStream.range(0, d1).parallel().forEach(x -> {
             IntStream.range(0, d2).forEach(y -> {
                 FluidEntity entity = entities[x][y];
                 FluidEntity otherEntity;
@@ -110,7 +119,7 @@ public class FluidPhysics {
      * The amount moved from one point to another is based on the given point's velocity.
      */
     private static void forwardAdvection(FluidEntity[][] entities) {
-        IntStream.range(0, entities.length).forEach(x -> {
+        IntStream.range(0, entities.length).parallel().forEach(x -> {
             IntStream.range(0, entities[0].length).forEach(y -> {
                 forwardAdvectionCellTransfer(entities, x, y);
             });
@@ -120,7 +129,7 @@ public class FluidPhysics {
     }
 
     private static void reverseAdvection(FluidEntity[][] entities) {
-        IntStream.range(0, entities.length).forEach(x -> {
+        IntStream.range(0, entities.length).parallel().forEach(x -> {
             IntStream.range(0, entities[0].length).forEach(y -> {
                 reverseAdvectionCellTransfer(entities, x, y);
             });
@@ -286,6 +295,5 @@ public class FluidPhysics {
         if (originYIndex >= entities[originXIndex].length) return;
         entities[originXIndex][originYIndex].recordTransferTo(entity, ratio);
     }
-
 
 }
