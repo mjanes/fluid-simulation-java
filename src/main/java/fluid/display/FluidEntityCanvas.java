@@ -4,7 +4,6 @@ import fluid.camera.Camera;
 import fluid.entity.FluidEntity;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.paint.Color;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 
 import java.awt.geom.Point2D;
@@ -53,7 +52,7 @@ public class FluidEntityCanvas extends Canvas {
         double yP = point.getY();
 
         // entity.Entity color
-        gc.setFill(Color.BLACK);
+        gc.setFill(entity.getInkColor());
         // Subtract half the radius from the projection point, because g.fillOval does not surround the center point
 
         gc.fillOval((int) xP - radius / 2, (int) yP - radius / 2, radius, radius);

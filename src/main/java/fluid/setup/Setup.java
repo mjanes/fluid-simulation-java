@@ -11,7 +11,7 @@ public class Setup {
 
     private static double sZDistance = 5000;
 
-    private static final int SIZE = 160;
+    private static final int SIZE = 140;
     public static FluidEntity[][] create() {
         return grid(SIZE);
     }

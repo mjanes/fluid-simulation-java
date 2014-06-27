@@ -1,5 +1,6 @@
 package fluid.entity;
 
+import javafx.scene.paint.Color;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 
 import java.util.ArrayList;
@@ -27,7 +28,8 @@ public class FluidEntity implements IDimensionalEntity {
 
     protected ArrayList<TransferRecord> mTransferRecords = new ArrayList<>();
 
-    protected double mInk;
+    protected double mInkMass;
+    protected Color mInkColor;
     protected double mDisplayRadius; // Display Radius
 
     public FluidEntity(double x, double y, double z, double mass, double heat) {
@@ -36,7 +38,7 @@ public class FluidEntity implements IDimensionalEntity {
         setZ(z);
         setMass(mass);
         setHeat(heat);
-        setInk(0);
+        setInk(0, Color.BLACK);
     }
 
     @Override
@@ -147,23 +149,65 @@ public class FluidEntity implements IDimensionalEntity {
      * Currently done in 2d
      */
     private void setDisplayRadius() {
-        mDisplayRadius = mInk > 1 ? Math.sqrt(mInk) : 0;
+        mDisplayRadius = mInkMass > 1 ? Math.sqrt(mInkMass) : 0;
     }
 
 
     /** Ink */
 
-    public double getInk() {
-        return mInk;
+    public double getInkMass() {
+        return mInkMass;
     }
 
-    public void setInk(double ink) {
-        mInk = ink;
+    public Color getInkColor() {
+        return mInkColor;
+    }
+
+    public synchronized void setInk(double ink, Color color) {
+        mInkMass = ink;
+        mInkColor = color;
         setDisplayRadius();
     }
 
-    public void addInk(double deltaInk) {
-        setInk(mInk + deltaInk);
+    public synchronized void addInk(double deltaInkMass, Color newColor) {
+        if (deltaInkMass <= 0 || mInkColor.equals(newColor)) {
+            setInk(mInkMass + deltaInkMass, mInkColor);
+            return;
+        }
+
+        double prevRed = mInkColor.getRed();
+        double prevGreen = mInkColor.getGreen();
+        double prevBlue = mInkColor.getBlue();
+        double newInkMass = mInkMass + deltaInkMass;
+
+        double oldProportion = mInkMass / newInkMass;
+        double newProportion = deltaInkMass / newInkMass;
+
+        double newRed = prevRed * oldProportion + newColor.getRed() * newProportion;
+        double newGreen = prevGreen * oldProportion + newColor.getGreen() * newProportion;
+        double newBlue = prevBlue * oldProportion + newColor.getBlue() * newProportion;
+
+        if (newRed < 0) {
+            newRed = 0;
+        }
+        if (newGreen < 0) {
+            newGreen = 0;
+        }
+        if (newBlue < 0) {
+            newBlue = 0;
+        }
+
+        if (newRed > 1) {
+            newRed = 1;
+        }
+        if (newGreen > 1) {
+            newGreen = 1;
+        }
+        if (newBlue > 1) {
+            newBlue = 1;
+        }
+
+        setInk(newInkMass, new Color(newRed, newGreen, newBlue, 1));
     }
 
 
@@ -228,20 +272,20 @@ public class FluidEntity implements IDimensionalEntity {
         double deltaXTransfer = mDeltaX * ratio;
         double deltaYTransfer = mDeltaY * ratio;
         double heatTransfer = mHeat * ratio;
-        double inkTransfer = mInk * ratio;
+        double inkTransfer = mInkMass * ratio;
 
         addMass(-massTransfer);
         addDeltaX(-deltaXTransfer);
         addDeltaY(-deltaYTransfer);
         addHeat(-heatTransfer);
-        addInk(-inkTransfer);
+        addInk(-inkTransfer, mInkColor);
 
         if (targetEntity != null) {
             targetEntity.addMass(massTransfer);
             targetEntity.addDeltaX(deltaXTransfer);
             targetEntity.addDeltaY(deltaYTransfer);
             targetEntity.addHeat(heatTransfer);
-            targetEntity.addInk(inkTransfer);
+            targetEntity.addInk(inkTransfer, mInkColor);
         }
     }
 
