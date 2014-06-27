@@ -41,6 +41,11 @@ public class FluidEntityCanvas extends Canvas {
 
     private void drawEntity(GraphicsContext gc, Camera camera, FluidEntity entity, double canvasWidth, double canvasHeight) {
 
+        double radius = entity.getDisplayRadius();
+        if (radius < 1) {
+            return;
+        }
+
         Point2D.Double point = getCanvasLocation(camera, canvasWidth, canvasHeight, entity);
         if (point == null) return;
 
@@ -51,7 +56,6 @@ public class FluidEntityCanvas extends Canvas {
         gc.setFill(Color.BLACK);
         // Subtract half the radius from the projection point, because g.fillOval does not surround the center point
 
-        double radius = entity.getRadius();
         gc.fillOval((int) xP - radius / 2, (int) yP - radius / 2, radius, radius);
 
 //        FluidEntity vector = entity.getNextLocationAsFluidEntity();

@@ -27,7 +27,8 @@ public class FluidEntity implements IDimensionalEntity {
 
     protected ArrayList<TransferRecord> mTransferRecords = new ArrayList<>();
 
-    protected double mRadius; // Display Radius
+    protected double mInk;
+    protected double mDisplayRadius; // Display Radius
 
     public FluidEntity(double x, double y, double z, double mass, double heat) {
         setX(x);
@@ -35,6 +36,7 @@ public class FluidEntity implements IDimensionalEntity {
         setZ(z);
         setMass(mass);
         setHeat(heat);
+        setInk(0);
     }
 
     @Override
@@ -120,7 +122,6 @@ public class FluidEntity implements IDimensionalEntity {
 
     public synchronized void setMass(double mass) {
         mMass = mass;
-        setRadius();
     }
 
     public double getMass() {
@@ -138,17 +139,33 @@ public class FluidEntity implements IDimensionalEntity {
 
     /** Radius */
 
-
-    public double getRadius() {
-        return mRadius;
+    public double getDisplayRadius() {
+        return mDisplayRadius;
     }
 
     /**
      * Currently done in 2d
      */
-    private void setRadius() {
-        mRadius = Math.sqrt(mMass);
+    private void setDisplayRadius() {
+        mDisplayRadius = mInk > 1 ? Math.sqrt(mInk) : 0;
     }
+
+
+    /** Ink */
+
+    public double getInk() {
+        return mInk;
+    }
+
+    public void setInk(double ink) {
+        mInk = ink;
+        setDisplayRadius();
+    }
+
+    public void addInk(double deltaInk) {
+        setInk(mInk + deltaInk);
+    }
+
 
     // TODO: Force = mass * velocity
 
@@ -211,17 +228,20 @@ public class FluidEntity implements IDimensionalEntity {
         double deltaXTransfer = mDeltaX * ratio;
         double deltaYTransfer = mDeltaY * ratio;
         double heatTransfer = mHeat * ratio;
+        double inkTransfer = mInk * ratio;
 
         addMass(-massTransfer);
         addDeltaX(-deltaXTransfer);
         addDeltaY(-deltaYTransfer);
         addHeat(-heatTransfer);
+        addInk(-inkTransfer);
 
         if (targetEntity != null) {
             targetEntity.addMass(massTransfer);
             targetEntity.addDeltaX(deltaXTransfer);
             targetEntity.addDeltaY(deltaYTransfer);
             targetEntity.addHeat(heatTransfer);
+            targetEntity.addInk(inkTransfer);
         }
     }
 

@@ -21,7 +21,7 @@ import java.util.concurrent.Executors;
 
 public class Main extends Application {
 
-    private int mFrameDelay = 30;
+    private int mFrameDelay = 20;
     private boolean mRunning = true;
 
     protected FluidEntity[][] mEntities;

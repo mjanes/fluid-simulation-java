@@ -35,27 +35,35 @@ public class FluidPhysics {
     private static void applyInput(FluidEntity[][] entities) {
 
         double factor = Math.abs(Math.sin(Math.toRadians(timestep * 10)));
-        System.out.println("Factor: " + factor);
 
         entities[0][0].setMass(factor * 600 + 400);
+        entities[0][0].setInk(entities[0][0].getMass() * factor);
         entities[0][0].addDeltaX(factor * 28);
         entities[0][0].addDeltaY(factor * 17);
         entities[0][0].setHeat(factor);
 
         entities[1][0].setMass(factor * 500 + 100);
+        entities[1][0].setInk(entities[1][0].getMass() * factor);
         entities[1][0].addDeltaX(factor * 22);
         entities[1][0].addDeltaY(factor * 16);
         entities[1][0].setHeat(1);
 
         entities[0][1].setMass(factor * 500 + 100);
+        entities[0][1].setInk(factor * 500 + 100);
         entities[0][1].addDeltaX(22);
         entities[0][1].addDeltaY(16);
         entities[0][1].setHeat(1);
 
         entities[1][1].setMass(factor * 200 + 200);
+        entities[1][1].setInk(factor * 200 + 200);
         entities[1][1].addDeltaX(23);
         entities[1][1].addDeltaY(14);
         entities[1][1].setHeat(factor * 1);
+
+
+
+//        entities[120][80].setMass(600);
+//        entities[120][80].setDeltaX(-40);
     }
 
     private static void applyHeat(FluidEntity[][] entities) {
