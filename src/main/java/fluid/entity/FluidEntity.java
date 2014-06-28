@@ -3,7 +3,7 @@ package fluid.entity;
 import javafx.scene.paint.Color;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 
-import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * http://cowboyprogramming.com/2008/04/01/practical-fluid-mechanics/
@@ -26,11 +26,13 @@ public class FluidEntity implements IDimensionalEntity {
     protected double mMass;     // TODO: Add density in addition to mass.
     protected double mHeat;
 
-    protected ArrayList<TransferRecord> mTransferRecords = new ArrayList<>();
-
     protected double mInkMass;
     protected Color mInkColor;
     protected double mDisplayRadius; // Display Radius
+
+
+    protected ConcurrentHashMap<RelativeTransferRecord, Integer> mRelativeTransferRecords = new ConcurrentHashMap<>();
+    protected ConcurrentHashMap<AbsoluteTransferRecord, Integer> mAbsoluteTransferRecords = new ConcurrentHashMap<>();
 
     public FluidEntity(double x, double y, double z, double mass, double heat) {
         setX(x);
@@ -42,45 +44,45 @@ public class FluidEntity implements IDimensionalEntity {
     }
 
     @Override
-    public void setX(double x) {
+    public synchronized void setX(double x) {
         mX = x;
         r4Matrix.setEntry(0, 0, x);
     }
 
     @Override
-    public double getX() {
+    public synchronized double getX() {
         return mX;
     }
 
     @Override
-    public void setY(double y) {
+    public synchronized void setY(double y) {
         mY = y;
         r4Matrix.setEntry(1, 0, y);
     }
 
     @Override
-    public double getY() {
+    public synchronized double getY() {
         return mY;
     }
 
     @Override
-    public void setZ(double z) {
+    public synchronized void setZ(double z) {
         mZ = z;
         r4Matrix.setEntry(2, 0, z);
     }
 
     @Override
-    public double getZ() {
+    public synchronized double getZ() {
         return mZ;
     }
 
     @Override
-    public double getDistance(IDimensionalEntity other) {
+    public synchronized double getDistance(IDimensionalEntity other) {
         return IDimensionalEntity.getDistance(this, other);
     }
 
     @Override
-    public Array2DRowRealMatrix getR4Matrix() {
+    public synchronized Array2DRowRealMatrix getR4Matrix() {
         return r4Matrix;
     }
 
@@ -95,7 +97,7 @@ public class FluidEntity implements IDimensionalEntity {
         setDeltaX(mDeltaX + deltaDeltaX);
     }
 
-    public double getDeltaX() {
+    public synchronized double getDeltaX() {
         return mDeltaX;
     }
 
@@ -107,7 +109,7 @@ public class FluidEntity implements IDimensionalEntity {
         setDeltaY(mDeltaY + deltaDeltaY);
     }
 
-    public double getDeltaY() {
+    public synchronized double getDeltaY() {
         return mDeltaY;
     }
 
@@ -115,7 +117,11 @@ public class FluidEntity implements IDimensionalEntity {
         mDeltaZ = deltaZ;
     }
 
-    public double getDeltaZ() {
+    public synchronized void addDeltaZ(double deltaDeltaZ) {
+        setDeltaZ(mDeltaZ + deltaDeltaZ);
+    }
+
+    public synchronized double getDeltaZ() {
         return mDeltaZ;
     }
 
@@ -126,13 +132,14 @@ public class FluidEntity implements IDimensionalEntity {
         mMass = mass;
     }
 
-    public double getMass() {
+    public synchronized double getMass() {
         return mMass;
     }
 
     public synchronized void addMass(double deltaMass) {
         if (mMass + deltaMass < 0) {
-            System.out.println("Mass being set to less than 0");
+            //System.out.println("Mass being set to less than 0");
+            setMass(0);
             return;
         }
         setMass(mMass + deltaMass);
@@ -141,25 +148,21 @@ public class FluidEntity implements IDimensionalEntity {
 
     /** Radius */
 
-    public double getDisplayRadius() {
+    public synchronized double getDisplayRadius() {
         return mDisplayRadius;
     }
 
     /**
      * Currently done in 2d
      */
-    private void setDisplayRadius() {
+    private synchronized void setDisplayRadius() {
         mDisplayRadius = mInkMass > 1 ? Math.sqrt(mInkMass) : 0;
     }
 
 
     /** Ink */
 
-    public double getInkMass() {
-        return mInkMass;
-    }
-
-    public Color getInkColor() {
+    public synchronized Color getInkColor() {
         return mInkColor;
     }
 
@@ -170,7 +173,7 @@ public class FluidEntity implements IDimensionalEntity {
     }
 
     public synchronized void addInk(double deltaInkMass, Color newColor) {
-        if (deltaInkMass <= 0 || mInkColor.equals(newColor)) {
+        if (deltaInkMass <= 0 || newColor == null || mInkColor.equals(newColor)) {
             setInk(mInkMass + deltaInkMass, mInkColor);
             return;
         }
@@ -222,7 +225,7 @@ public class FluidEntity implements IDimensionalEntity {
         mHeat = heat;
     }
 
-    public double getHeat() {
+    public synchronized double getHeat() {
         return mHeat;
     }
 
@@ -233,7 +236,7 @@ public class FluidEntity implements IDimensionalEntity {
 
     /** For display */
 
-    public FluidEntity getNextLocationAsFluidEntity() {
+    public synchronized FluidEntity getNextLocationAsFluidEntity() {
         return new FluidEntity(mX + mDeltaX, mY + mDeltaY, mZ + mDeltaZ, mMass, mHeat);
     }
 
@@ -241,59 +244,69 @@ public class FluidEntity implements IDimensionalEntity {
 
     /** Stepping from to the next increment of the simulation */
 
-    public synchronized void incrementStep() {
-        double totalToRatio = 0;
-        for (TransferRecord transferRecord : mTransferRecords) {
-            totalToRatio += transferRecord.getRatio();
+    public void transferRelativeValues() {
+        double totalRatio = 0;
+        for (RelativeTransferRecord relativeTransferRecord : mRelativeTransferRecords.keySet()) {
+            totalRatio += relativeTransferRecord.getRatio();
         }
 
-        for (TransferRecord transferRecord : mTransferRecords) {
-            if (totalToRatio > 1) {
-                transferTo(transferRecord.getTargetEntity(), transferRecord.getRatio() / totalToRatio);
+        for (RelativeTransferRecord relativeTransferRecord : mRelativeTransferRecords.keySet()) {
+            if (totalRatio > 1) {
+                recordAbsoluteTransfer(relativeTransferRecord.getTargetEntity(), relativeTransferRecord.getRatio() / totalRatio);
             } else {
-                transferTo(transferRecord.getTargetEntity(), transferRecord.getRatio());
+                recordAbsoluteTransfer(relativeTransferRecord.getTargetEntity(), relativeTransferRecord.getRatio());
             }
         }
 
-        mTransferRecords.clear();
+        mRelativeTransferRecords.clear();
     }
 
-    public synchronized void recordTransferTo(FluidEntity targetEntity, double ratio) {
-        if (ratio < 0 || ratio > 1) {
-            System.out.println("Error, ratio = " + ratio);
-            return;
+    public void transferAbsoluteValues() {
+        for (AbsoluteTransferRecord absoluteTransferRecord : mAbsoluteTransferRecords.keySet()) {
+            absoluteTransferRecord.transfer(this);
         }
-        mTransferRecords.add(new TransferRecord(targetEntity, ratio));
+
+        mAbsoluteTransferRecords.clear();
     }
 
 
-    private void transferTo(FluidEntity targetEntity, double ratio) {
+    private void recordAbsoluteTransfer(FluidEntity targetEntity, double ratio) {
         double massTransfer = mMass * ratio;
         double deltaXTransfer = mDeltaX * ratio;
         double deltaYTransfer = mDeltaY * ratio;
         double heatTransfer = mHeat * ratio;
         double inkTransfer = mInkMass * ratio;
 
-        addMass(-massTransfer);
-        addDeltaX(-deltaXTransfer);
-        addDeltaY(-deltaYTransfer);
-        addHeat(-heatTransfer);
-        addInk(-inkTransfer, mInkColor);
+        recordAbsoluteTransfer(new AbsoluteTransferRecord(-massTransfer, -deltaXTransfer, -deltaYTransfer, -heatTransfer, -inkTransfer, null));
 
-        if (targetEntity != null) {
-            targetEntity.addMass(massTransfer);
-            targetEntity.addDeltaX(deltaXTransfer);
-            targetEntity.addDeltaY(deltaYTransfer);
-            targetEntity.addHeat(heatTransfer);
-            targetEntity.addInk(inkTransfer, mInkColor);
-        }
+        if (targetEntity == null) return;
+
+        targetEntity.recordAbsoluteTransfer(new AbsoluteTransferRecord(massTransfer, deltaXTransfer, deltaYTransfer, heatTransfer, inkTransfer, mInkColor));
     }
 
-    private static class TransferRecord {
+    public void recordRelativeTransfer(FluidEntity targetEntity, double ratio) {
+        if (ratio < 0 || ratio > 1) {
+            System.out.println("Error, ratio = " + ratio);
+            return;
+        }
+
+        if (this.equals(targetEntity)) {
+            return;
+        }
+
+        mRelativeTransferRecords.put(new RelativeTransferRecord(targetEntity, ratio), Integer.valueOf(0));
+    }
+
+    public void recordAbsoluteTransfer(AbsoluteTransferRecord record) {
+        mAbsoluteTransferRecords.put(record, Integer.valueOf(0));
+    }
+
+
+    private static class RelativeTransferRecord {
         private FluidEntity mTargetEntity;
         private double mRatio;
 
-        public TransferRecord(FluidEntity targetEntity, double ratio) {
+        public RelativeTransferRecord(FluidEntity targetEntity, double ratio) {
             mTargetEntity = targetEntity;
             mRatio = ratio;
         }
@@ -301,5 +314,34 @@ public class FluidEntity implements IDimensionalEntity {
         public FluidEntity getTargetEntity() { return mTargetEntity; }
 
         public double getRatio() { return mRatio; }
+
+    }
+
+    private static class AbsoluteTransferRecord {
+
+        double mMassTransfer;
+        double mDeltaXTransfer;
+        double mDeltaYTransfer;
+        double mHeatTransfer;
+        double mInkTransfer;
+        Color mInkColor;
+
+
+        public AbsoluteTransferRecord(double massTransfer, double deltaXTransfer, double deltaYTransfer, double heatTransfer, double inkTransfer, Color inkColor) {
+            mMassTransfer = massTransfer;
+            mDeltaXTransfer = deltaXTransfer;
+            mDeltaYTransfer = deltaYTransfer;
+            mHeatTransfer = heatTransfer;
+            mInkTransfer = inkTransfer;
+            mInkColor = inkColor;
+        }
+
+        public void transfer(FluidEntity entity) {
+            entity.addMass(mMassTransfer);
+            entity.addDeltaX(mDeltaXTransfer);
+            entity.addDeltaY(mDeltaYTransfer);
+            entity.addHeat(mHeatTransfer);
+            entity.addInk(mInkTransfer, mInkColor);
+        }
     }
 }

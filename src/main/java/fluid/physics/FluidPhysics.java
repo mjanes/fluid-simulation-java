@@ -26,8 +26,17 @@ public class FluidPhysics {
 
         applyHeat(entities);
         applyPressure(entities);
+
+        double time = System.currentTimeMillis();
         forwardAdvection(entities);
         reverseAdvection(entities);
+        System.out.println("Time to apply advection: " + (System.currentTimeMillis() - time));
+
+
+        time = System.currentTimeMillis();
+        applyStep(entities);
+        System.out.println("Time to apply step: " + (System.currentTimeMillis() - time));
+
 
         timestep++;
     }
@@ -39,40 +48,40 @@ public class FluidPhysics {
 
         entities[0][0].setMass(factor * 600 + 50);
         entities[0][0].setInk(entities[0][0].getMass() * factor, Color.ORANGE);
-        entities[0][0].addDeltaX(factor * 28);
-        entities[0][0].addDeltaY(factor * 17);
+        entities[0][0].addDeltaX(factor * 14);
+        entities[0][0].addDeltaY(factor * 8);
         entities[0][0].setHeat(factor);
 
         entities[1][0].setMass(factor * 500 + 20);
         entities[1][0].setInk(entities[1][0].getMass() * factor, Color.RED);
-        entities[1][0].addDeltaX(factor * 22);
-        entities[1][0].addDeltaY(factor * 16);
+        entities[1][0].addDeltaX(factor * 11);
+        entities[1][0].addDeltaY(factor * 7);
         entities[1][0].setHeat(1);
 
         factor = Math.abs(Math.sin(Math.toRadians(timestep * 2)));
         entities[0][1].setMass(factor * 500 + 100);
         entities[0][1].setInk(factor * 500 + 100, Color.ORANGE);
-        entities[0][1].addDeltaX(22);
-        entities[0][1].addDeltaY(16);
+        entities[0][1].addDeltaX(12);
+        entities[0][1].addDeltaY(7);
         entities[0][1].setHeat(1);
 
         entities[1][1].setMass(factor * 200);
         entities[1][1].setInk(factor * 200, Color.YELLOW);
-        entities[1][1].addDeltaX(23);
-        entities[1][1].addDeltaY(14);
+        entities[1][1].addDeltaX(12);
+        entities[1][1].addDeltaY(6);
         entities[1][1].setHeat(factor);
 
 
         factor = Math.abs(Math.cos(Math.toRadians(timestep * 2)));
         entities[120][80].setMass(600 * factor);
-        entities[120][80].setDeltaX(-40 * factor);
+        entities[120][80].setDeltaX(-30 * factor + 10);
         entities[120][80].setDeltaY(-4);
         entities[120][80].setInk(600, Color.BLUE);
 
 
         factor = Math.abs(Math.sin(Math.toRadians(timestep)));
         entities[100][10].setMass(400 * (1 - factor));
-        entities[100][10].setDeltaX(-20);
+        entities[100][10].setDeltaX(-20 * factor + 5);
         entities[100][10].setDeltaY(4);
         entities[100][10].setHeat(1 - factor);
         entities[100][10].setInk(600, Color.GREEN);
@@ -130,8 +139,6 @@ public class FluidPhysics {
                 }
             });
         });
-
-        applyStep(entities);
     }
 
     /**
@@ -140,28 +147,30 @@ public class FluidPhysics {
      */
     private static void forwardAdvection(FluidEntity[][] entities) {
         IntStream.range(0, entities.length).parallel().forEach(x -> {
-            IntStream.range(0, entities[0].length).forEach(y -> {
+            IntStream.range(0, entities[x].length).forEach(y -> {
                 forwardAdvectionCellTransfer(entities, x, y);
             });
         });
-
-        applyStep(entities);
     }
 
     private static void reverseAdvection(FluidEntity[][] entities) {
         IntStream.range(0, entities.length).parallel().forEach(x -> {
-            IntStream.range(0, entities[0].length).forEach(y -> {
+            IntStream.range(0, entities[x].length).forEach(y -> {
                 reverseAdvectionCellTransfer(entities, x, y);
             });
         });
-
-        applyStep(entities);
     }
 
     private static void applyStep(FluidEntity[][] entities) {
         IntStream.range(0, entities.length).forEach(x -> {
-            IntStream.range(0, entities[0].length).forEach(y -> {
-                entities[x][y].incrementStep();
+            IntStream.range(0, entities[x].length).forEach(y -> {
+                entities[x][y].transferRelativeValues();
+            });
+        });
+
+        IntStream.range(0, entities.length).parallel().forEach(x -> {
+            IntStream.range(0, entities[x].length).forEach(y -> {
+                entities[x][y].transferAbsoluteValues();
             });
         });
     }
@@ -305,7 +314,7 @@ public class FluidPhysics {
             targetEntity = entities[targetXIndex][targetYIndex];
         }
 
-        entity.recordTransferTo(targetEntity, ratio);
+        entity.recordRelativeTransfer(targetEntity, ratio);
     }
 
     private static void transferFrom(FluidEntity entity, FluidEntity[][] entities, int originXIndex, int originYIndex, double ratio) {
@@ -313,7 +322,7 @@ public class FluidPhysics {
         if (originYIndex < 0) return;
         if (originXIndex >= entities.length) return;
         if (originYIndex >= entities[originXIndex].length) return;
-        entities[originXIndex][originYIndex].recordTransferTo(entity, ratio);
+        entities[originXIndex][originYIndex].recordRelativeTransfer(entity, ratio);
     }
 
 }

@@ -9,7 +9,6 @@ import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -21,7 +20,7 @@ import java.util.concurrent.Executors;
 
 public class Main extends Application {
 
-    private int mFrameDelay = 20;
+    private int mFrameDelay = 1;
     private boolean mRunning = true;
 
     protected FluidEntity[][] mEntities;
@@ -83,16 +82,13 @@ public class Main extends Application {
             incrementStep.setOnSucceeded(e -> {
                 mEntities = incrementStep.getValue();
 
-                Platform.runLater(() -> {
-                    // TODO: Perhaps create a separate pause camera button?
-                    mCamera.move();
+                // TODO: Perhaps create a separate pause camera button?
+                mCamera.move();
 
-                    // tell graphics to repaint
-
-                    double time = System.currentTimeMillis();
-                    mCanvas.drawEntities(mEntities);
-                    System.out.println("Time to draw entities: " + (System.currentTimeMillis() - time));
-                });
+                // tell graphics to repaint
+                double time = System.currentTimeMillis();
+                mCanvas.drawEntities(mEntities);
+                System.out.println("Time to draw entities: " + (System.currentTimeMillis() - time));
             });
 
             incrementStep.setOnFailed(e ->  {
@@ -105,7 +101,7 @@ public class Main extends Application {
 
     private static class SimulationTask extends Task<FluidEntity[][]> {
 
-        FluidEntity[][] mEntities;
+        final FluidEntity[][] mEntities;
 
         public SimulationTask(FluidEntity[][] entities) {
             mEntities = entities;

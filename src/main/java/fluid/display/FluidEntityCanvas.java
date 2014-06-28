@@ -22,10 +22,10 @@ public class FluidEntityCanvas extends Canvas {
         mCamera = camera;
     }
 
-    public void drawEntities(FluidEntity[][] entities) {
-        double canvasWidth = getWidth();
-        double canvasHeight = getHeight();
-        GraphicsContext gc = getGraphicsContext2D();
+    public void drawEntities(final FluidEntity[][] entities) {
+        final double canvasWidth = getWidth();
+        final double canvasHeight = getHeight();
+        final GraphicsContext gc = getGraphicsContext2D();
         gc.clearRect(0, 0, canvasWidth, canvasHeight);
 
 
@@ -38,7 +38,7 @@ public class FluidEntityCanvas extends Canvas {
         });
     }
 
-    private void drawEntity(GraphicsContext gc, Camera camera, FluidEntity entity, double canvasWidth, double canvasHeight) {
+    private void drawEntity(final GraphicsContext gc, Camera camera, final FluidEntity entity, final double canvasWidth, final double canvasHeight) {
 
         double radius = entity.getDisplayRadius();
         if (radius < 1) {
@@ -74,7 +74,7 @@ public class FluidEntityCanvas extends Canvas {
      *
      * @return
      */
-    private static Point2D.Double getCanvasLocation(Camera camera, double canvasWidth, double canvasHeight, FluidEntity entity) {
+    private static Point2D.Double getCanvasLocation(Camera camera, final double canvasWidth, final double canvasHeight, FluidEntity entity) {
         if (entity == null) return null;
 
         /* Starting offset from camera

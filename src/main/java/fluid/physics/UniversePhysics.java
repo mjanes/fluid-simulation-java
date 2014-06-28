@@ -45,12 +45,7 @@ public class UniversePhysics {
 //        System.out.println("Total absolute delta x: " + totalAbsoluteDeltaX);
 //        System.out.println("Total absolute delta y: " + totalAbsoluteDeltaY);
 
-
-        double time = System.currentTimeMillis();
-
         FluidPhysics.incrementFluid(entities);
-
-        System.out.println("Time to increment step: " + (System.currentTimeMillis() - time));
 
 //        step++;
 
