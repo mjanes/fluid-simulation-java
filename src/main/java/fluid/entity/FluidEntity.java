@@ -31,8 +31,8 @@ public class FluidEntity implements IDimensionalEntity {
     protected double mDisplayRadius; // Display Radius
 
 
-    protected ConcurrentHashMap<RelativeTransferRecord, Integer> mRelativeTransferRecords = new ConcurrentHashMap<>();
-    protected ConcurrentHashMap<AbsoluteTransferRecord, Integer> mAbsoluteTransferRecords = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<RelativeTransferRecord, Integer> mRelativeTransferRecords = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<AbsoluteTransferRecord, Integer> mAbsoluteTransferRecords = new ConcurrentHashMap<>();
 
     public FluidEntity(double x, double y, double z, double mass, double heat) {
         setX(x);
@@ -241,7 +241,6 @@ public class FluidEntity implements IDimensionalEntity {
     }
 
 
-
     /** Stepping from to the next increment of the simulation */
 
     public void transferRelativeValues() {
@@ -294,11 +293,11 @@ public class FluidEntity implements IDimensionalEntity {
             return;
         }
 
-        mRelativeTransferRecords.put(new RelativeTransferRecord(targetEntity, ratio), Integer.valueOf(0));
+        mRelativeTransferRecords.put(new RelativeTransferRecord(targetEntity, ratio), 0);
     }
 
     public void recordAbsoluteTransfer(AbsoluteTransferRecord record) {
-        mAbsoluteTransferRecords.put(record, Integer.valueOf(0));
+        mAbsoluteTransferRecords.put(record, 0);
     }
 
 

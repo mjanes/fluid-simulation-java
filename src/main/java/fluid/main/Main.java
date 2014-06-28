@@ -91,9 +91,7 @@ public class Main extends Application {
                 System.out.println("Time to draw entities: " + (System.currentTimeMillis() - time));
             });
 
-            incrementStep.setOnFailed(e ->  {
-                System.out.println(e.toString());
-            });
+            incrementStep.setOnFailed(e -> System.out.println(e.toString()));
             mExecutorService.submit(incrementStep);
         }
     }

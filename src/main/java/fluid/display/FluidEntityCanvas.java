@@ -13,7 +13,6 @@ public class FluidEntityCanvas extends Canvas {
 
     private Camera mCamera;
 
-    private static final int RADIUS = 2;
     public static final int EYE_DISTANCE = 5000;
 
     public FluidEntityCanvas(int width, int height, Camera camera) {
@@ -31,11 +30,7 @@ public class FluidEntityCanvas extends Canvas {
 
         int d1 = entities.length;
         int d2 = entities[0].length;
-        IntStream.range(0, d1).forEach(x -> {
-             IntStream.range(0, d2).forEach(y -> {
-                 drawEntity(gc, mCamera, entities[x][y], canvasWidth, canvasHeight);
-             });
-        });
+        IntStream.range(0, d1).forEach(x -> IntStream.range(0, d2).forEach(y -> drawEntity(gc, mCamera, entities[x][y], canvasWidth, canvasHeight)));
     }
 
     private void drawEntity(final GraphicsContext gc, Camera camera, final FluidEntity entity, final double canvasWidth, final double canvasHeight) {

@@ -196,8 +196,7 @@ public class Camera implements IMobileDimensionalEntity {
 
     @Override
     public double getDistance(IDimensionalEntity other) {
-        double distance = IDimensionalEntity.getDistance(this, other);
-        return distance;
+        return IDimensionalEntity.getDistance(this, other);
     }
 
     @Override

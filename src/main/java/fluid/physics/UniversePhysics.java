@@ -15,7 +15,7 @@ public class UniversePhysics {
      * @param entities Entities to run universe physics on.
      */
     public static synchronized FluidEntity[][] updateUniverseState(FluidEntity[][] entities) {
-        if (entities == null) return entities;
+        if (entities == null) return null;
 
 //        double totalMass = 0;
 //        double totalDeltaX = 0;
