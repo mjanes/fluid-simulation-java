@@ -11,7 +11,7 @@ public class Setup {
 
     private static double sZDistance = 5000;
 
-    private static final int SIZE = 160;
+    private static final int SIZE = 180;
     public static FluidEntity[][] create() {
         return grid(SIZE);
     }
@@ -32,14 +32,6 @@ public class Setup {
                 entities[i][j] = entity;
             });
         });
-
-        //entities[0][0].setMass(400);
-        //entities[SIZE / 2][SIZE / 2].setMass(100);
-//
-//        for (int i = 0; i < entities.length; i ++) {
-//            entities[i][0].setDeltaX(5);
-//            entities[i][0].setDeltaY(5);
-//        }
 
         return entities;
     }
