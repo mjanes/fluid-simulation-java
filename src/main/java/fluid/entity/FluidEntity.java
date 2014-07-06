@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class FluidEntity implements IDimensionalEntity {
 
     public static final int SPACE = 5; // spacing between entities, currently writing this that they must be placed on a grid
+    public static final double MASS_TO_HEAT_SCALE = .01;
 
     protected double mX;
     protected double mY;
@@ -97,6 +98,10 @@ public class FluidEntity implements IDimensionalEntity {
         setDeltaX(mDeltaX + deltaDeltaX);
     }
 
+    public synchronized void applyForceX(double forceX) {
+        addDeltaX(forceX / mMass);
+    }
+
     public synchronized double getDeltaX() {
         return mDeltaX;
     }
@@ -109,6 +114,10 @@ public class FluidEntity implements IDimensionalEntity {
         setDeltaY(mDeltaY + deltaDeltaY);
     }
 
+    public synchronized void applyForceY(double forceY) {
+        addDeltaY(forceY / mMass);
+    }
+
     public synchronized double getDeltaY() {
         return mDeltaY;
     }
@@ -119,6 +128,10 @@ public class FluidEntity implements IDimensionalEntity {
 
     public synchronized void addDeltaZ(double deltaDeltaZ) {
         setDeltaZ(mDeltaZ + deltaDeltaZ);
+    }
+
+    public synchronized void applyForceZ(double forceZ) {
+        addDeltaZ(forceZ / mMass);
     }
 
     public synchronized double getDeltaZ() {
@@ -142,6 +155,15 @@ public class FluidEntity implements IDimensionalEntity {
             setMass(0);
             return;
         }
+
+        // Adding heat, playing around with physics, idea being that if pressure increases, so does heat, if pressure
+        // decreases, heat decreases. Not sure about the details.
+        // https://en.wikipedia.org/wiki/Boyle's_law ?
+        // Guessing
+//        double proportionMassIncrease = deltaMass / mMass;
+//        addHeat(proportionMassIncrease * MASS_TO_HEAT_SCALE);
+
+
         setMass(mMass + deltaMass);
     }
 

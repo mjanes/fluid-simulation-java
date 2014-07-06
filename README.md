@@ -1,2 +1,2 @@
-fluid-simulation-java
+fluid-simulation
 =====================

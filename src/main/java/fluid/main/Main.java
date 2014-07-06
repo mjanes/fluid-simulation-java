@@ -9,6 +9,7 @@ import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -20,10 +21,10 @@ import java.util.concurrent.Executors;
 
 public class Main extends Application {
 
-    private int mFrameDelay = 1;
+    private int mFrameDelay = 80;
     private boolean mRunning = true;
 
-    protected FluidEntity[][] mEntities;
+    protected static final FluidEntity[][] ENTITIES = Setup.create();
     private FluidEntityCanvas mCanvas;
     private Camera mCamera;
 
@@ -49,9 +50,12 @@ public class Main extends Application {
         stage.setScene(new Scene(root));
         stage.show();
 
-        // TODO: Add all the other buttons later, but for now, just start things.
-        mEntities = Setup.create();
+        stage.setOnCloseRequest(e -> {
+            Platform.exit();
+            System.exit(0);
+        });
 
+        // TODO: Add all the other buttons later, but for now, just start things.
         runSimulation();
     }
 
@@ -68,7 +72,7 @@ public class Main extends Application {
 
         Timeline timeline = new Timeline();
         timeline.setCycleCount(Animation.INDEFINITE);
-        KeyFrame increment = new KeyFrame(Duration.millis(getFrameDelay()), e -> increment());
+        KeyFrame increment = new KeyFrame(Duration.millis(1), e -> increment());
         timeline.getKeyFrames().add(increment);
         timeline.play();
     }
@@ -77,37 +81,31 @@ public class Main extends Application {
     protected void increment() {
         // Perform physics simulations
         if (isRunning()) {
-            //mEntities = UniversePhysics.updateUniverseState(mEntities);
-            SimulationTask incrementStep = new SimulationTask(mEntities);
-            incrementStep.setOnSucceeded(e -> {
-                mEntities = incrementStep.getValue();
 
-                // TODO: Perhaps create a separate pause camera button?
+            SimulationTask incrementStep = new SimulationTask();
+            incrementStep.setOnSucceeded(e -> {
                 mCamera.move();
 
                 // tell graphics to repaint
-                double time = System.currentTimeMillis();
-                mCanvas.drawEntities(mEntities);
-                System.out.println("Time to draw entities: " + (System.currentTimeMillis() - time));
+                mCanvas.drawEntities(ENTITIES);
             });
 
-            incrementStep.setOnFailed(e -> System.out.println(e.toString()));
+            incrementStep.setOnFailed(e -> {
+                System.out.println(e.toString());
+            });
+
             mExecutorService.submit(incrementStep);
         }
     }
 
 
-    private static class SimulationTask extends Task<FluidEntity[][]> {
-
-        final FluidEntity[][] mEntities;
-
-        public SimulationTask(FluidEntity[][] entities) {
-            mEntities = entities;
-        }
+    private static class SimulationTask extends Task<Void> {
 
         @Override
-        protected FluidEntity[][] call() throws Exception {
-            return UniversePhysics.updateUniverseState(mEntities);
+        protected Void call() throws Exception {
+            UniversePhysics.updateUniverseState(Main.ENTITIES);
+            return null;
         }
     }
+
 }
