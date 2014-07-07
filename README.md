@@ -5,6 +5,14 @@ Teaching myself how to do a basic fluid simulation. Also my introduction to Java
 
 Currently the simulation is 2D only, though the camera is equipped to do 3D.
 
+TODO: 
+- Allow different types of fluids such as air and water
+- Allow phase transitions
+- Simulate viscosity
+- Simulate heat transfer
+- Better simulate gravity applying pressure
+- Differentiate between temperature and heat
+
 References:
 http://cowboyprogramming.com/2008/04/01/practical-fluid-mechanics/
 https://software.intel.com/sites/default/files/m/e/b/b/e/f/FluidsForGames_Pt1.pdf
