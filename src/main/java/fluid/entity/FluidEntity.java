@@ -13,7 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class FluidEntity implements IDimensionalEntity {
 
     public static final int SPACE = 5; // spacing between entities, currently writing this that they must be placed on a grid
-    public static final double MASS_TO_HEAT_SCALE = .01;
+    private static final double PRESSURE_SCALE = .002;
+
 
     protected double mX;
     protected double mY;
@@ -24,8 +25,9 @@ public class FluidEntity implements IDimensionalEntity {
     protected double mDeltaX;
     protected double mDeltaY;
     protected double mDeltaZ;
-    protected double mMass;     // TODO: Add density in addition to mass.
-    protected double mHeat;
+    protected double mMass;
+    protected double mTemperature;
+    protected double mPressure = -1;
 
     protected double mInkMass;
     protected Color mInkColor;
@@ -35,12 +37,12 @@ public class FluidEntity implements IDimensionalEntity {
     protected final ConcurrentHashMap<RelativeTransferRecord, Integer> mRelativeTransferRecords = new ConcurrentHashMap<>();
     protected final ConcurrentHashMap<AbsoluteTransferRecord, Integer> mAbsoluteTransferRecords = new ConcurrentHashMap<>();
 
-    public FluidEntity(double x, double y, double z, double mass, double heat) {
+    public FluidEntity(double x, double y, double z, double mass, double temperature) {
         setX(x);
         setY(y);
         setZ(z);
         setMass(mass);
-        setHeat(heat);
+        setTemperature(temperature);
         setInk(0, Color.BLACK);
     }
 
@@ -156,13 +158,8 @@ public class FluidEntity implements IDimensionalEntity {
             return;
         }
 
-        // Adding heat, playing around with physics, idea being that if pressure increases, so does heat, if pressure
-        // decreases, heat decreases. Not sure about the details.
-        // https://en.wikipedia.org/wiki/Boyle's_law ?
-        // Guessing
-//        double proportionMassIncrease = deltaMass / mMass;
-//        addHeat(proportionMassIncrease * MASS_TO_HEAT_SCALE);
-
+        // TODO: Adding heat, playing around with physics, idea being that if pressure increases, so does heat, if
+        // pressure decreases, heat decreases. Not sure about the details.
 
         setMass(mMass + deltaMass);
     }
@@ -177,7 +174,7 @@ public class FluidEntity implements IDimensionalEntity {
     /**
      * Currently done in 2d
      */
-    private synchronized void setDisplayRadius() {
+    private void setDisplayRadius() {
         mDisplayRadius = mInkMass > 1 ? Math.sqrt(mInkMass) : 0;
     }
 
@@ -236,30 +233,37 @@ public class FluidEntity implements IDimensionalEntity {
     }
 
 
-    // TODO: Force = mass * velocity
-
-    // TODO: Force
-
-
     /** Heat */
 
-    public synchronized void setHeat(double heat) {
-        mHeat = heat;
+    public synchronized void setTemperature(double temperature) {
+        mTemperature = temperature;
     }
 
-    public synchronized double getHeat() {
-        return mHeat;
+    public synchronized double getTemperature() {
+        return mTemperature;
     }
 
     public synchronized void addHeat(double deltaHeat) {
-        mHeat += deltaHeat;
+        mTemperature += deltaHeat;
+    }
+
+
+    /** Pressure */
+
+    public synchronized double getPressure() {
+        if (mPressure < 0) {
+            // https://en.wikipedia.org/wiki/Pressure
+            // http://www.passmyexams.co.uk/GCSE/physics/pressure-temperature-relationship-of-gas-pressure-law.html
+            mPressure = mMass * mTemperature * PRESSURE_SCALE;
+        }
+        return mPressure;
     }
 
 
     /** For display */
 
     public synchronized FluidEntity getNextLocationAsFluidEntity() {
-        return new FluidEntity(mX + mDeltaX, mY + mDeltaY, mZ + mDeltaZ, mMass, mHeat);
+        return new FluidEntity(mX + mDeltaX, mY + mDeltaY, mZ + mDeltaZ, mMass, mTemperature);
     }
 
 
@@ -278,16 +282,18 @@ public class FluidEntity implements IDimensionalEntity {
                 recordAbsoluteTransfer(relativeTransferRecord.getTargetEntity(), relativeTransferRecord.getRatio());
             }
         }
-
-        mRelativeTransferRecords.clear();
     }
 
     public void transferAbsoluteValues() {
         for (AbsoluteTransferRecord absoluteTransferRecord : mAbsoluteTransferRecords.keySet()) {
             absoluteTransferRecord.transfer(this);
         }
+    }
 
+    public void clear() {
+        mRelativeTransferRecords.clear();
         mAbsoluteTransferRecords.clear();
+        mPressure = -1;
     }
 
 
@@ -295,7 +301,7 @@ public class FluidEntity implements IDimensionalEntity {
         double massTransfer = mMass * ratio;
         double deltaXTransfer = mDeltaX * ratio;
         double deltaYTransfer = mDeltaY * ratio;
-        double heatTransfer = mHeat * ratio;
+        double heatTransfer = mTemperature * ratio;
         double inkTransfer = mInkMass * ratio;
 
         recordAbsoluteTransfer(new AbsoluteTransferRecord(-massTransfer, -deltaXTransfer, -deltaYTransfer, -heatTransfer, -inkTransfer, null));

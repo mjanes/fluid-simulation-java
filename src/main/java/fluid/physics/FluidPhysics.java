@@ -12,10 +12,10 @@ import java.util.stream.IntStream;
  */
 public class FluidPhysics {
 
+    public static final double ROOM_TEMPERATURE = 30;
+
     private static final double CELL_AREA = Math.pow(FluidEntity.SPACE, 2);
     private static final double GRAVITY_TO_VELOCITY_SCALE = .01;
-    private static final double DENSITY_TO_VELOCITY_SCALE = .1;
-    private static final double HEAT_TO_VELOCITY_SCALE = .02;
 
 
     public static void incrementFluid(FluidEntity[][] entities) {
@@ -75,32 +75,17 @@ public class FluidPhysics {
         // For now, just assuming that xOffset and yOffset can only be 1, 0, -1
         double ratio;
         if (xOffset != 0 && yOffset != 0) {
-            //ratio = .70710678; TODO: Fix this
+            //ratio = .70710678; // TODO: Fix this
             ratio = 0;
         } else {
             ratio = 1;
         }
 
-        double forceX = 0;
-        double forceY = 0;
-
-        // pressure
-        double massDifference = origin.getMass() - target.getMass();
-        if (massDifference > 0) {
-            forceX += xOffset * massDifference * DENSITY_TO_VELOCITY_SCALE * ratio;
-            forceY += yOffset * massDifference * DENSITY_TO_VELOCITY_SCALE * ratio;
+        double pressureDifference = origin.getPressure() - target.getPressure();
+        if (pressureDifference > 0) {
+            target.applyForceX(xOffset * pressureDifference * ratio);
+            target.applyForceY(yOffset * pressureDifference * ratio);
         }
-
-        // heat
-        double heatDifference = origin.getHeat() - target.getHeat();
-        if (heatDifference > 0) {
-            forceX += xOffset * heatDifference * HEAT_TO_VELOCITY_SCALE * ratio;
-            forceY += yOffset * heatDifference * HEAT_TO_VELOCITY_SCALE * ratio;
-        }
-
-        if (forceX != 0) target.applyForceX(forceX);
-        if (forceY != 0) target.applyForceY(forceY);
-
 
     }
 
@@ -146,6 +131,7 @@ public class FluidPhysics {
     private static void applyStep(FluidEntity[][] entities) {
         IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferRelativeValues()));
         IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferAbsoluteValues()));
+        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].clear()));
     }
 
     /**

@@ -1,6 +1,7 @@
 package fluid.setup;
 
 import fluid.entity.FluidEntity;
+import fluid.physics.FluidPhysics;
 
 import java.util.stream.IntStream;
 
@@ -28,7 +29,7 @@ public class Setup {
 
                 double z = sZDistance;
 
-                FluidEntity entity = new FluidEntity(x, y, z, 10, 0);
+                FluidEntity entity = new FluidEntity(x, y, z, 10, FluidPhysics.ROOM_TEMPERATURE);
                 entities[i][j] = entity;
             });
         });
