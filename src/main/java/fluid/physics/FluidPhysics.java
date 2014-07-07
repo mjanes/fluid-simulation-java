@@ -13,6 +13,7 @@ import java.util.stream.IntStream;
 public class FluidPhysics {
 
     public static final double ROOM_TEMPERATURE = 30;
+    public static final double DEFAULT_MASS = 10;
 
     private static final double CELL_AREA = Math.pow(FluidEntity.SPACE, 2);
     private static final double GRAVITY_TO_VELOCITY_SCALE = .01;

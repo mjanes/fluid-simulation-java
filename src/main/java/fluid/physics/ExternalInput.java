@@ -14,6 +14,21 @@ public class ExternalInput {
         //inputOriginal(entities);
         inputHeat(entities);
         //inputExplosion(entities, timestep);
+        //smallInput(entities, timestep);
+    }
+
+    private static void smallInput(FluidEntity[][] entities, int timestep) {
+        for (FluidEntity[] entitiesRow : entities) {
+            for (FluidEntity entity : entitiesRow) {
+                entity.setInk(10, Color.BLACK);
+            }
+        }
+
+        entities[0][0].setMass(FluidPhysics.DEFAULT_MASS);
+        entities[0][0].setTemperature(FluidPhysics.ROOM_TEMPERATURE + 1);
+        entities[0][0].setInk(10, Color.RED);
+
+
     }
 
     private static void inputExplosion(FluidEntity[][] entities, int timestep) {
@@ -72,15 +87,15 @@ public class ExternalInput {
 
     private static void inputHeat(FluidEntity[][] entities) {
         // Hot
-        entities[79][0].setTemperature(70);
+        entities[79][0].setTemperature(45);
         entities[79][0].setInk(50, Color.RED);
-        entities[79][0].setMass(10);
-        entities[80][0].setTemperature(80);
+        entities[79][0].setMass(FluidPhysics.DEFAULT_MASS);
+        entities[80][0].setTemperature(50);
         entities[80][0].setInk(100, Color.RED);
-        entities[80][0].setMass(10);
-        entities[81][0].setTemperature(65);
+        entities[80][0].setMass(FluidPhysics.DEFAULT_MASS);
+        entities[81][0].setTemperature(45);
         entities[81][0].setInk(50, Color.RED);
-        entities[81][0].setMass(10);
+        entities[81][0].setMass(FluidPhysics.DEFAULT_MASS);
 
         // Cold
         setRoomTempSpot(entities[10][0]);
@@ -104,7 +119,7 @@ public class ExternalInput {
 
     private static void setRoomTempSpot(FluidEntity entity) {
         entity.setInk(10, Color.BLUE);
-        entity.setMass(10);
+        entity.setMass(FluidPhysics.DEFAULT_MASS);
         entity.setTemperature(FluidPhysics.ROOM_TEMPERATURE);
 
     }
