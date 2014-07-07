@@ -11,10 +11,29 @@ public class ExternalInput {
 
 
     public static void applyInput(FluidEntity[][] entities, int timestep) {
+        neutralizeBorder(entities);
         //inputOriginal(entities);
         inputHeat(entities);
         //inputExplosion(entities, timestep);
         //smallInput(entities, timestep);
+    }
+
+    private static void neutralizeBorder(FluidEntity[][] entities) {
+        for (FluidEntity entity : entities[0]) {
+            setNeutral(entity);
+        }
+        for (FluidEntity entity : entities[entities.length - 1]) {
+            setNeutral(entity);
+        }
+        for (FluidEntity[] entityRow : entities) {
+            setNeutral(entityRow[0]);
+            setNeutral(entityRow[entityRow.length - 1]);
+        }
+    }
+
+    private static void setNeutral(FluidEntity entity) {
+        entity.setMass(FluidPhysics.DEFAULT_MASS);
+        entity.setTemperature(FluidPhysics.ROOM_TEMPERATURE);
     }
 
     private static void smallInput(FluidEntity[][] entities, int timestep) {
@@ -27,8 +46,6 @@ public class ExternalInput {
         entities[0][0].setMass(FluidPhysics.DEFAULT_MASS);
         entities[0][0].setTemperature(FluidPhysics.ROOM_TEMPERATURE + 1);
         entities[0][0].setInk(10, Color.RED);
-
-
     }
 
     private static void inputExplosion(FluidEntity[][] entities, int timestep) {
