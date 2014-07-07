@@ -34,45 +34,32 @@ public class FluidPhysics {
         int d2 = entities[0].length;
 
         // pressure, heat, displacement, etc
-        IntStream.range(0, d1).parallel().forEach(x -> IntStream.range(0, d2).forEach(y -> {
+        IntStream.range(0, d1 - 1).parallel().forEach(x -> IntStream.range(0, d2 - 1).forEach(y -> {
             FluidEntity entity = entities[x][y];
 
-            // Left entities
-            if (x > 0) {
-                applyPressureToCell(entity, entities[x - 1][y], -1, 0);
-            }
-
             // Right entities
-            if (x + 1 < d1) {
-                applyPressureToCell(entity, entities[x + 1][y], 1, 0);
-            }
-
-            // Lower entity
-            if (y > 0) {
-                applyPressureToCell(entity, entities[x][y - 1], 0, -1);
-            }
+            applyPressureBetweenCells(entity, entities[x + 1][y], true, false);
 
             // Upper entity
-            if (y + 1 < d2) {
-                applyPressureToCell(entity, entities[x][y + 1], 0, 1);
-            }
+            applyPressureBetweenCells(entity, entities[x][y + 1], false, true);
         }));
     }
 
-    private static void applyPressureToCell(FluidEntity origin, FluidEntity target, int xOffset, int yOffset) {
-        double pressureDifference = origin.getPressure() - target.getPressure();
+    private static void applyPressureBetweenCells(FluidEntity a, FluidEntity b, boolean xOffset, boolean yOffset) {
+        double pressureDifference = a.getPressure() - b.getPressure();
         if (pressureDifference > 0) {
-            target.applyForceX(xOffset * pressureDifference);
-            target.applyForceY(yOffset * pressureDifference);
+            if (xOffset) b.applyForceX(pressureDifference);
+            if (yOffset) b.applyForceY(pressureDifference);
+        } else if (pressureDifference < 0) {
+            if (xOffset) a.applyForceX(pressureDifference);
+            if (yOffset) a.applyForceY(pressureDifference);
         }
-
     }
 
     private static void applyGravity(FluidEntity[][] entities) {
         int d1 = entities.length;
         int d2 = entities[0].length;
 
-        // pressure, heat, displacement, etc
         IntStream.range(0, d1).parallel().forEach(x -> IntStream.range(0, d2).forEach(y -> {
             FluidEntity entity = entities[x][y];
 
