@@ -17,29 +17,17 @@ public class FluidPhysics {
     private static final double DENSITY_TO_VELOCITY_SCALE = .1;
     private static final double HEAT_TO_VELOCITY_SCALE = .02;
 
-    private static int timestep = 0;
-
 
     public static void incrementFluid(FluidEntity[][] entities) {
         if (entities == null) return;
 
-        ExternalInput.applyInput(entities, timestep);
-
         applyPressure(entities);
+        applyGravity(entities);
         advection(entities);
         applyStep(entities);
-
-        timestep++;
     }
 
 
-    /**
-     * TODO: Betting that this step of things is the greatest cause of the artifact of heat/pressure moving faster along
-     * x and y axis. Should be easy to break down into sub functions, and have heat/pressure/etc travel diagonally as
-     * well.
-     *
-     * @param entities
-     */
     private static void applyPressure(FluidEntity[][] entities) {
 
         int d1 = entities.length;
@@ -49,7 +37,7 @@ public class FluidPhysics {
         IntStream.range(0, d1).parallel().forEach(x -> IntStream.range(0, d2).forEach(y -> {
             FluidEntity entity = entities[x][y];
 
-            // Left Entity
+            // Left entities
             if (x > 0) {
                 applyPressureToCell(entity, entities[x - 1][y], -1, 0);
 
@@ -60,7 +48,7 @@ public class FluidPhysics {
                 }
             }
 
-            // Right entity
+            // Right entities
             if (x + 1 < d1) {
                 applyPressureToCell(entity, entities[x + 1][y], 1, 0);
 
@@ -86,8 +74,8 @@ public class FluidPhysics {
     private static void applyPressureToCell(FluidEntity origin, FluidEntity target, int xOffset, int yOffset) {
         // For now, just assuming that xOffset and yOffset can only be 1, 0, -1
         double ratio;
-        if (Math.abs(xOffset) != 0 && Math.abs(yOffset) != 0) {
-            //ratio = .70710678;
+        if (xOffset != 0 && yOffset != 0) {
+            //ratio = .70710678; TODO: Fix this
             ratio = 0;
         } else {
             ratio = 1;
@@ -114,8 +102,32 @@ public class FluidPhysics {
         if (forceY != 0) target.applyForceY(forceY);
 
 
-        // gravity
-        if (yOffset != 0) origin.applyForceY(yOffset * -massDifference * GRAVITY_TO_VELOCITY_SCALE * ratio);
+    }
+
+    private static void applyGravity(FluidEntity[][] entities) {
+        int d1 = entities.length;
+        int d2 = entities[0].length;
+
+        // pressure, heat, displacement, etc
+        IntStream.range(0, d1).parallel().forEach(x -> IntStream.range(0, d2).forEach(y -> {
+            FluidEntity entity = entities[x][y];
+
+            // Lower entity
+            if (y > 0) {
+                applyGravityToCell(entity, entities[x][y - 1], -1);
+            }
+
+            // Upper entity
+            if (y + 1 < d2) {
+                applyGravityToCell(entity, entities[x][y + 1], 1);
+            }
+        }));
+    }
+
+    private static void applyGravityToCell(FluidEntity origin, FluidEntity target, int yOffset) {
+
+        double massDifference = origin.getMass() - target.getMass();
+        origin.applyForceY(yOffset * -massDifference * GRAVITY_TO_VELOCITY_SCALE);
     }
 
 
