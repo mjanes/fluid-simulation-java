@@ -40,23 +40,11 @@ public class FluidPhysics {
             // Left entities
             if (x > 0) {
                 applyPressureToCell(entity, entities[x - 1][y], -1, 0);
-
-                if (y > 0) {
-                    applyPressureToCell(entity, entities[x - 1][y - 1], -1, -1);
-                } else if (y + 1 < d2) {
-                    applyPressureToCell(entity, entities[x - 1][y + 1], -1, 1);
-                }
             }
 
             // Right entities
             if (x + 1 < d1) {
                 applyPressureToCell(entity, entities[x + 1][y], 1, 0);
-
-                if (y > 0) {
-                    applyPressureToCell(entity, entities[x + 1][y - 1], 1, -1);
-                } else if (y + 1 < d2) {
-                    applyPressureToCell(entity, entities[x + 1][y + 1], 1, 1);
-                }
             }
 
             // Lower entity
@@ -72,19 +60,10 @@ public class FluidPhysics {
     }
 
     private static void applyPressureToCell(FluidEntity origin, FluidEntity target, int xOffset, int yOffset) {
-        // For now, just assuming that xOffset and yOffset can only be 1, 0, -1
-        double ratio;
-        if (xOffset != 0 && yOffset != 0) {
-            //ratio = .70710678; // TODO: Fix this
-            ratio = 0;
-        } else {
-            ratio = 1;
-        }
-
         double pressureDifference = origin.getPressure() - target.getPressure();
         if (pressureDifference > 0) {
-            target.applyForceX(xOffset * pressureDifference * ratio);
-            target.applyForceY(yOffset * pressureDifference * ratio);
+            target.applyForceX(xOffset * pressureDifference);
+            target.applyForceY(yOffset * pressureDifference);
         }
 
     }
