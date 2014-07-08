@@ -162,14 +162,23 @@ public class FluidEntity implements IDimensionalEntity {
     }
 
     public synchronized void addMass(double deltaMass, double massTemperature, Color color) {
+        addMass(deltaMass, massTemperature, color, 0, 0);
+    }
+
+    public synchronized void addMass(double deltaMass, double massTemperature, Color color, double velocityX, double velocityY) {
         if (mMass + deltaMass < 0) {
             setMass(0);
             setHeat(0);
+            setDeltaX(0);
+            setDeltaY(0);
+            setDeltaZ(0);
             return;
         }
 
         setMass(mMass + deltaMass);
         addHeat(deltaMass * massTemperature);
+        applyForceX(deltaMass * velocityX);
+        applyForceY(deltaMass * velocityY);
 
         if (deltaMass < 0 || color == null || mColor.equals(color)) return;
 
@@ -187,25 +196,14 @@ public class FluidEntity implements IDimensionalEntity {
         double newBlue = prevBlue * oldProportion + color.getBlue() * newProportion;
         double newAlpha = prevAlpha * oldProportion + color.getOpacity() * newProportion;
 
-        if (newRed < 0) {
-            newRed = 0;
-        }
-        if (newGreen < 0) {
-            newGreen = 0;
-        }
-        if (newBlue < 0) {
-            newBlue = 0;
-        }
-
-        if (newRed > 1) {
-            newRed = 1;
-        }
-        if (newGreen > 1) {
-            newGreen = 1;
-        }
-        if (newBlue > 1) {
-            newBlue = 1;
-        }
+        if (newRed < 0) newRed = 0;
+        if (newGreen < 0) newGreen = 0;
+        if (newBlue < 0) newBlue = 0;
+        if (newAlpha < 0) newAlpha = 0;
+        if (newRed > 1)  newRed = 1;
+        if (newGreen > 1) newGreen = 1;
+        if (newBlue > 1)  newBlue = 1;
+        if (newAlpha > 1) newAlpha = 1;
 
         setColor(new Color(newRed, newGreen, newBlue, newAlpha));
     }
@@ -292,17 +290,14 @@ public class FluidEntity implements IDimensionalEntity {
 
     private void recordAbsoluteTransfer(FluidEntity targetEntity, double ratio) {
         double massTransfer = mMass * ratio;
-        double forceXTransfer = getForceX() * ratio;
-        double forceYTransfer = getForceY() * ratio;
-        Color inkColor = mColor;
 
-        recordAbsoluteTransfer(new AbsoluteTransferRecord(-massTransfer, getTemperature(), -forceXTransfer, -forceYTransfer, null));
+        recordAbsoluteTransfer(new AbsoluteTransferRecord(-massTransfer, getTemperature(), mDeltaX, mDeltaY, null));
 
         // If targetEntity is null, because the transfer is going off the border of the universe, the values are simply
         // removed from the simulation.
         if (targetEntity == null) return;
 
-        targetEntity.recordAbsoluteTransfer(new AbsoluteTransferRecord(massTransfer, getTemperature(), forceXTransfer, forceYTransfer, inkColor));
+        targetEntity.recordAbsoluteTransfer(new AbsoluteTransferRecord(massTransfer, getTemperature(), mDeltaX, mDeltaY, mColor));
     }
 
     public void recordRelativeTransfer(FluidEntity targetEntity, double ratio) {
@@ -348,23 +343,21 @@ public class FluidEntity implements IDimensionalEntity {
 
         final private double mMassTransfer;
         final private double mMassTemperature;
-        final private double mForceXTransfer;
-        final private double mForceYTransfer;
+        final private double mVelocityX;
+        final private double mVelocityY;
         final private Color mInkColor;
 
 
-        public AbsoluteTransferRecord(double massTransfer, double massTemperature, double forceXTransfer, double forceYTransfer, Color inkColor) {
+        public AbsoluteTransferRecord(double massTransfer, double massTemperature, double velocityX, double velocityY, Color inkColor) {
             mMassTransfer = massTransfer;
             mMassTemperature = massTemperature;
-            mForceXTransfer = forceXTransfer;
-            mForceYTransfer = forceYTransfer;
+            mVelocityX = velocityX;
+            mVelocityY = velocityY;
             mInkColor = inkColor;
         }
 
         public void transfer(FluidEntity entity) {
-            entity.addMass(mMassTransfer, mMassTemperature, mInkColor);
-            entity.applyForceX(mForceXTransfer);
-            entity.applyForceY(mForceYTransfer);
+            entity.addMass(mMassTransfer, mMassTemperature, mInkColor, mVelocityX, mVelocityY);
         }
     }
 }
