@@ -258,8 +258,8 @@ public class FluidEntity implements IDimensionalEntity {
 
     /** For display */
 
-    public synchronized FluidEntity getNextLocationAsFluidEntity() {
-        return new FluidEntity(mX + mDeltaX, mY + mDeltaY, mZ + mDeltaZ, mMass, getTemperature());
+    public synchronized FluidEntity getNextLocationAsFluidEntity(double velocityFactor) {
+        return new FluidEntity(mX + (mDeltaX * velocityFactor), mY + (mDeltaY * velocityFactor), mZ + (mDeltaZ * velocityFactor), mMass, getTemperature());
     }
 
 

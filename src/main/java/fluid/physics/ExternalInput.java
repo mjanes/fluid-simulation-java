@@ -44,15 +44,7 @@ public class ExternalInput {
     }
 
     private static void smallInput(FluidEntity[][] entities, int timestep) {
-        for (FluidEntity[] entitiesRow : entities) {
-            for (FluidEntity entity : entitiesRow) {
-                entity.setColor(Color.BLACK);
-            }
-        }
-
-        entities[0][0].setMass(FluidPhysics.DEFAULT_MASS);
-        entities[0][0].setTemperature(FluidPhysics.ROOM_TEMPERATURE + 1);
-        entities[0][0].setColor(Color.RED);
+        entities[entities.length / 2][0].addMass(5, FluidPhysics.ROOM_TEMPERATURE + 15, Color.RED);
     }
 
 //    private static void inputExplosion(FluidEntity[][] entities, int timestep) {
