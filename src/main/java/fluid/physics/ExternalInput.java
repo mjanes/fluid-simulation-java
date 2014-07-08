@@ -103,46 +103,14 @@ public class ExternalInput {
 
     private static void inputHeat(FluidEntity[][] entities) {
         // Hot
-//        entities[79][0].setMass(FluidPhysics.DEFAULT_MASS);
-//        entities[79][0].setTemperature(FluidPhysics.ROOM_TEMPERATURE + 45);
-//        entities[79][0].setColor(Color.RED);
-
-        entities[79][0].addMass(5, FluidPhysics.ROOM_TEMPERATURE + 15, Color.RED);
-
-//        entities[80][0].setMass(FluidPhysics.DEFAULT_MASS);
-//        entities[80][0].setTemperature(FluidPhysics.ROOM_TEMPERATURE + 50);
-//        entities[80][0].setColor(Color.RED);
-        entities[80][0].addMass(5, FluidPhysics.ROOM_TEMPERATURE + 20, Color.RED);
-
-//        entities[81][0].setMass(FluidPhysics.DEFAULT_MASS);
-//        entities[81][0].setTemperature(FluidPhysics.ROOM_TEMPERATURE + 45);
-//        entities[81][0].setColor(Color.RED);
-        entities[81][0].addMass(5, FluidPhysics.ROOM_TEMPERATURE + 15, Color.RED);
-
-        // Cold
-        setRoomTempSpot(entities[10][0]);
-        setRoomTempSpot(entities[20][0]);
-        setRoomTempSpot(entities[30][0]);
-        setRoomTempSpot(entities[40][0]);
-        setRoomTempSpot(entities[50][0]);
-        setRoomTempSpot(entities[60][0]);
-        setRoomTempSpot(entities[70][0]);
-        setRoomTempSpot(entities[90][0]);
-        setRoomTempSpot(entities[100][0]);
-        setRoomTempSpot(entities[100][0]);
-        setRoomTempSpot(entities[110][0]);
-        setRoomTempSpot(entities[120][0]);
-        setRoomTempSpot(entities[130][0]);
+        entities[79][0].addMass(5, FluidPhysics.ROOM_TEMPERATURE + 25, Color.RED);
+        entities[80][0].addMass(5, FluidPhysics.ROOM_TEMPERATURE + 30, Color.RED);
+        entities[81][0].addMass(5, FluidPhysics.ROOM_TEMPERATURE + 25, Color.RED);
 
 
-        // Neutral
+
+        // Neutral - smoke
         entities[40][40].setColor(Color.BLACK);
     }
 
-    private static void setRoomTempSpot(FluidEntity entity) {
-        entity.setColor(Color.BLUE);
-        entity.setMass(FluidPhysics.DEFAULT_MASS);
-        entity.setTemperature(FluidPhysics.ROOM_TEMPERATURE);
-
-    }
 }

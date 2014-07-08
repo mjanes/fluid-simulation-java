@@ -49,11 +49,11 @@ public class FluidPhysics {
     private static void applyPressureBetweenCells(FluidEntity a, FluidEntity b, boolean xOffset, boolean yOffset) {
         double pressureDifference = a.getPressure() - b.getPressure();
         if (pressureDifference > 0) {
-            if (xOffset) b.applyForceX(pressureDifference);
-            if (yOffset) b.applyForceY(pressureDifference);
-        } else if (pressureDifference < 0) {
             if (xOffset) a.applyForceX(pressureDifference);
             if (yOffset) a.applyForceY(pressureDifference);
+        } else if (pressureDifference < 0) {
+            if (xOffset) b.applyForceX(pressureDifference);
+            if (yOffset) b.applyForceY(pressureDifference);
         }
     }
 

@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class FluidEntity implements IDimensionalEntity {
 
     public static final int SPACE = 5; // spacing between entities, currently writing this that they must be placed on a grid
-    private static final double GAS_CONSTANT = .01;
+    private static final double GAS_CONSTANT = .02;
 
 
     protected double mX;
