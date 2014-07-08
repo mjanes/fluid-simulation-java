@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class FluidEntity implements IDimensionalEntity {
 
     public static final int SPACE = 5; // spacing between entities, currently writing this that they must be placed on a grid
-    private static final double GAS_CONSTANT = .02;
+    private static final double GAS_CONSTANT = .01;
 
 
     protected double mX;
@@ -27,7 +27,7 @@ public class FluidEntity implements IDimensionalEntity {
     protected double mDeltaZ;
     protected double mMass;
     protected double mHeat;
-    protected Color mInk;
+    protected Color mColor;
 
     protected final ConcurrentHashMap<RelativeTransferRecord, Integer> mRelativeTransferRecords = new ConcurrentHashMap<>();
     protected final ConcurrentHashMap<AbsoluteTransferRecord, Integer> mAbsoluteTransferRecords = new ConcurrentHashMap<>();
@@ -38,7 +38,7 @@ public class FluidEntity implements IDimensionalEntity {
         setZ(z);
         setMass(mass);
         setTemperature(temperature);
-        setInk(Color.TRANSPARENT);
+        setColor(Color.TRANSPARENT);
     }
 
     @Override
@@ -171,13 +171,13 @@ public class FluidEntity implements IDimensionalEntity {
         setMass(mMass + deltaMass);
         addHeat(deltaMass * massTemperature);
 
-        if (deltaMass < 0 || color == null || mInk.equals(color)) return;
+        if (deltaMass < 0 || color == null || mColor.equals(color)) return;
 
         // Ink
-        double prevRed = mInk.getRed();
-        double prevGreen = mInk.getGreen();
-        double prevBlue = mInk.getBlue();
-        double prevAlpha = mInk.getOpacity();
+        double prevRed = mColor.getRed();
+        double prevGreen = mColor.getGreen();
+        double prevBlue = mColor.getBlue();
+        double prevAlpha = mColor.getOpacity();
 
         double oldProportion = (mMass - deltaMass) / mMass;
         double newProportion = deltaMass / mMass;
@@ -207,18 +207,18 @@ public class FluidEntity implements IDimensionalEntity {
             newBlue = 1;
         }
 
-        setInk(new Color(newRed, newGreen, newBlue, newAlpha));
+        setColor(new Color(newRed, newGreen, newBlue, newAlpha));
     }
 
 
     /** Ink */
 
-    public synchronized Color getInk() {
-        return mInk;
+    public synchronized Color getColor() {
+        return mColor;
     }
 
-    public synchronized void setInk(Color color) {
-        mInk = color;
+    public synchronized void setColor(Color color) {
+        mColor = color;
     }
 
 
@@ -237,7 +237,11 @@ public class FluidEntity implements IDimensionalEntity {
     }
 
     public synchronized void addHeat(double deltaHeat) {
-        setHeat(mHeat = deltaHeat);
+        if (mHeat + deltaHeat < 0) {
+            setHeat(0);
+            return;
+        }
+        setHeat(mHeat + deltaHeat);
     }
 
     public synchronized double getHeat() { return mHeat; }
@@ -274,25 +278,23 @@ public class FluidEntity implements IDimensionalEntity {
                 recordAbsoluteTransfer(relativeTransferRecord.getTargetEntity(), relativeTransferRecord.getProportion());
             }
         }
+
+        mRelativeTransferRecords.clear();
     }
 
     public void transferAbsoluteValues() {
         for (AbsoluteTransferRecord absoluteTransferRecord : mAbsoluteTransferRecords.keySet()) {
             absoluteTransferRecord.transfer(this);
         }
-    }
 
-    public void clear() {
-        mRelativeTransferRecords.clear();
         mAbsoluteTransferRecords.clear();
     }
-
 
     private void recordAbsoluteTransfer(FluidEntity targetEntity, double ratio) {
         double massTransfer = mMass * ratio;
         double forceXTransfer = getForceX() * ratio;
         double forceYTransfer = getForceY() * ratio;
-        Color inkColor = mInk;
+        Color inkColor = mColor;
 
         recordAbsoluteTransfer(new AbsoluteTransferRecord(-massTransfer, getTemperature(), -forceXTransfer, -forceYTransfer, null));
 

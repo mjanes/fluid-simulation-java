@@ -12,7 +12,7 @@ import java.util.stream.IntStream;
  */
 public class FluidPhysics {
 
-    public static final double ROOM_TEMPERATURE = 30;
+    public static final double ROOM_TEMPERATURE = 10;
     public static final double DEFAULT_MASS = 10;
 
     private static final double CELL_AREA = Math.pow(FluidEntity.SPACE, 2);
@@ -38,7 +38,7 @@ public class FluidPhysics {
         IntStream.range(0, d1 - 1).parallel().forEach(x -> IntStream.range(0, d2 - 1).forEach(y -> {
             FluidEntity entity = entities[x][y];
 
-            // Right entities
+            // Right entity
             applyPressureBetweenCells(entity, entities[x + 1][y], true, false);
 
             // Upper entity
@@ -98,7 +98,6 @@ public class FluidPhysics {
     private static void applyStep(FluidEntity[][] entities) {
         IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferRelativeValues()));
         IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferAbsoluteValues()));
-        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].clear()));
     }
 
     /**

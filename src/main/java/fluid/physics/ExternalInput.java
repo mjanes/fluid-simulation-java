@@ -46,83 +46,86 @@ public class ExternalInput {
     private static void smallInput(FluidEntity[][] entities, int timestep) {
         for (FluidEntity[] entitiesRow : entities) {
             for (FluidEntity entity : entitiesRow) {
-                entity.setInk(Color.BLACK);
+                entity.setColor(Color.BLACK);
             }
         }
 
         entities[0][0].setMass(FluidPhysics.DEFAULT_MASS);
         entities[0][0].setTemperature(FluidPhysics.ROOM_TEMPERATURE + 1);
-        entities[0][0].setInk(Color.RED);
+        entities[0][0].setColor(Color.RED);
     }
 
-    private static void inputExplosion(FluidEntity[][] entities, int timestep) {
-        if (timestep < 5) {
-            entities[70][20].addHeat(5000);
-            entities[70][20].setInk(Color.RED);
-        } else if (timestep < 50) {
-            entities[70][20].addHeat(2000);
-            entities[70][20].setInk(Color.RED);
-        }
-    }
+//    private static void inputExplosion(FluidEntity[][] entities, int timestep) {
+//        if (timestep < 5) {
+//            entities[70][20].addHeat(5000);
+//            entities[70][20].setColor(Color.RED);
+//        } else if (timestep < 50) {
+//            entities[70][20].addHeat(2000);
+//            entities[70][20].setColor(Color.RED);
+//        }
+//    }
 
-    private static void inputOriginal(FluidEntity[][] entities, int timestep) {
-        double factor = Math.abs(Math.sin(Math.toRadians(timestep * 3)));
-
-        entities[0][0].setMass(factor * 600 + 50);
-        entities[0][0].setInk(Color.ORANGE);
-        entities[0][0].applyForceX(factor * 14);
-        entities[0][0].applyForceY(factor * 8);
-        entities[0][0].setTemperature(factor * 20);
-
-        entities[1][0].setMass(factor * 500 + 20);
-        entities[1][0].setInk(Color.RED);
-        entities[1][0].applyForceX(factor * 11);
-        entities[1][0].applyForceY(factor * 7);
-        entities[1][0].setTemperature(10);
-
-        factor = Math.abs(Math.sin(Math.toRadians(timestep * 2)));
-        entities[0][1].setMass(factor * 500 + 100);
-        entities[0][1].setInk(Color.ORANGE);
-        entities[0][1].addDeltaX(12);
-        entities[0][1].addDeltaY(7);
-        entities[0][1].setTemperature(10);
-
-        entities[1][1].setMass(factor * 200);
-        entities[1][1].setInk(Color.YELLOW);
-        entities[1][1].addDeltaX(12);
-        entities[1][1].addDeltaY(6);
-        entities[1][1].setTemperature(factor * 20);
-
-
-        factor = Math.abs(Math.cos(Math.toRadians(timestep * 2)));
-        entities[120][80].setMass(600 * factor);
-        entities[120][80].setDeltaX(-30 * factor + 10);
-        entities[120][80].setDeltaY(-4);
-        entities[120][80].setInk(Color.BLUE);
-
-
-        factor = Math.abs(Math.sin(Math.toRadians(timestep)));
-        entities[100][10].setMass(400 * (1 - factor));
-        entities[100][10].setDeltaX(-20 * factor + 5);
-        entities[100][10].setDeltaY(4);
-        entities[100][10].setTemperature((1 - factor) * 20);
-        entities[100][10].setInk(Color.GREEN);
-    }
+//    private static void inputOriginal(FluidEntity[][] entities, int timestep) {
+//        double factor = Math.abs(Math.sin(Math.toRadians(timestep * 3)));
+//
+//        entities[0][0].setMass(factor * 600 + 50);
+//        entities[0][0].setColor(Color.ORANGE);
+//        entities[0][0].applyForceX(factor * 14);
+//        entities[0][0].applyForceY(factor * 8);
+//        entities[0][0].setTemperature(factor * 20);
+//
+//        entities[1][0].setMass(factor * 500 + 20);
+//        entities[1][0].setColor(Color.RED);
+//        entities[1][0].applyForceX(factor * 11);
+//        entities[1][0].applyForceY(factor * 7);
+//        entities[1][0].setTemperature(10);
+//
+//        factor = Math.abs(Math.sin(Math.toRadians(timestep * 2)));
+//        entities[0][1].setMass(factor * 500 + 100);
+//        entities[0][1].setColor(Color.ORANGE);
+//        entities[0][1].addDeltaX(12);
+//        entities[0][1].addDeltaY(7);
+//        entities[0][1].setTemperature(10);
+//
+//        entities[1][1].setMass(factor * 200);
+//        entities[1][1].setColor(Color.YELLOW);
+//        entities[1][1].addDeltaX(12);
+//        entities[1][1].addDeltaY(6);
+//        entities[1][1].setTemperature(factor * 20);
+//
+//
+//        factor = Math.abs(Math.cos(Math.toRadians(timestep * 2)));
+//        entities[120][80].setMass(600 * factor);
+//        entities[120][80].setDeltaX(-30 * factor + 10);
+//        entities[120][80].setDeltaY(-4);
+//        entities[120][80].setColor(Color.BLUE);
+//
+//
+//        factor = Math.abs(Math.sin(Math.toRadians(timestep)));
+//        entities[100][10].setMass(400 * (1 - factor));
+//        entities[100][10].setDeltaX(-20 * factor + 5);
+//        entities[100][10].setDeltaY(4);
+//        entities[100][10].setTemperature((1 - factor) * 20);
+//        entities[100][10].setColor(Color.GREEN);
+//    }
 
     private static void inputHeat(FluidEntity[][] entities) {
         // Hot
-        entities[79][0].setMass(FluidPhysics.DEFAULT_MASS);
-        entities[79][0].setTemperature(FluidPhysics.ROOM_TEMPERATURE + 45);
-        entities[79][0].setInk(Color.RED);
+//        entities[79][0].setMass(FluidPhysics.DEFAULT_MASS);
+//        entities[79][0].setTemperature(FluidPhysics.ROOM_TEMPERATURE + 45);
+//        entities[79][0].setColor(Color.RED);
 
-        entities[80][0].setMass(FluidPhysics.DEFAULT_MASS);
-        entities[80][0].setTemperature(FluidPhysics.ROOM_TEMPERATURE + 50);
-        entities[80][0].setInk(Color.RED);
+        entities[79][0].addMass(5, FluidPhysics.ROOM_TEMPERATURE + 15, Color.RED);
 
-        entities[81][0].setMass(FluidPhysics.DEFAULT_MASS);
-        entities[81][0].setTemperature(FluidPhysics.ROOM_TEMPERATURE + 45);
-        entities[81][0].setInk(Color.RED);
+//        entities[80][0].setMass(FluidPhysics.DEFAULT_MASS);
+//        entities[80][0].setTemperature(FluidPhysics.ROOM_TEMPERATURE + 50);
+//        entities[80][0].setColor(Color.RED);
+        entities[80][0].addMass(5, FluidPhysics.ROOM_TEMPERATURE + 20, Color.RED);
 
+//        entities[81][0].setMass(FluidPhysics.DEFAULT_MASS);
+//        entities[81][0].setTemperature(FluidPhysics.ROOM_TEMPERATURE + 45);
+//        entities[81][0].setColor(Color.RED);
+        entities[81][0].addMass(5, FluidPhysics.ROOM_TEMPERATURE + 15, Color.RED);
 
         // Cold
         setRoomTempSpot(entities[10][0]);
@@ -141,11 +144,11 @@ public class ExternalInput {
 
 
         // Neutral
-        entities[40][40].setInk(Color.BLACK);
+        entities[40][40].setColor(Color.BLACK);
     }
 
     private static void setRoomTempSpot(FluidEntity entity) {
-        entity.setInk(Color.BLUE);
+        entity.setColor(Color.BLUE);
         entity.setMass(FluidPhysics.DEFAULT_MASS);
         entity.setTemperature(FluidPhysics.ROOM_TEMPERATURE);
 

@@ -18,7 +18,7 @@ public class FluidEntityCanvas extends Canvas {
     public static final int EYE_DISTANCE = 5000;
 
     public enum DrawType {
-        INK, HEAT, VELOCITY
+        INK, HEAT, VELOCITY, MASS
     }
 
     public FluidEntityCanvas(int width, int height, Camera camera) {
@@ -45,7 +45,7 @@ public class FluidEntityCanvas extends Canvas {
         // NOTE: When this stops being 2D will have to calculate radius
         if (drawType.equals(DrawType.INK)) {
             radius = Math.sqrt(entity.getMass()); // NOTE: Probably want to change this to cube root when we go 3d
-            color = entity.getInk();
+            color = entity.getColor();
         } else if (drawType.equals(DrawType.HEAT)) {
             radius = Math.sqrt(entity.getMass());
             double temperature = entity.getTemperature();
@@ -57,6 +57,9 @@ public class FluidEntityCanvas extends Canvas {
             }
         } else if (drawType.equals(DrawType.VELOCITY)) {
             radius = 1;
+            color = Color.BLACK;
+        } else if (drawType.equals(DrawType.MASS)) {
+            radius = Math.sqrt(entity.getMass()); // NOTE: Probably want to change this to cube root when we go 3
             color = Color.BLACK;
         }
 
