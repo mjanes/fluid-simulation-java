@@ -11,8 +11,12 @@ import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
+import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -30,6 +34,8 @@ public class Main extends Application {
 
     private ExecutorService mExecutorService;
 
+    private volatile FluidEntityCanvas.DrawType mDrawType;
+
     /**
      * http://cowboyprogramming.com/2008/04/01/practical-fluid-mechanics/
      */
@@ -46,6 +52,9 @@ public class Main extends Application {
         Group root = new Group();
         mCanvas = new FluidEntityCanvas(1600, 1000, mCamera);
 
+        addDisplayTypeButtons(root);
+        // TODO: Camera moving buttons
+
         root.getChildren().add(mCanvas);
         stage.setScene(new Scene(root));
         stage.show();
@@ -55,8 +64,42 @@ public class Main extends Application {
             System.exit(0);
         });
 
-        // TODO: Add all the other buttons later, but for now, just start things.
-        runSimulation();
+        //runSimulation();
+    }
+
+    private void addDisplayTypeButtons(Group root) {
+        RadioButton inkButton = new RadioButton("Ink");
+        RadioButton massButton = new RadioButton("Mass");
+        RadioButton heatButton = new RadioButton("Heat");
+        RadioButton velocityButton = new RadioButton("Velocity");
+
+        ToggleGroup displayTypeGroup = new ToggleGroup();
+        inkButton.setToggleGroup(displayTypeGroup);
+        massButton.setToggleGroup(displayTypeGroup);
+        heatButton.setToggleGroup(displayTypeGroup);
+        velocityButton.setToggleGroup(displayTypeGroup);
+
+        displayTypeGroup.selectedToggleProperty().addListener((observableValue, oldToggle, newToggle) -> {
+            if (displayTypeGroup.getSelectedToggle().equals(inkButton)) {
+                mDrawType = FluidEntityCanvas.DrawType.INK;
+            } else if (displayTypeGroup.getSelectedToggle().equals(massButton)) {
+                mDrawType = FluidEntityCanvas.DrawType.MASS;
+            } else if (displayTypeGroup.getSelectedToggle().equals(heatButton)) {
+                mDrawType = FluidEntityCanvas.DrawType.HEAT;
+            } else if (displayTypeGroup.getSelectedToggle().equals(velocityButton)) {
+                mDrawType = FluidEntityCanvas.DrawType.VELOCITY;
+            }
+        });
+
+        inkButton.setSelected(true);
+
+        VBox box = new VBox();
+        box.getChildren().add(inkButton);
+        box.getChildren().add(massButton);
+        box.getChildren().add(heatButton);
+        box.getChildren().add(velocityButton);
+        box.setPadding(new Insets(20, 20, 20, 20));
+        root.getChildren().add(box);
     }
 
     public int getFrameDelay() {
@@ -87,7 +130,7 @@ public class Main extends Application {
                 mCamera.move();
 
                 // tell graphics to repaint
-                mCanvas.drawEntities(ENTITIES, FluidEntityCanvas.DrawType.MASS);
+                mCanvas.drawEntities(ENTITIES, mDrawType);
             });
 
             incrementStep.setOnFailed(e -> {
