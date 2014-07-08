@@ -12,10 +12,11 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
-import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -49,13 +50,21 @@ public class Main extends Application {
 
         mCamera = new Camera(0, 0, 0);
 
-        Group root = new Group();
-        mCanvas = new FluidEntityCanvas(1600, 1000, mCamera);
+        StackPane root = new StackPane();
 
-        addDisplayTypeButtons(root);
+        VBox displayType = getDisplayTypeButtons();
         // TODO: Camera moving buttons
 
-        root.getChildren().add(mCanvas);
+        // Canvas
+        mCanvas = new FluidEntityCanvas(1400, 900, mCamera);
+
+        HBox parentBox = new HBox();
+        parentBox.getChildren().add(displayType);
+        parentBox.getChildren().add(mCanvas);
+        parentBox.setPadding(new Insets(20, 20, 20, 20));
+
+        root.getChildren().add(parentBox);
+
         stage.setScene(new Scene(root));
         stage.show();
 
@@ -64,10 +73,10 @@ public class Main extends Application {
             System.exit(0);
         });
 
-        //runSimulation();
+        runSimulation();
     }
 
-    private void addDisplayTypeButtons(Group root) {
+    private VBox getDisplayTypeButtons() {
         RadioButton inkButton = new RadioButton("Ink");
         RadioButton massButton = new RadioButton("Mass");
         RadioButton heatButton = new RadioButton("Heat");
@@ -99,7 +108,8 @@ public class Main extends Application {
         box.getChildren().add(heatButton);
         box.getChildren().add(velocityButton);
         box.setPadding(new Insets(20, 20, 20, 20));
-        root.getChildren().add(box);
+
+        return box;
     }
 
     public int getFrameDelay() {
