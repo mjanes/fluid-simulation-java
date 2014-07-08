@@ -87,7 +87,7 @@ public class Main extends Application {
                 mCamera.move();
 
                 // tell graphics to repaint
-                mCanvas.drawEntities(ENTITIES);
+                mCanvas.drawEntities(ENTITIES, FluidEntityCanvas.DrawType.HEAT);
             });
 
             incrementStep.setOnFailed(e -> {

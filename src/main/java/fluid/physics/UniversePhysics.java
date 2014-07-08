@@ -17,7 +17,7 @@ public class UniversePhysics {
     public static synchronized void updateUniverseState(FluidEntity[][] entities) {
         if (entities == null) return;
 
-        //getStats(entities);
+        getStats(entities);
 
         ExternalInput.applyInput(entities, sStep);
         FluidPhysics.incrementFluid(entities);
@@ -58,7 +58,9 @@ public class UniversePhysics {
         System.out.println("Total mass: " + totalMass);
         System.out.println("Max entity mass: " + maxMass);
         System.out.println("Min entity mass: " + minMass);
+        System.out.println("Average mass: " + totalMass / (entities.length * entities[0].length));
         System.out.println("Total heat: " + totalHeat);
+        System.out.println("Average heat: " + totalHeat / (entities.length * entities[0].length));
         System.out.println("Total delta x: " + totalDeltaX);
         System.out.println("Total delta y: " + totalDeltaY);
         System.out.println("Total absolute delta x: " + totalAbsoluteDeltaX);

@@ -27,11 +27,7 @@ public class FluidEntity implements IDimensionalEntity {
     protected double mDeltaZ;
     protected double mMass;
     protected double mHeat;
-
-    protected double mInkMass;
-    protected Color mInkColor;
-    protected double mDisplayRadius; // Display Radius
-
+    protected Color mInk;
 
     protected final ConcurrentHashMap<RelativeTransferRecord, Integer> mRelativeTransferRecords = new ConcurrentHashMap<>();
     protected final ConcurrentHashMap<AbsoluteTransferRecord, Integer> mAbsoluteTransferRecords = new ConcurrentHashMap<>();
@@ -42,7 +38,7 @@ public class FluidEntity implements IDimensionalEntity {
         setZ(z);
         setMass(mass);
         setTemperature(temperature);
-        setInk(0, Color.BLACK);
+        setInk(Color.TRANSPARENT);
     }
 
     @Override
@@ -165,59 +161,31 @@ public class FluidEntity implements IDimensionalEntity {
         return mMass;
     }
 
-    public synchronized void addMass(double deltaMass, double massTemperature) {
+    public synchronized void addMass(double deltaMass, double massTemperature, Color color) {
         if (mMass + deltaMass < 0) {
-            deltaMass = -mMass;
+            setMass(0);
+            setHeat(0);
+            return;
         }
 
         setMass(mMass + deltaMass);
         addHeat(deltaMass * massTemperature);
-    }
 
+        if (deltaMass < 0 || color == null || mInk.equals(color)) return;
 
-    /** Radius */
+        // Ink
+        double prevRed = mInk.getRed();
+        double prevGreen = mInk.getGreen();
+        double prevBlue = mInk.getBlue();
+        double prevAlpha = mInk.getOpacity();
 
-    public synchronized double getDisplayRadius() {
-        return mDisplayRadius;
-    }
+        double oldProportion = (mMass - deltaMass) / mMass;
+        double newProportion = deltaMass / mMass;
 
-    /**
-     * Currently done in 2d
-     */
-    private void setDisplayRadius() {
-        mDisplayRadius = mInkMass > 1 ? Math.sqrt(mInkMass) : 0;
-    }
-
-
-    /** Ink */
-
-    public synchronized Color getInkColor() {
-        return mInkColor;
-    }
-
-    public synchronized void setInk(double ink, Color color) {
-        mInkMass = ink;
-        mInkColor = color;
-        setDisplayRadius();
-    }
-
-    public synchronized void addInk(double deltaInkMass, Color newColor) {
-        if (deltaInkMass <= 0 || newColor == null || mInkColor.equals(newColor)) {
-            setInk(mInkMass + deltaInkMass, mInkColor);
-            return;
-        }
-
-        double prevRed = mInkColor.getRed();
-        double prevGreen = mInkColor.getGreen();
-        double prevBlue = mInkColor.getBlue();
-        double newInkMass = mInkMass + deltaInkMass;
-
-        double oldProportion = mInkMass / newInkMass;
-        double newProportion = deltaInkMass / newInkMass;
-
-        double newRed = prevRed * oldProportion + newColor.getRed() * newProportion;
-        double newGreen = prevGreen * oldProportion + newColor.getGreen() * newProportion;
-        double newBlue = prevBlue * oldProportion + newColor.getBlue() * newProportion;
+        double newRed = prevRed * oldProportion + color.getRed() * newProportion;
+        double newGreen = prevGreen * oldProportion + color.getGreen() * newProportion;
+        double newBlue = prevBlue * oldProportion + color.getBlue() * newProportion;
+        double newAlpha = prevAlpha * oldProportion + color.getOpacity() * newProportion;
 
         if (newRed < 0) {
             newRed = 0;
@@ -239,7 +207,18 @@ public class FluidEntity implements IDimensionalEntity {
             newBlue = 1;
         }
 
-        setInk(newInkMass, new Color(newRed, newGreen, newBlue, 1));
+        setInk(new Color(newRed, newGreen, newBlue, newAlpha));
+    }
+
+
+    /** Ink */
+
+    public synchronized Color getInk() {
+        return mInk;
+    }
+
+    public synchronized void setInk(Color color) {
+        mInk = color;
     }
 
 
@@ -253,8 +232,12 @@ public class FluidEntity implements IDimensionalEntity {
         return mHeat / mMass;
     }
 
+    public synchronized void setHeat(double heat) {
+        mHeat = heat;
+    }
+
     public synchronized void addHeat(double deltaHeat) {
-        mHeat += deltaHeat;
+        setHeat(mHeat = deltaHeat);
     }
 
     public synchronized double getHeat() { return mHeat; }
@@ -265,7 +248,7 @@ public class FluidEntity implements IDimensionalEntity {
     public synchronized double getPressure() {
         // https://en.wikipedia.org/wiki/Pressure
         // http://www.passmyexams.co.uk/GCSE/physics/pressure-temperature-relationship-of-gas-pressure-law.html
-        return mMass * getTemperature() * GAS_CONSTANT; // NOTE: GAS_CONSTANT could be a variable that changes based on heat. Phase change
+        return mHeat * GAS_CONSTANT; // NOTE: GAS_CONSTANT could be a variable that changes based on heat. Phase change
     }
 
 
@@ -309,15 +292,15 @@ public class FluidEntity implements IDimensionalEntity {
         double massTransfer = mMass * ratio;
         double forceXTransfer = getForceX() * ratio;
         double forceYTransfer = getForceY() * ratio;
-        double inkTransfer = mInkMass * ratio;
+        Color inkColor = mInk;
 
-        recordAbsoluteTransfer(new AbsoluteTransferRecord(-massTransfer, getTemperature(), -forceXTransfer, -forceYTransfer, -inkTransfer, null));
+        recordAbsoluteTransfer(new AbsoluteTransferRecord(-massTransfer, getTemperature(), -forceXTransfer, -forceYTransfer, null));
 
         // If targetEntity is null, because the transfer is going off the border of the universe, the values are simply
         // removed from the simulation.
         if (targetEntity == null) return;
 
-        targetEntity.recordAbsoluteTransfer(new AbsoluteTransferRecord(massTransfer, getTemperature(), forceXTransfer, forceYTransfer, inkTransfer, mInkColor));
+        targetEntity.recordAbsoluteTransfer(new AbsoluteTransferRecord(massTransfer, getTemperature(), forceXTransfer, forceYTransfer, inkColor));
     }
 
     public void recordRelativeTransfer(FluidEntity targetEntity, double ratio) {
@@ -365,24 +348,21 @@ public class FluidEntity implements IDimensionalEntity {
         final private double mMassTemperature;
         final private double mForceXTransfer;
         final private double mForceYTransfer;
-        final private double mInkTransfer;
         final private Color mInkColor;
 
 
-        public AbsoluteTransferRecord(double massTransfer, double massTemperature, double forceXTransfer, double forceYTransfer, double inkTransfer, Color inkColor) {
+        public AbsoluteTransferRecord(double massTransfer, double massTemperature, double forceXTransfer, double forceYTransfer, Color inkColor) {
             mMassTransfer = massTransfer;
             mMassTemperature = massTemperature;
             mForceXTransfer = forceXTransfer;
             mForceYTransfer = forceYTransfer;
-            mInkTransfer = inkTransfer;
             mInkColor = inkColor;
         }
 
         public void transfer(FluidEntity entity) {
-            entity.addMass(mMassTransfer, mMassTemperature);
+            entity.addMass(mMassTransfer, mMassTemperature, mInkColor);
             entity.applyForceX(mForceXTransfer);
             entity.applyForceY(mForceYTransfer);
-            entity.addInk(mInkTransfer, mInkColor);
         }
     }
 }

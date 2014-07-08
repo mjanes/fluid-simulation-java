@@ -2,8 +2,10 @@ package fluid.display;
 
 import fluid.camera.Camera;
 import fluid.entity.FluidEntity;
+import fluid.physics.FluidPhysics;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.paint.Color;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 
 import java.awt.geom.Point2D;
@@ -15,28 +17,50 @@ public class FluidEntityCanvas extends Canvas {
 
     public static final int EYE_DISTANCE = 5000;
 
+    public enum DrawType {
+        INK, HEAT, VELOCITY
+    }
+
     public FluidEntityCanvas(int width, int height, Camera camera) {
         super(width, height);
 
         mCamera = camera;
     }
 
-    public void drawEntities(final FluidEntity[][] entities) {
+    public void drawEntities(final FluidEntity[][] entities, final DrawType drawType) {
         final double canvasWidth = getWidth();
         final double canvasHeight = getHeight();
         final GraphicsContext gc = getGraphicsContext2D();
         gc.clearRect(0, 0, canvasWidth, canvasHeight);
 
 
-        int d1 = entities.length;
-        int d2 = entities[0].length;
-        IntStream.range(0, d1).forEach(x -> IntStream.range(0, d2).forEach(y -> drawEntity(gc, mCamera, entities[x][y], canvasWidth, canvasHeight)));
+        IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> drawEntity(gc, mCamera, entities[x][y], canvasWidth, canvasHeight, drawType)));
     }
 
-    private void drawEntity(final GraphicsContext gc, Camera camera, final FluidEntity entity, final double canvasWidth, final double canvasHeight) {
+    private void drawEntity(final GraphicsContext gc, Camera camera, final FluidEntity entity, final double canvasWidth, final double canvasHeight, final DrawType drawType) {
 
-        double radius = entity.getDisplayRadius();
-        if (radius < 1) {
+        double radius = 0;
+        Color color = Color.TRANSPARENT;
+
+        // NOTE: When this stops being 2D will have to calculate radius
+        if (drawType.equals(DrawType.INK)) {
+            radius = Math.sqrt(entity.getMass()); // NOTE: Probably want to change this to cube root when we go 3d
+            color = entity.getInk();
+        } else if (drawType.equals(DrawType.HEAT)) {
+            radius = Math.sqrt(entity.getMass());
+            double temperature = entity.getTemperature();
+            if (temperature < FluidPhysics.ROOM_TEMPERATURE) {
+                color = Color.BLUE;
+            } else {
+                double normalizedHot = (temperature - FluidPhysics.ROOM_TEMPERATURE) / FluidPhysics.ROOM_TEMPERATURE;
+                color = new Color(Math.min(1, normalizedHot), 0, 0, 1);
+            }
+        } else if (drawType.equals(DrawType.VELOCITY)) {
+            radius = 1;
+            color = Color.BLACK;
+        }
+
+        if (radius < 1 || color.equals(Color.TRANSPARENT)) {
             return;
         }
 
@@ -46,16 +70,18 @@ public class FluidEntityCanvas extends Canvas {
         double xP = point.getX();
         double yP = point.getY();
 
-        // entity.Entity color
-        gc.setFill(entity.getInkColor());
+
         // Subtract half the radius from the projection point, because g.fillOval does not surround the center point
 
+        gc.setFill(color);
         gc.fillOval((int) xP - radius / 2, (int) yP - radius / 2, radius, radius);
 
-//        FluidEntity vector = entity.getNextLocationAsFluidEntity();
-//        Point2D.Double vectorPoint = getCanvasLocation(camera, canvasWidth, canvasHeight, vector);
-//        gc.setStroke(Color.RED);
-//        gc.strokeLine(xP, yP, vectorPoint.getX(), vectorPoint.getY());
+        if (drawType.equals(DrawType.VELOCITY)) {
+            FluidEntity vector = entity.getNextLocationAsFluidEntity();
+            Point2D.Double vectorPoint = getCanvasLocation(camera, canvasWidth, canvasHeight, vector);
+            gc.setStroke(Color.RED);
+            gc.strokeLine(xP, yP, vectorPoint.getX(), vectorPoint.getY());
+        }
     }
 
     /**
