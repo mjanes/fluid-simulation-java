@@ -107,8 +107,6 @@ public class ExternalInput {
         entities[80][0].addMass(5, FluidPhysics.ROOM_TEMPERATURE + 30, Color.RED);
         entities[81][0].addMass(5, FluidPhysics.ROOM_TEMPERATURE + 25, Color.RED);
 
-
-
         // Neutral - smoke
         entities[40][40].setColor(Color.BLACK);
     }

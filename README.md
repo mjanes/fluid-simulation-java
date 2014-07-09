@@ -9,9 +9,6 @@ TODO:
 - Allow different types of fluids such as air and water
 - Allow phase transitions
 - Simulate viscosity
-- Simulate heat transfer
-- Better simulate gravity applying pressure
-- Differentiate between temperature and heat
 
 References:
 http://cowboyprogramming.com/2008/04/01/practical-fluid-mechanics/

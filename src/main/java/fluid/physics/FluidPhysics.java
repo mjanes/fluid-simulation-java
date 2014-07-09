@@ -16,12 +16,14 @@ public class FluidPhysics {
     public static final double DEFAULT_MASS = 10;
 
     private static final double CELL_AREA = Math.pow(FluidEntity.SPACE, 2);
-    private static final double GRAVITY_TO_VELOCITY_SCALE = .01;
 
+    private static final double GRAVITY_TO_VELOCITY_CONSTANT = .01;
+    private static final double CONDUCTION_CONSTANT = .01; // TODO: make this depend on type of cell
 
     public static void incrementFluid(FluidEntity[][] entities) {
         if (entities == null) return;
 
+        applyConduction(entities);
         applyPressure(entities);
         applyGravity(entities);
         advection(entities);
@@ -30,7 +32,6 @@ public class FluidPhysics {
 
 
     private static void applyPressure(FluidEntity[][] entities) {
-
         int d1 = entities.length;
         int d2 = entities[0].length;
 
@@ -77,9 +78,30 @@ public class FluidPhysics {
     }
 
     private static void applyGravityToCell(FluidEntity origin, FluidEntity target, int yOffset) {
-
         double massDifference = origin.getMass() - target.getMass();
-        origin.applyForceY(yOffset * -massDifference * GRAVITY_TO_VELOCITY_SCALE);
+        origin.applyForceY(yOffset * -massDifference * GRAVITY_TO_VELOCITY_CONSTANT);
+    }
+
+    private static void applyConduction(FluidEntity[][] entities) {
+        int d1 = entities.length;
+        int d2 = entities[0].length;
+
+        // pressure, heat, displacement, etc
+        IntStream.range(0, d1 - 1).parallel().forEach(x -> IntStream.range(0, d2 - 1).forEach(y -> {
+            FluidEntity entity = entities[x][y];
+
+            // Right entity
+            applyConductionBetweenCells(entity, entities[x + 1][y]);
+
+            // Upper entity
+            applyConductionBetweenCells(entity, entities[x][y + 1]);
+        }));
+    }
+
+    private static void applyConductionBetweenCells(FluidEntity a, FluidEntity b) {
+        double temperatureDifference = a.getTemperature() - b.getTemperature();
+        a.addHeat(-temperatureDifference * CONDUCTION_CONSTANT * b.getMass());
+        b.addHeat(temperatureDifference * CONDUCTION_CONSTANT * a.getMass());
     }
 
 
