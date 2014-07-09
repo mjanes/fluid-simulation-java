@@ -25,17 +25,15 @@ public class FluidPhysics {
         applyConduction(entities);
         applyPressure(entities);
         applyGravity(entities);
+        //applyViscosity(entities);
         advection(entities);
         applyStep(entities);
     }
 
 
     private static void applyPressure(FluidEntity[][] entities) {
-        int d1 = entities.length;
-        int d2 = entities[0].length;
-
         // pressure, heat, displacement, etc
-        IntStream.range(0, d1 - 1).parallel().forEach(x -> IntStream.range(0, d2 - 1).forEach(y -> {
+        IntStream.range(0, entities.length - 1).parallel().forEach(x -> IntStream.range(0, entities[x].length - 1).forEach(y -> {
             FluidEntity entity = entities[x][y];
 
             // Right entity
@@ -58,10 +56,7 @@ public class FluidPhysics {
     }
 
     private static void applyGravity(FluidEntity[][] entities) {
-        int d1 = entities.length;
-        int d2 = entities[0].length;
-
-        IntStream.range(0, d1).parallel().forEach(x -> IntStream.range(0, d2).forEach(y -> {
+        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> {
             FluidEntity entity = entities[x][y];
 
             // Lower entity
@@ -70,7 +65,7 @@ public class FluidPhysics {
             }
 
             // Upper entity
-            if (y + 1 < d2) {
+            if (y + 1 < entities[x].length) {
                 applyGravityToCell(entity, entities[x][y + 1], 1);
             }
         }));
@@ -82,11 +77,8 @@ public class FluidPhysics {
     }
 
     private static void applyConduction(FluidEntity[][] entities) {
-        int d1 = entities.length;
-        int d2 = entities[0].length;
-
         // pressure, heat, displacement, etc
-        IntStream.range(0, d1 - 1).parallel().forEach(x -> IntStream.range(0, d2 - 1).forEach(y -> {
+        IntStream.range(0, entities.length - 1).parallel().forEach(x -> IntStream.range(0, entities[x].length - 1).forEach(y -> {
             FluidEntity entity = entities[x][y];
 
             // Right entity
