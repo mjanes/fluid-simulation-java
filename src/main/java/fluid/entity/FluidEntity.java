@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class FluidEntity implements IDimensionalEntity {
 
     public static final int SPACE = 5; // spacing between entities, currently writing this that they must be placed on a grid
-    private static final double GAS_CONSTANT = .02; // TODO: Make this variable based on fluid material
+    private static final double GAS_CONSTANT = .02;
 
     protected double mX;
     protected double mY;
@@ -302,9 +302,29 @@ public class FluidEntity implements IDimensionalEntity {
      *
      * https://en.wikipedia.org/wiki/Pressure
      * http://www.passmyexams.co.uk/GCSE/physics/pressure-temperature-relationship-of-gas-pressure-law.html
+     * https://en.wikipedia.org/wiki/Charles%27s_Law
      */
     public synchronized double getPressure() {
-        return GAS_CONSTANT * mMass * getTemperature(); // NOTE: GAS_CONSTANT could be a variable that changes based on heat. Phase change
+        return GAS_CONSTANT * mMass * getTemperature() * getMolarWeight();
+    }
+
+    /**
+     * TODO: Make this variable based on the type of matter within the cell
+     *
+     * https://en.wikipedia.org/wiki/Avogadro%27s_law
+     */
+    private double getMolarWeight() {
+        return 1;
+    }
+
+
+    /**
+     * TODO: Make this a variable based on the type of matter within the cell.
+     *
+     * https://en.wikipedia.org/wiki/Thermal_conductivity
+     */
+    public double getConductivity() {
+        return .01;
     }
 
 
@@ -313,6 +333,7 @@ public class FluidEntity implements IDimensionalEntity {
     public synchronized FluidEntity getNextLocationAsFluidEntity(double velocityFactor) {
         return new FluidEntity(mX + (mDeltaX * velocityFactor), mY + (mDeltaY * velocityFactor), mZ + (mDeltaZ * velocityFactor), mMass, getTemperature());
     }
+
 
 
     /** Stepping from to the next increment of the simulation */
