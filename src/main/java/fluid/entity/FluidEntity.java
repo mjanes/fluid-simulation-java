@@ -29,7 +29,8 @@ public class FluidEntity implements IDimensionalEntity {
     protected Color mColor;
 
     protected final ConcurrentHashMap<RelativeTransferRecord, Integer> mRelativeTransferRecords = new ConcurrentHashMap<>();
-    protected final ConcurrentHashMap<AbsoluteTransferRecord, Integer> mAbsoluteTransferRecords = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<TransferToRecord, Integer> mIncomingTransferRecords = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<TransferAwayRecord, Integer> mOutgoingTransferRecords = new ConcurrentHashMap<>();
 
     public FluidEntity(double x, double y, double z, double mass, double temperature) {
         setX(x);
@@ -98,7 +99,12 @@ public class FluidEntity implements IDimensionalEntity {
         return mDeltaX;
     }
 
-    public synchronized void applyForceX(double forceX) {
+    public synchronized void addForceX(double forceX) {
+        if (mMass <= 0) {
+            setDeltaX(0);
+            return;
+        }
+
         addDeltaX(forceX / mMass);
     }
 
@@ -119,7 +125,12 @@ public class FluidEntity implements IDimensionalEntity {
         return mDeltaY;
     }
 
-    public synchronized void applyForceY(double forceY) {
+    public synchronized void addForceY(double forceY) {
+        if (mMass <= 0) {
+            setDeltaY(0);
+            return;
+        }
+
         addDeltaY(forceY / mMass);
     }
 
@@ -140,7 +151,11 @@ public class FluidEntity implements IDimensionalEntity {
         return mDeltaZ;
     }
 
-    public synchronized void applyForceZ(double forceZ) {
+    public synchronized void addForceZ(double forceZ) {
+        if (mMass <= 0) {
+            setDeltaY(0);
+            return;
+        }
         addDeltaZ(forceZ / mMass);
     }
 
@@ -153,6 +168,10 @@ public class FluidEntity implements IDimensionalEntity {
     /** Mass */
 
     public synchronized void setMass(double mass) {
+        if (mass < 0) {
+            mMass = 0;
+            return;
+        }
         mMass = mass;
     }
 
@@ -164,48 +183,79 @@ public class FluidEntity implements IDimensionalEntity {
         addMass(deltaMass, massTemperature, color, 0, 0);
     }
 
-    public synchronized void addMass(double deltaMass, double massTemperature, Color color, double velocityX, double velocityY) {
-        if (mMass + deltaMass < 0) {
+    public synchronized void addMass(double deltaMass, double massTemperature, Color color, double incomingDeltaX, double incomingDeltaY) {
+        if (deltaMass < 0) {
+            System.out.println("Negative delta mass in addMass");
+            return;
+        }
+
+        // We know that deltaMass > 0
+        // Order that these are done in is important. Must set delta after setting mass.
+
+        double oldDeltaX = getDeltaX();
+        double oldDeltaY = getDeltaY();
+
+        setMass(mMass + deltaMass);
+
+        double oldProportion = (mMass - deltaMass) / mMass;
+        double newProportion = deltaMass / mMass;
+
+        double newDeltaX = oldDeltaX * oldProportion + incomingDeltaX * newProportion;
+        double newDeltaY = oldDeltaY * oldProportion + incomingDeltaY * newProportion;
+
+        setDeltaX(newDeltaX);
+        setDeltaY(newDeltaY);
+
+        // Unlike force, heat is independent of mass.
+        addHeat(deltaMass * massTemperature);
+
+        if (!(color == null || color.equals(mColor))) {
+            // Ink - doing this in a separate block
+            double prevRed = mColor.getRed();
+            double prevGreen = mColor.getGreen();
+            double prevBlue = mColor.getBlue();
+            double prevAlpha = mColor.getOpacity();
+
+            double newRed = prevRed * oldProportion + color.getRed() * newProportion;
+            double newGreen = prevGreen * oldProportion + color.getGreen() * newProportion;
+            double newBlue = prevBlue * oldProportion + color.getBlue() * newProportion;
+            double newAlpha = prevAlpha * oldProportion + color.getOpacity() * newProportion;
+
+            if (newRed < 0) newRed = 0;
+            if (newGreen < 0) newGreen = 0;
+            if (newBlue < 0) newBlue = 0;
+            if (newAlpha < 0) newAlpha = 0;
+            if (newRed > 1) newRed = 1;
+            if (newGreen > 1) newGreen = 1;
+            if (newBlue > 1) newBlue = 1;
+            if (newAlpha > 1) newAlpha = 1;
+
+            setColor(new Color(newRed, newGreen, newBlue, newAlpha));
+        }
+    }
+
+    /**
+     * If the change in mass is negative, then the delta of the remaining mass will be the same, though the force
+     * of that mass will be correspondingly lessened.
+     *
+     * Heat though will be decreased.
+     *
+     * I suppose force is analogous to heat, and delta is analogous to temperature here.
+     */
+    private void subtractMass(double deltaMass) {
+        if (mMass + deltaMass <= 0) {
             setMass(0);
             setHeat(0);
             setDeltaX(0);
             setDeltaY(0);
             setDeltaZ(0);
-            return;
+        } else {
+            double proportion = deltaMass / mMass;
+            setMass(mMass + deltaMass);
+            addHeat(mHeat * proportion);
         }
-
-        setMass(mMass + deltaMass);
-        addHeat(deltaMass * massTemperature);
-        applyForceX(deltaMass * velocityX);
-        applyForceY(deltaMass * velocityY);
-
-        if (deltaMass < 0 || color == null || mColor.equals(color)) return;
-
-        // Ink
-        double prevRed = mColor.getRed();
-        double prevGreen = mColor.getGreen();
-        double prevBlue = mColor.getBlue();
-        double prevAlpha = mColor.getOpacity();
-
-        double oldProportion = (mMass - deltaMass) / mMass;
-        double newProportion = deltaMass / mMass;
-
-        double newRed = prevRed * oldProportion + color.getRed() * newProportion;
-        double newGreen = prevGreen * oldProportion + color.getGreen() * newProportion;
-        double newBlue = prevBlue * oldProportion + color.getBlue() * newProportion;
-        double newAlpha = prevAlpha * oldProportion + color.getOpacity() * newProportion;
-
-        if (newRed < 0) newRed = 0;
-        if (newGreen < 0) newGreen = 0;
-        if (newBlue < 0) newBlue = 0;
-        if (newAlpha < 0) newAlpha = 0;
-        if (newRed > 1)  newRed = 1;
-        if (newGreen > 1) newGreen = 1;
-        if (newBlue > 1)  newBlue = 1;
-        if (newAlpha > 1) newAlpha = 1;
-
-        setColor(new Color(newRed, newGreen, newBlue, newAlpha));
     }
+
 
 
     /** Ink */
@@ -230,6 +280,10 @@ public class FluidEntity implements IDimensionalEntity {
     }
 
     public synchronized void setHeat(double heat) {
+        if (heat < 0) {
+            mHeat = 0;
+            return;
+        }
         mHeat = heat;
     }
 
@@ -249,7 +303,7 @@ public class FluidEntity implements IDimensionalEntity {
      * https://en.wikipedia.org/wiki/Pressure
      * http://www.passmyexams.co.uk/GCSE/physics/pressure-temperature-relationship-of-gas-pressure-law.html
      */
-public synchronized double getPressure() {
+    public synchronized double getPressure() {
         return GAS_CONSTANT * mMass * getTemperature(); // NOTE: GAS_CONSTANT could be a variable that changes based on heat. Phase change
     }
 
@@ -280,24 +334,35 @@ public synchronized double getPressure() {
         mRelativeTransferRecords.clear();
     }
 
-    public void transferAbsoluteValues() {
-        for (AbsoluteTransferRecord absoluteTransferRecord : mAbsoluteTransferRecords.keySet()) {
-            absoluteTransferRecord.transfer(this);
+    public void transferOutgoingValues() {
+        for (TransferAwayRecord transferRecord : mOutgoingTransferRecords.keySet()) {
+            transferRecord.transfer(this);
         }
 
-        mAbsoluteTransferRecords.clear();
+        mOutgoingTransferRecords.clear();
+    }
+
+    public void transferIncomingValues() {
+        for (TransferToRecord transferRecord : mIncomingTransferRecords.keySet()) {
+            transferRecord.transfer(this);
+        }
+
+        mIncomingTransferRecords.clear();
     }
 
     private void recordAbsoluteTransfer(FluidEntity targetEntity, double ratio) {
+        if (mMass == 0 || ratio == 0) return;
+
         double massTransfer = mMass * ratio;
 
-        recordAbsoluteTransfer(new AbsoluteTransferRecord(-massTransfer, getTemperature(), mDeltaX, mDeltaY, null));
+        recordTransferAway(new TransferAwayRecord(-massTransfer));
 
         // If targetEntity is null, because the transfer is going off the border of the universe, the values are simply
         // removed from the simulation.
+        // TODO: Implement better/different borders for the the universe.
         if (targetEntity == null) return;
 
-        targetEntity.recordAbsoluteTransfer(new AbsoluteTransferRecord(massTransfer, getTemperature(), mDeltaX, mDeltaY, mColor));
+        targetEntity.recordTransferTo(new TransferToRecord(massTransfer, getTemperature(), getDeltaX(), getDeltaY(), mColor));
     }
 
     public void recordRelativeTransfer(FluidEntity targetEntity, double ratio) {
@@ -312,8 +377,12 @@ public synchronized double getPressure() {
         mRelativeTransferRecords.put(new RelativeTransferRecord(targetEntity, ratio), 0);
     }
 
-    public void recordAbsoluteTransfer(AbsoluteTransferRecord record) {
-        mAbsoluteTransferRecords.put(record, 0);
+    public void recordTransferTo(TransferToRecord record) {
+        mIncomingTransferRecords.put(record, 0);
+    }
+
+    public void recordTransferAway(TransferAwayRecord record) {
+        mOutgoingTransferRecords.put(record, 0);
     }
 
 
@@ -339,7 +408,7 @@ public synchronized double getPressure() {
     /**
      * An absolute transfer record records values to be added to this entity's.
      */
-    private static class AbsoluteTransferRecord {
+    private static class TransferToRecord {
 
         final private double mMassTransfer;
         final private double mMassTemperature;
@@ -347,8 +416,7 @@ public synchronized double getPressure() {
         final private double mVelocityY;
         final private Color mInkColor;
 
-
-        public AbsoluteTransferRecord(double massTransfer, double massTemperature, double velocityX, double velocityY, Color inkColor) {
+        public TransferToRecord(double massTransfer, double massTemperature, double velocityX, double velocityY, Color inkColor) {
             mMassTransfer = massTransfer;
             mMassTemperature = massTemperature;
             mVelocityX = velocityX;
@@ -359,5 +427,18 @@ public synchronized double getPressure() {
         public void transfer(FluidEntity entity) {
             entity.addMass(mMassTransfer, mMassTemperature, mInkColor, mVelocityX, mVelocityY);
         }
+    }
+
+    private static class TransferAwayRecord {
+        final private double mMassTransfer;
+
+        public TransferAwayRecord(double massTransfer) {
+            mMassTransfer = massTransfer;
+        }
+
+        public void transfer(FluidEntity entity) {
+            entity.subtractMass(mMassTransfer);
+        }
+
     }
 }

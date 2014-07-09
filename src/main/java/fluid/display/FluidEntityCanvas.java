@@ -23,7 +23,6 @@ public class FluidEntityCanvas extends Canvas {
 
     public FluidEntityCanvas(int width, int height, Camera camera) {
         super(width, height);
-
         mCamera = camera;
     }
 

@@ -15,9 +15,7 @@ public class UniversePhysics {
      * @param entities Entities to run universe physics on.
      */
     public static synchronized void updateUniverseState(FluidEntity[][] entities) {
-        if (entities == null) return;
-
-        getStats(entities);
+        //getStats(entities);
 
         ExternalInput.applyInput(entities, sStep);
         FluidPhysics.incrementFluid(entities);
@@ -46,39 +44,20 @@ public class UniversePhysics {
         double maxDeltaY = 0;
         double minDeltaY = 0;
 
-        for (FluidEntity[] row : entities) {
-            for (FluidEntity entity : row) {
-                if (entity.getMass() > maxMass) {
-                    maxMass = entity.getMass();
-                }
-                if (entity.getMass() < minMass) {
-                    minMass = entity.getMass();
-                }
-                if (entity.getHeat() > maxHeat) {
-                    maxHeat = entity.getHeat();
-                }
-                if (entity.getHeat() < minHeat) {
-                    minHeat = entity.getHeat();
-                }
-                if (entity.getTemperature() > maxTemperature) {
-                    maxTemperature = entity.getTemperature();
-                }
-                if (entity.getTemperature() < minTemperature) {
-                    minTemperature = entity.getTemperature();
-                }
-                if (entity.getDeltaX() > maxDeltaX) {
-                    maxDeltaX = entity.getDeltaX();
-                }
-                if (entity.getDeltaX() < minDeltaX) {
-                    minDeltaX = entity.getDeltaX();
-                }
-                if (entity.getDeltaY() > maxDeltaY) {
-                    maxDeltaY = entity.getDeltaY();
-                }
-                if (entity.getDeltaY() < minDeltaY) {
-                    minDeltaY = entity.getDeltaY();
-                }
+        for (int i = 0; i < entities.length; i++) {
+            for (int j = 0; j < entities[i].length; j++) {
+                FluidEntity entity = entities[i][j];
 
+                if (entity.getMass() > maxMass) maxMass = entity.getMass();
+                if (entity.getMass() < minMass) minMass = entity.getMass();
+                if (entity.getHeat() > maxHeat) maxHeat = entity.getHeat();
+                if (entity.getHeat() < minHeat) minHeat = entity.getHeat();
+                if (entity.getTemperature() > maxTemperature) maxTemperature = entity.getTemperature();
+                if (entity.getTemperature() < minTemperature) minTemperature = entity.getTemperature();
+                if (entity.getDeltaX() > maxDeltaX) maxDeltaX = entity.getDeltaX();
+                if (entity.getDeltaX() < minDeltaX) minDeltaX = entity.getDeltaX();
+                if (entity.getDeltaY() > maxDeltaY) maxDeltaY = entity.getDeltaY();
+                if (entity.getDeltaY() < minDeltaY) minDeltaY = entity.getDeltaY();
 
                 totalMass += entity.getMass();
                 totalHeat += entity.getHeat();

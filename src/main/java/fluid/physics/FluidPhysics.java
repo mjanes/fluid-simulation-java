@@ -50,11 +50,11 @@ public class FluidPhysics {
     private static void applyPressureBetweenCells(FluidEntity a, FluidEntity b, boolean xOffset, boolean yOffset) {
         double pressureDifference = a.getPressure() - b.getPressure();
         if (pressureDifference > 0) {
-            if (xOffset) a.applyForceX(pressureDifference);
-            if (yOffset) a.applyForceY(pressureDifference);
+            if (xOffset) a.addForceX(pressureDifference);
+            if (yOffset) a.addForceY(pressureDifference);
         } else if (pressureDifference < 0) {
-            if (xOffset) b.applyForceX(pressureDifference);
-            if (yOffset) b.applyForceY(pressureDifference);
+            if (xOffset) b.addForceX(pressureDifference);
+            if (yOffset) b.addForceY(pressureDifference);
         }
     }
 
@@ -79,7 +79,7 @@ public class FluidPhysics {
 
     private static void applyGravityToCell(FluidEntity origin, FluidEntity target, int yOffset) {
         double massDifference = origin.getMass() - target.getMass();
-        origin.applyForceY(yOffset * -massDifference * GRAVITY_TO_VELOCITY_CONSTANT);
+        origin.addForceY(yOffset * -massDifference * GRAVITY_TO_VELOCITY_CONSTANT);
     }
 
     private static void applyConduction(FluidEntity[][] entities) {
@@ -119,7 +119,8 @@ public class FluidPhysics {
 
     private static void applyStep(FluidEntity[][] entities) {
         IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferRelativeValues()));
-        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferAbsoluteValues()));
+        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferOutgoingValues()));
+        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferIncomingValues()));
     }
 
     /**

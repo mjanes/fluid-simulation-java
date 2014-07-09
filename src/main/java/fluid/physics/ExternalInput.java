@@ -41,65 +41,14 @@ public class ExternalInput {
     private static void setNeutral(FluidEntity entity) {
         entity.setMass(FluidPhysics.DEFAULT_MASS);
         entity.setTemperature(FluidPhysics.ROOM_TEMPERATURE);
+        entity.setDeltaX(0);
+        entity.setDeltaY(0);
+        entity.setDeltaZ(0);
     }
 
     private static void smallInput(FluidEntity[][] entities, int timestep) {
         entities[entities.length / 2][0].addMass(5, FluidPhysics.ROOM_TEMPERATURE + 15, Color.RED);
     }
-
-//    private static void inputExplosion(FluidEntity[][] entities, int timestep) {
-//        if (timestep < 5) {
-//            entities[70][20].addHeat(5000);
-//            entities[70][20].setColor(Color.RED);
-//        } else if (timestep < 50) {
-//            entities[70][20].addHeat(2000);
-//            entities[70][20].setColor(Color.RED);
-//        }
-//    }
-
-//    private static void inputOriginal(FluidEntity[][] entities, int timestep) {
-//        double factor = Math.abs(Math.sin(Math.toRadians(timestep * 3)));
-//
-//        entities[0][0].setMass(factor * 600 + 50);
-//        entities[0][0].setColor(Color.ORANGE);
-//        entities[0][0].applyForceX(factor * 14);
-//        entities[0][0].applyForceY(factor * 8);
-//        entities[0][0].setTemperature(factor * 20);
-//
-//        entities[1][0].setMass(factor * 500 + 20);
-//        entities[1][0].setColor(Color.RED);
-//        entities[1][0].applyForceX(factor * 11);
-//        entities[1][0].applyForceY(factor * 7);
-//        entities[1][0].setTemperature(10);
-//
-//        factor = Math.abs(Math.sin(Math.toRadians(timestep * 2)));
-//        entities[0][1].setMass(factor * 500 + 100);
-//        entities[0][1].setColor(Color.ORANGE);
-//        entities[0][1].addDeltaX(12);
-//        entities[0][1].addDeltaY(7);
-//        entities[0][1].setTemperature(10);
-//
-//        entities[1][1].setMass(factor * 200);
-//        entities[1][1].setColor(Color.YELLOW);
-//        entities[1][1].addDeltaX(12);
-//        entities[1][1].addDeltaY(6);
-//        entities[1][1].setTemperature(factor * 20);
-//
-//
-//        factor = Math.abs(Math.cos(Math.toRadians(timestep * 2)));
-//        entities[120][80].setMass(600 * factor);
-//        entities[120][80].setDeltaX(-30 * factor + 10);
-//        entities[120][80].setDeltaY(-4);
-//        entities[120][80].setColor(Color.BLUE);
-//
-//
-//        factor = Math.abs(Math.sin(Math.toRadians(timestep)));
-//        entities[100][10].setMass(400 * (1 - factor));
-//        entities[100][10].setDeltaX(-20 * factor + 5);
-//        entities[100][10].setDeltaY(4);
-//        entities[100][10].setTemperature((1 - factor) * 20);
-//        entities[100][10].setColor(Color.GREEN);
-//    }
 
     private static void inputHeat(FluidEntity[][] entities) {
         // Hot
