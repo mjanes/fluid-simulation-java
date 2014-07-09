@@ -13,8 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class FluidEntity implements IDimensionalEntity {
 
     public static final int SPACE = 5; // spacing between entities, currently writing this that they must be placed on a grid
-    private static final double GAS_CONSTANT = .02;
-
+    private static final double GAS_CONSTANT = .02; // TODO: Make this variable based on fluid material
 
     protected double mX;
     protected double mY;
@@ -235,22 +234,23 @@ public class FluidEntity implements IDimensionalEntity {
     }
 
     public synchronized void addHeat(double deltaHeat) {
-        if (mHeat + deltaHeat < 0) {
-            setHeat(0);
-            return;
-        }
         setHeat(mHeat + deltaHeat);
     }
 
     public synchronized double getHeat() { return mHeat; }
 
 
-    /** Pressure */
-
-    public synchronized double getPressure() {
-        // https://en.wikipedia.org/wiki/Pressure
-        // http://www.passmyexams.co.uk/GCSE/physics/pressure-temperature-relationship-of-gas-pressure-law.html
-        return mHeat * GAS_CONSTANT; // NOTE: GAS_CONSTANT could be a variable that changes based on heat. Phase change
+    /**
+     * Pressure
+     *
+     * We are presuming that the volume of of a fluid entity cell is constant, but the amount of mass, and
+     * the temperature of that mass may change.
+     *
+     * https://en.wikipedia.org/wiki/Pressure
+     * http://www.passmyexams.co.uk/GCSE/physics/pressure-temperature-relationship-of-gas-pressure-law.html
+     */
+public synchronized double getPressure() {
+        return GAS_CONSTANT * mMass * getTemperature(); // NOTE: GAS_CONSTANT could be a variable that changes based on heat. Phase change
     }
 
 

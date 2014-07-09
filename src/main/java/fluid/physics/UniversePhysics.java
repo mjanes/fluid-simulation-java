@@ -41,6 +41,10 @@ public class UniversePhysics {
         double minHeat = entities[0][0].getHeat();
         double maxTemperature = 0;
         double minTemperature = entities[0][0].getTemperature();
+        double maxDeltaX = 0;
+        double minDeltaX = 0;
+        double maxDeltaY = 0;
+        double minDeltaY = 0;
 
         for (FluidEntity[] row : entities) {
             for (FluidEntity entity : row) {
@@ -62,6 +66,19 @@ public class UniversePhysics {
                 if (entity.getTemperature() < minTemperature) {
                     minTemperature = entity.getTemperature();
                 }
+                if (entity.getDeltaX() > maxDeltaX) {
+                    maxDeltaX = entity.getDeltaX();
+                }
+                if (entity.getDeltaX() < minDeltaX) {
+                    minDeltaX = entity.getDeltaX();
+                }
+                if (entity.getDeltaY() > maxDeltaY) {
+                    maxDeltaY = entity.getDeltaY();
+                }
+                if (entity.getDeltaY() < minDeltaY) {
+                    minDeltaY = entity.getDeltaY();
+                }
+
 
                 totalMass += entity.getMass();
                 totalHeat += entity.getHeat();
@@ -89,9 +106,15 @@ public class UniversePhysics {
         System.out.println("Average temperature: " + totalTemperature / (entities.length * entities[0].length));
 
         System.out.println("Total delta x: " + totalDeltaX);
-        System.out.println("Total delta y: " + totalDeltaY);
         System.out.println("Total absolute delta x: " + totalAbsoluteDeltaX);
+        System.out.println("Max delta x: " + maxDeltaX);
+        System.out.println("Min delta x: " + minDeltaX);
+
+        System.out.println("Total delta y: " + totalDeltaY);
         System.out.println("Total absolute delta y: " + totalAbsoluteDeltaY);
+        System.out.println("Max delta y: " + maxDeltaY);
+        System.out.println("Min delta y: " + minDeltaY);
+
         System.out.println("");
     }
 
