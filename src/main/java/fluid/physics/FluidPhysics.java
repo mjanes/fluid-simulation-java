@@ -92,44 +92,39 @@ public class FluidPhysics {
 
     private static void applyGravity(FluidEntity[][] entities) {
         IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length - 1).forEach(y -> {
-            FluidEntity entity = entities[x][y];
-            applyGravityToCell(entity, entities[x][y + 1]);
+            FluidEntity lower = entities[x][y];
+            FluidEntity upper = entities[x][y + 1];
+            double massDifference = upper.getMass() - lower.getMass();
+            if (massDifference > 0) {
+                upper.addForceY(-massDifference * GRAVITATIONAL_CONSTANT);
+            }
         }));
     }
 
-    private static void applyGravityToCell(FluidEntity lower, FluidEntity upper) {
-        double massDifference = upper.getMass() - lower.getMass();
-        if (massDifference > 0) {
-            upper.addForceY(-massDifference * GRAVITATIONAL_CONSTANT);
-        }
-    }
-
+    /**
+     * https://en.wikipedia.org/wiki/Shear_stress
+     */
     private static void applyViscosity(FluidEntity[][] entities) {
         IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> {
-            FluidEntity entity = entities[x][y];
+            FluidEntity a = entities[x][y];
 
             // Right entity
             if (x + 1 < entities.length) {
-                applyViscosityBetweenCells(entity, entities[x + 1][y]);
+                FluidEntity b = entities[x + 1][y];
+                double deltaYDifference = a.getDeltaY() - b.getDeltaY();
+                a.addForceY(-deltaYDifference * b.getViscosity() * b.getMass());
+                b.addForceY(deltaYDifference * a.getViscosity() * a.getMass());
             }
 
             // Upper entity
             if (y + 1 < entities[x].length) {
-                applyViscosityBetweenCells(entity, entities[x][y + 1]);
+                FluidEntity b = entities[x][y + 1];
+                double deltaXDifference = a.getDeltaX() - b.getDeltaX();
+                a.addForceX(-deltaXDifference * b.getViscosity() * b.getMass());
+                b.addForceX(deltaXDifference * a.getViscosity() * a.getMass());
             }
         }));
     }
-
-    private static void applyViscosityBetweenCells(FluidEntity a, FluidEntity b) {
-        double deltaXDifference = a.getDeltaX() - b.getDeltaX();
-        a.addForceX(-deltaXDifference * b.getViscosity() * b.getMass());
-        b.addForceX(deltaXDifference * a.getViscosity() * a.getMass());
-
-        double deltaYDifference = a.getDeltaY() - b.getDeltaY();
-        a.addForceY(-deltaYDifference * b.getViscosity() * b.getMass());
-        b.addForceY(deltaYDifference * a.getViscosity() * a.getMass());
-    }
-
 
     /**
      * Advection moves the quantities from point to its connections/neighbors. Quantities include velocity/mass/heat/etc.
