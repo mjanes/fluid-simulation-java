@@ -19,6 +19,10 @@ public class FluidPhysics {
 
     private static final double GRAVITATIONAL_CONSTANT = .01; // TODO: Better handle gravity
 
+    public enum BorderType {REFLECTIVE, OPEN, NULLING};
+
+    private static BorderType sBorderType = BorderType.NULLING;
+
     public static void incrementFluid(FluidEntity[][] entities) {
         if (entities == null) return;
 
@@ -27,7 +31,6 @@ public class FluidPhysics {
         applyPressure(entities);
         applyGravity(entities);
         applyViscosity(entities);
-        applyBorder(entities);
 
         // transfer logging
         advection(entities);
@@ -37,16 +40,42 @@ public class FluidPhysics {
     }
 
 
-    private static void applyPressure(FluidEntity[][] entities) {
-        // pressure, heat, displacement, etc
-        IntStream.range(0, entities.length - 1).parallel().forEach(x -> IntStream.range(0, entities[x].length - 1).forEach(y -> {
+    private static void applyConduction(FluidEntity[][] entities) {
+        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> {
             FluidEntity entity = entities[x][y];
 
             // Right entity
-            applyPressureBetweenCells(entity, entities[x + 1][y], true, false);
+            if (x + 1 < entities.length) {
+                applyConductionBetweenCells(entity, entities[x + 1][y]);
+            }
 
             // Upper entity
-            applyPressureBetweenCells(entity, entities[x][y + 1], false, true);
+            if (y + 1 < entities[x].length) {
+                applyConductionBetweenCells(entity, entities[x][y + 1]);
+            }
+        }));
+    }
+
+    private static void applyConductionBetweenCells(FluidEntity a, FluidEntity b) {
+        double temperatureDifference = a.getTemperature() - b.getTemperature();
+        a.addHeat(-temperatureDifference * b.getConductivity() * b.getMass());
+        b.addHeat(temperatureDifference * a.getConductivity() * a.getMass());
+    }
+
+    private static void applyPressure(FluidEntity[][] entities) {
+        // pressure, heat, displacement, etc
+        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> {
+            FluidEntity entity = entities[x][y];
+
+            // Right entity
+            if (x + 1 < entities.length) {
+                applyPressureBetweenCells(entity, entities[x + 1][y], true, false);
+            }
+
+            // Upper entity
+            if (y + 1 < entities[x].length) {
+                applyPressureBetweenCells(entity, entities[x][y + 1], false, true);
+            }
         }));
     }
 
@@ -82,38 +111,21 @@ public class FluidPhysics {
         origin.addForceY(yOffset * -massDifference * GRAVITATIONAL_CONSTANT);
     }
 
-    private static void applyConduction(FluidEntity[][] entities) {
-        // pressure, heat, displacement, etc
-        IntStream.range(0, entities.length - 1).parallel().forEach(x -> IntStream.range(0, entities[x].length - 1).forEach(y -> {
-            FluidEntity entity = entities[x][y];
-
-            // Right entity
-            applyConductionBetweenCells(entity, entities[x + 1][y]);
-
-            // Upper entity
-            applyConductionBetweenCells(entity, entities[x][y + 1]);
-        }));
-    }
-
-    private static void applyConductionBetweenCells(FluidEntity a, FluidEntity b) {
-        double temperatureDifference = a.getTemperature() - b.getTemperature();
-        a.addHeat(-temperatureDifference * b.getConductivity() * b.getMass());
-        b.addHeat(temperatureDifference * a.getConductivity() * a.getMass());
-    }
-
     private static void applyViscosity(FluidEntity[][] entities) {
-        // pressure, heat, displacement, etc
-        IntStream.range(0, entities.length - 1).parallel().forEach(x -> IntStream.range(0, entities[x].length - 1).forEach(y -> {
+        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> {
             FluidEntity entity = entities[x][y];
 
             // Right entity
-            applyViscosityBetweenCells(entity, entities[x + 1][y]);
+            if (x + 1 < entities.length) {
+                applyViscosityBetweenCells(entity, entities[x + 1][y]);
+            }
 
             // Upper entity
-            applyViscosityBetweenCells(entity, entities[x][y + 1]);
+            if (y + 1 < entities[x].length) {
+                applyViscosityBetweenCells(entity, entities[x][y + 1]);
+            }
         }));
     }
-
 
     private static void applyViscosityBetweenCells(FluidEntity a, FluidEntity b) {
         double deltaXDifference = a.getDeltaX() - b.getDeltaX();
@@ -123,39 +135,6 @@ public class FluidPhysics {
         double deltaYDifference = a.getDeltaY() - b.getDeltaY();
         a.addForceY(-deltaYDifference * b.getViscosity() * b.getMass());
         b.addForceY(deltaYDifference * a.getViscosity() * a.getMass());
-    }
-
-
-    private static void applyBorder(FluidEntity[][] entities) {
-        // At the moment making the border reflect everything.
-
-        // left side
-        for (int i = 0; i < entities[0].length; i++) {
-            if (entities[0][i].getDeltaX() < 0) {
-                entities[0][i].setDeltaX(-entities[0][i].getDeltaX());
-            }
-        }
-
-        // right side
-        for (int i = 0; i < entities[0].length; i++) {
-            if (entities[entities.length - 1][i].getDeltaX() > 0) {
-                entities[entities.length - 1][i].setDeltaX(-entities[0][i].getDeltaX());
-            }
-        }
-
-        // bottom side
-        for (int i = 0; i < entities.length; i++) {
-            if (entities[i][0].getDeltaY() < 0) {
-                entities[i][0].setDeltaY(-entities[i][0].getDeltaY());
-            }
-        }
-
-        // top side
-        for (int i = 0; i < entities.length; i++) {
-            if (entities[i][entities[i].length - 1].getDeltaY() < 0) {
-                entities[i][entities[i].length - 1].setDeltaY(-entities[entities[i].length - 1][0].getDeltaY());
-            }
-        }
     }
 
 
@@ -278,17 +257,6 @@ public class FluidPhysics {
             System.out.println("Math problem!");
         }
 
-        /*
-         * To achieve this result I first create a list that for each point records the four points that are sources for
-         * that point, and the fraction of each point they want. Simultaneously I accumulate the fractions asked of each
-         * source point. In an ideal world, this would add up to one, as the entire value is being moved somewhere
-         * (including partially back where it started). But with our compressible field the amount of the value in each
-         * point that is being moved can be greater than or less than one. If the total fraction required is greater
-         * than one, then we can simply scale all the requested fraction by this value, which means the total will be
-         * one. If less than one, then the requesting points can have the full amount requested. We should not scale in
-         * this case as it will lead to significant errors.
-         */
-
         transferFrom(entity, entities, t1x, t1y, bottomLeftRatio);
         transferFrom(entity, entities, t2x, t1y, bottomRightRatio);
         transferFrom(entity, entities, t1x, t2y, topLeftRatio);
@@ -309,14 +277,41 @@ public class FluidPhysics {
         return targetIndex;
     }
 
+
     private static void transferTo(FluidEntity entity, FluidEntity[][] entities, int targetXIndex, int targetYIndex, double ratio) {
         FluidEntity targetEntity = null;
 
+        // If this is true, the target entity is on screen.
         if (!(targetXIndex < 0 || targetYIndex < 0 || targetXIndex >= entities.length || targetYIndex >= entities[targetXIndex].length)) {
             targetEntity = entities[targetXIndex][targetYIndex];
+
         }
 
-        entity.recordRelativeTransfer(targetEntity, ratio);
+        if (targetEntity == null) {
+            if (sBorderType.equals(BorderType.OPEN)) {
+                entity.recordRelativeTransfer(targetEntity, ratio);
+            } else {
+                // Testing, if the entity would target off screen, reflect/bounce back
+                // Or just neutralize?
+                if (targetXIndex < 0 || targetXIndex >= entities.length) {
+                    if (sBorderType.equals(BorderType.REFLECTIVE)) {
+                        entity.setDeltaX(-entity.getDeltaX());
+                    } else if (sBorderType.equals(BorderType.NULLING)) {
+                        entity.setDeltaX(0);
+                    }
+                }
+                if (targetYIndex < 0 || targetYIndex >= entities[0].length) {
+                    if (sBorderType.equals(BorderType.REFLECTIVE)) {
+                        entity.setDeltaY(-entity.getDeltaY());
+                    } else if (sBorderType.equals(BorderType.NULLING)) {
+                        entity.setDeltaY(0);
+                    }
+                }
+            }
+
+        } else {
+            entity.recordRelativeTransfer(targetEntity, ratio);
+        }
     }
 
     private static void transferFrom(FluidEntity entity, FluidEntity[][] entities, int originXIndex, int originYIndex, double ratio) {

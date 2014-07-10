@@ -41,7 +41,7 @@ public class ExternalInput {
         }
     }
 
-    private static void setNeutral(FluidEntity entity) {
+    public static void setNeutral(FluidEntity entity) {
         entity.setMass(FluidPhysics.DEFAULT_MASS);
         entity.setTemperature(FluidPhysics.ROOM_TEMPERATURE);
         entity.setDeltaX(0);

@@ -304,8 +304,10 @@ public class FluidEntity implements IDimensionalEntity {
      * http://www.passmyexams.co.uk/GCSE/physics/pressure-temperature-relationship-of-gas-pressure-law.html
      * https://en.wikipedia.org/wiki/Charles%27s_Law
      */
+    private double mPressure;
     public synchronized double getPressure() {
-        return GAS_CONSTANT * mMass * getTemperature() / getMolarWeight();
+        mPressure = GAS_CONSTANT * mHeat / getMolarWeight();
+        return mPressure;
     }
 
     /**
@@ -327,7 +329,9 @@ public class FluidEntity implements IDimensionalEntity {
         return .01;
     }
 
-
+    /**
+     * https://en.wikipedia.org/wiki/Viscosity
+     */
     public double getViscosity() {
         return .01;
     }
@@ -378,13 +382,12 @@ public class FluidEntity implements IDimensionalEntity {
     private void recordAbsoluteTransfer(FluidEntity targetEntity, double ratio) {
         if (mMass == 0 || ratio == 0) return;
 
-        // If targetEntity is null, it is because the transfer is going off the border of the universe
-        if (targetEntity == null) return;
-
         double massTransfer = mMass * ratio;
 
         recordTransferAway(new TransferAwayRecord(-massTransfer));
 
+        // If targetEntity is null, it is because the transfer is going off the border of the universe
+        if (targetEntity == null) return;
         targetEntity.recordTransferTo(new TransferToRecord(massTransfer, getTemperature(), getDeltaX(), getDeltaY(), mColor));
     }
 

@@ -13,7 +13,7 @@ public class Setup {
 
     private static double sZDistance = 5000;
 
-    private static final int SIZE = 175;
+    private static final int SIZE = 150;
     public static FluidEntity[][] create() {
         return grid(SIZE);
         //return rayleighTaylor(SIZE);
@@ -38,6 +38,9 @@ public class Setup {
         return entities;
     }
 
+    /**
+     * https://en.wikipedia.org/wiki/Rayleigh%E2%80%93Taylor_instability
+     */
     private static FluidEntity[][] rayleighTaylor(int numEntitiesOnSide) {
         FluidEntity[][] entities = new FluidEntity[numEntitiesOnSide][numEntitiesOnSide];
 
@@ -52,13 +55,13 @@ public class Setup {
 
                 FluidEntity entity;
                 if (j > numEntitiesOnSide / 2) {
-                    entity = new FluidEntity(x, y, z, FluidPhysics.DEFAULT_MASS * 2, FluidPhysics.ROOM_TEMPERATURE);
+                    entity = new FluidEntity(x, y, z, FluidPhysics.DEFAULT_MASS * 4, FluidPhysics.ROOM_TEMPERATURE);
                     entity.setColor(Color.BLUE);
                     if (Math.random() < .01) {
                         entity.addMass(FluidPhysics.DEFAULT_MASS, FluidPhysics.DEFAULT_MASS, Color.BLACK);
                     }
                 } else {
-                    entity = new FluidEntity(x, y, z, FluidPhysics.DEFAULT_MASS, FluidPhysics.ROOM_TEMPERATURE);
+                    entity = new FluidEntity(x, y, z, FluidPhysics.DEFAULT_MASS / 4, FluidPhysics.ROOM_TEMPERATURE);
                     entity.setColor(Color.RED);
                 }
                 entities[i][j] = entity;
