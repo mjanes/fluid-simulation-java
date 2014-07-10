@@ -16,7 +16,7 @@ public class ExternalInput {
         //inputNeutral(entities);
         //inputBreeze(entities);
 
-        inputHeat(entities);
+        inputHeat(entities, timestep);
 
         //smallInput(entities, timestep);
     }
@@ -59,7 +59,7 @@ public class ExternalInput {
         entities[81][0].addMass(12, FluidPhysics.ROOM_TEMPERATURE + 25, Color.ORANGERED);
     }
 
-    private static void inputHeat(FluidEntity[][] entities) {
+    private static void inputHeat(FluidEntity[][] entities, int step) {
         entities[79][0].addHeat(FluidPhysics.ROOM_TEMPERATURE + 25);
         entities[79][0].setColor(Color.ORANGERED);
         entities[80][0].addHeat(FluidPhysics.ROOM_TEMPERATURE + 30);

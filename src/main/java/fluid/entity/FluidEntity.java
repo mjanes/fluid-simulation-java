@@ -105,6 +105,8 @@ public class FluidEntity implements IDimensionalEntity {
             return;
         }
 
+        // TODO: Probably need some efficiency thing here, if mass is too small, and force is too high, turn some energy
+        // into heat?
         addDeltaX(forceX / mMass);
     }
 
@@ -131,6 +133,8 @@ public class FluidEntity implements IDimensionalEntity {
             return;
         }
 
+        // TODO: Probably need some efficiency thing here, if mass is too small, and force is too high, turn some energy
+        // into heat?
         addDeltaY(forceY / mMass);
     }
 
@@ -153,9 +157,13 @@ public class FluidEntity implements IDimensionalEntity {
 
     public synchronized void addForceZ(double forceZ) {
         if (mMass <= 0) {
-            setDeltaY(0);
+            setDeltaZ(0);
             return;
         }
+
+
+        // TODO: Probably need some efficiency thing here, if mass is too small, and force is too high, turn some energy
+        // into heat?
         addDeltaZ(forceZ / mMass);
     }
 
@@ -276,6 +284,7 @@ public class FluidEntity implements IDimensionalEntity {
     }
 
     public synchronized double getTemperature() {
+        if (mMass <= 0) return 0;
         return mHeat / mMass;
     }
 
@@ -304,15 +313,12 @@ public class FluidEntity implements IDimensionalEntity {
      * http://www.passmyexams.co.uk/GCSE/physics/pressure-temperature-relationship-of-gas-pressure-law.html
      * https://en.wikipedia.org/wiki/Charles%27s_Law
      */
-    private double mPressure;
     public synchronized double getPressure() {
-        mPressure = GAS_CONSTANT * mHeat / getMolarWeight();
-        return mPressure;
+        return GAS_CONSTANT * mMass * getTemperature() / getMolarWeight();
     }
 
-    /**
-     * TODO: Make the below variables based on the type of matter within the cell
-     */
+
+     // TODO: Make the below variables based on the type of matter within the cell
 
     /**
      * https://en.wikipedia.org/wiki/Avogadro%27s_law

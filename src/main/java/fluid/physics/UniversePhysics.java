@@ -44,17 +44,12 @@ public class UniversePhysics {
         double maxDeltaY = 0;
         double minDeltaY = 0;
 
-        int xOfMassMass = 0;
-        int yOfMassMass = 0;
-
         for (int i = 0; i < entities.length; i++) {
             for (int j = 0; j < entities[i].length; j++) {
                 FluidEntity entity = entities[i][j];
 
                 if (entity.getMass() > maxMass) {
                     maxMass = entity.getMass();
-                    xOfMassMass = i;
-                    yOfMassMass = j;
                 }
                 if (entity.getMass() < minMass) minMass = entity.getMass();
                 if (entity.getHeat() > maxHeat) maxHeat = entity.getHeat();

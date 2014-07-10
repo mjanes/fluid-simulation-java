@@ -49,7 +49,8 @@ public class FluidEntityCanvas extends Canvas {
             radius = Math.sqrt(entity.getMass());
             double temperature = entity.getTemperature();
             if (temperature < FluidPhysics.ROOM_TEMPERATURE) {
-                color = Color.BLUE;
+                double normalizedCold = (FluidPhysics.ROOM_TEMPERATURE - temperature) / FluidPhysics.ROOM_TEMPERATURE;
+                color = new Color(0, normalizedCold, 0, 1);
             } else {
                 double normalizedHot = (temperature - FluidPhysics.ROOM_TEMPERATURE) / FluidPhysics.ROOM_TEMPERATURE;
                 color = new Color(Math.min(1, normalizedHot), 0, 0, 1);

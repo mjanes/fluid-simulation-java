@@ -17,7 +17,7 @@ public class FluidPhysics {
 
     private static final double CELL_AREA = Math.pow(FluidEntity.SPACE, 2);
 
-    private static final double GRAVITATIONAL_CONSTANT = .01; // TODO: Better handle gravity
+    private static final double GRAVITATIONAL_CONSTANT = .02; // TODO: Better handle gravity
 
     public enum BorderType {REFLECTIVE, OPEN, NULLING};
 
@@ -91,24 +91,17 @@ public class FluidPhysics {
     }
 
     private static void applyGravity(FluidEntity[][] entities) {
-        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> {
+        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length - 1).forEach(y -> {
             FluidEntity entity = entities[x][y];
-
-            // Lower entity
-            if (y > 0) {
-                applyGravityToCell(entity, entities[x][y - 1], -1);
-            }
-
-            // Upper entity
-            if (y + 1 < entities[x].length) {
-                applyGravityToCell(entity, entities[x][y + 1], 1);
-            }
+            applyGravityToCell(entity, entities[x][y + 1]);
         }));
     }
 
-    private static void applyGravityToCell(FluidEntity origin, FluidEntity target, int yOffset) {
-        double massDifference = origin.getMass() - target.getMass();
-        origin.addForceY(yOffset * -massDifference * GRAVITATIONAL_CONSTANT);
+    private static void applyGravityToCell(FluidEntity lower, FluidEntity upper) {
+        double massDifference = upper.getMass() - lower.getMass();
+        if (massDifference > 0) {
+            upper.addForceY(-massDifference * GRAVITATIONAL_CONSTANT);
+        }
     }
 
     private static void applyViscosity(FluidEntity[][] entities) {
