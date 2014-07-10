@@ -305,12 +305,14 @@ public class FluidEntity implements IDimensionalEntity {
      * https://en.wikipedia.org/wiki/Charles%27s_Law
      */
     public synchronized double getPressure() {
-        return GAS_CONSTANT * mMass * getTemperature() * getMolarWeight();
+        return GAS_CONSTANT * mMass * getTemperature() / getMolarWeight();
     }
 
     /**
-     * TODO: Make this variable based on the type of matter within the cell
-     *
+     * TODO: Make the below variables based on the type of matter within the cell
+     */
+
+    /**
      * https://en.wikipedia.org/wiki/Avogadro%27s_law
      */
     private double getMolarWeight() {
@@ -319,14 +321,16 @@ public class FluidEntity implements IDimensionalEntity {
 
 
     /**
-     * TODO: Make this a variable based on the type of matter within the cell.
-     *
      * https://en.wikipedia.org/wiki/Thermal_conductivity
      */
     public double getConductivity() {
         return .01;
     }
 
+
+    public double getViscosity() {
+        return .01;
+    }
 
     /** For display */
 

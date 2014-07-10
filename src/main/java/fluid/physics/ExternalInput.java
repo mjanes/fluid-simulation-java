@@ -10,11 +10,11 @@ public class ExternalInput {
 
     public static void applyInput(FluidEntity[][] entities, int timestep) {
         neutralizeBorder(entities);
-        //inputOriginal(entities);
+        //inputExplosion(entities, timestep);
         inputHeat(entities);
         inputNeutral(entities);
         inputBreeze(entities);
-        //inputExplosion(entities, timestep);
+
         //smallInput(entities, timestep);
     }
 
@@ -51,14 +51,12 @@ public class ExternalInput {
     }
 
     private static void inputHeat(FluidEntity[][] entities) {
-        // Hot
-        entities[79][0].addMass(15, FluidPhysics.ROOM_TEMPERATURE + 25, Color.RED);
-        entities[80][0].addMass(15, FluidPhysics.ROOM_TEMPERATURE + 30, Color.RED);
-        entities[81][0].addMass(15, FluidPhysics.ROOM_TEMPERATURE + 25, Color.RED);
+        entities[79][0].addMass(12, FluidPhysics.ROOM_TEMPERATURE + 25, Color.ORANGERED);
+        entities[80][0].addMass(20, FluidPhysics.ROOM_TEMPERATURE + 30, Color.RED);
+        entities[81][0].addMass(12, FluidPhysics.ROOM_TEMPERATURE + 25, Color.ORANGERED);
     }
 
     private static void inputNeutral(FluidEntity[][] entities) {
-        // Neutral - smoke
         entities[40][40].setColor(Color.BLACK);
     }
 
@@ -68,11 +66,10 @@ public class ExternalInput {
     }
 
     private static void inputExplosion(FluidEntity[][] entities, int timestep) {
-        FluidEntity entity = entities[60][60];
-        if (timestep < 5) {
+        FluidEntity entity = entities[80][40];
+        if (timestep < 3) {
             entity.addMass(FluidPhysics.DEFAULT_MASS * 100, FluidPhysics.ROOM_TEMPERATURE * 10, Color.RED);
         }
-
     }
 
 }

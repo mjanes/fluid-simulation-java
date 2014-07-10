@@ -25,7 +25,7 @@ public class FluidPhysics {
         applyConduction(entities);
         applyPressure(entities);
         applyGravity(entities);
-        //applyViscosity(entities);
+        applyViscosity(entities);
         advection(entities);
         applyStep(entities);
     }
@@ -93,6 +93,30 @@ public class FluidPhysics {
         double temperatureDifference = a.getTemperature() - b.getTemperature();
         a.addHeat(-temperatureDifference * b.getConductivity() * b.getMass());
         b.addHeat(temperatureDifference * a.getConductivity() * a.getMass());
+    }
+
+    private static void applyViscosity(FluidEntity[][] entities) {
+        // pressure, heat, displacement, etc
+        IntStream.range(0, entities.length - 1).parallel().forEach(x -> IntStream.range(0, entities[x].length - 1).forEach(y -> {
+            FluidEntity entity = entities[x][y];
+
+            // Right entity
+            applyViscosityBetweenCells(entity, entities[x + 1][y]);
+
+            // Upper entity
+            applyViscosityBetweenCells(entity, entities[x][y + 1]);
+        }));
+    }
+
+
+    private static void applyViscosityBetweenCells(FluidEntity a, FluidEntity b) {
+        double deltaXDifference = a.getDeltaX() - b.getDeltaX();
+        a.addForceX(-deltaXDifference * b.getViscosity() * b.getMass());
+        b.addForceX(deltaXDifference * a.getViscosity() * a.getMass());
+
+        double deltaYDifference = a.getDeltaY() - b.getDeltaY();
+        a.addForceY(-deltaXDifference * b.getViscosity() * b.getMass());
+        b.addForceY(deltaXDifference * a.getViscosity() * a.getMass());
     }
 
 
