@@ -378,14 +378,12 @@ public class FluidEntity implements IDimensionalEntity {
     private void recordAbsoluteTransfer(FluidEntity targetEntity, double ratio) {
         if (mMass == 0 || ratio == 0) return;
 
+        // If targetEntity is null, it is because the transfer is going off the border of the universe
+        if (targetEntity == null) return;
+
         double massTransfer = mMass * ratio;
 
         recordTransferAway(new TransferAwayRecord(-massTransfer));
-
-        // If targetEntity is null, because the transfer is going off the border of the universe, the values are simply
-        // removed from the simulation.
-        // TODO: Implement better/different borders for the the universe.
-        if (targetEntity == null) return;
 
         targetEntity.recordTransferTo(new TransferToRecord(massTransfer, getTemperature(), getDeltaX(), getDeltaY(), mColor));
     }

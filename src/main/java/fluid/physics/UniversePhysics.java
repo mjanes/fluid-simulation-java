@@ -15,7 +15,7 @@ public class UniversePhysics {
      * @param entities Entities to run universe physics on.
      */
     public static synchronized void updateUniverseState(FluidEntity[][] entities) {
-        //getStats(entities);
+        getStats(entities);
 
         ExternalInput.applyInput(entities, sStep);
         FluidPhysics.incrementFluid(entities);

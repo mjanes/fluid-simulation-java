@@ -9,11 +9,14 @@ import javafx.scene.paint.Color;
 public class ExternalInput {
 
     public static void applyInput(FluidEntity[][] entities, int timestep) {
-        neutralizeBorder(entities);
+        //neutralizeBorder(entities);
         //inputExplosion(entities, timestep);
+
+        //inputHotMass(entities);
+        //inputNeutral(entities);
+        //inputBreeze(entities);
+
         inputHeat(entities);
-        inputNeutral(entities);
-        inputBreeze(entities);
 
         //smallInput(entities, timestep);
     }
@@ -50,10 +53,19 @@ public class ExternalInput {
         entities[entities.length / 2][0].addMass(5, FluidPhysics.ROOM_TEMPERATURE + 15, Color.RED);
     }
 
-    private static void inputHeat(FluidEntity[][] entities) {
+    private static void inputHotMass(FluidEntity[][] entities) {
         entities[79][0].addMass(12, FluidPhysics.ROOM_TEMPERATURE + 25, Color.ORANGERED);
         entities[80][0].addMass(20, FluidPhysics.ROOM_TEMPERATURE + 30, Color.RED);
         entities[81][0].addMass(12, FluidPhysics.ROOM_TEMPERATURE + 25, Color.ORANGERED);
+    }
+
+    private static void inputHeat(FluidEntity[][] entities) {
+        entities[79][0].addHeat(FluidPhysics.ROOM_TEMPERATURE + 25);
+        entities[79][0].setColor(Color.ORANGERED);
+        entities[80][0].addHeat(FluidPhysics.ROOM_TEMPERATURE + 30);
+        entities[80][0].setColor(Color.RED);
+        entities[81][0].addHeat(FluidPhysics.ROOM_TEMPERATURE + 25);
+        entities[81][0].setColor(Color.ORANGERED);
     }
 
     private static void inputNeutral(FluidEntity[][] entities) {

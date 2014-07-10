@@ -22,11 +22,17 @@ public class FluidPhysics {
     public static void incrementFluid(FluidEntity[][] entities) {
         if (entities == null) return;
 
+        // force applications
         applyConduction(entities);
         applyPressure(entities);
         applyGravity(entities);
         applyViscosity(entities);
+        applyBorder(entities);
+
+        // transfer logging
         advection(entities);
+
+        // transfer application
         applyStep(entities);
     }
 
@@ -115,8 +121,41 @@ public class FluidPhysics {
         b.addForceX(deltaXDifference * a.getViscosity() * a.getMass());
 
         double deltaYDifference = a.getDeltaY() - b.getDeltaY();
-        a.addForceY(-deltaXDifference * b.getViscosity() * b.getMass());
-        b.addForceY(deltaXDifference * a.getViscosity() * a.getMass());
+        a.addForceY(-deltaYDifference * b.getViscosity() * b.getMass());
+        b.addForceY(deltaYDifference * a.getViscosity() * a.getMass());
+    }
+
+
+    private static void applyBorder(FluidEntity[][] entities) {
+        // At the moment making the border reflect everything.
+
+        // left side
+        for (int i = 0; i < entities[0].length; i++) {
+            if (entities[0][i].getDeltaX() < 0) {
+                entities[0][i].setDeltaX(-entities[0][i].getDeltaX());
+            }
+        }
+
+        // right side
+        for (int i = 0; i < entities[0].length; i++) {
+            if (entities[entities.length - 1][i].getDeltaX() > 0) {
+                entities[entities.length - 1][i].setDeltaX(-entities[0][i].getDeltaX());
+            }
+        }
+
+        // bottom side
+        for (int i = 0; i < entities.length; i++) {
+            if (entities[i][0].getDeltaY() < 0) {
+                entities[i][0].setDeltaY(-entities[i][0].getDeltaY());
+            }
+        }
+
+        // top side
+        for (int i = 0; i < entities.length; i++) {
+            if (entities[i][entities[i].length - 1].getDeltaY() < 0) {
+                entities[i][entities[i].length - 1].setDeltaY(-entities[entities[i].length - 1][0].getDeltaY());
+            }
+        }
     }
 
 

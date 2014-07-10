@@ -79,7 +79,7 @@ public class Main extends Application {
     private VBox getDisplayTypeButtons() {
         RadioButton inkButton = new RadioButton("Ink");
         RadioButton massButton = new RadioButton("Mass");
-        RadioButton heatButton = new RadioButton("Heat");
+        RadioButton heatButton = new RadioButton("Temperature");
         RadioButton velocityButton = new RadioButton("Velocity");
 
         ToggleGroup displayTypeGroup = new ToggleGroup();
@@ -94,7 +94,7 @@ public class Main extends Application {
             } else if (displayTypeGroup.getSelectedToggle().equals(massButton)) {
                 mDrawType = FluidEntityCanvas.DrawType.MASS;
             } else if (displayTypeGroup.getSelectedToggle().equals(heatButton)) {
-                mDrawType = FluidEntityCanvas.DrawType.HEAT;
+                mDrawType = FluidEntityCanvas.DrawType.TEMPERATURE;
             } else if (displayTypeGroup.getSelectedToggle().equals(velocityButton)) {
                 mDrawType = FluidEntityCanvas.DrawType.VELOCITY;
             }
