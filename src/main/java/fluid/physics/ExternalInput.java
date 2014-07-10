@@ -9,14 +9,13 @@ import javafx.scene.paint.Color;
 public class ExternalInput {
 
     public static void applyInput(FluidEntity[][] entities, int timestep) {
-        //neutralizeBorder(entities);
+        neutralizeBorder(entities);
         //inputExplosion(entities, timestep);
 
-        //inputHotMass(entities);
-        //inputNeutral(entities);
-        //inputBreeze(entities);
+        inputCandle(entities);
+        inputBreeze(entities);
 
-        inputHeat(entities, timestep);
+        //inputHeat(entities, timestep);
 
         //smallInput(entities, timestep);
     }
@@ -53,10 +52,10 @@ public class ExternalInput {
         entities[entities.length / 2][0].addMass(5, FluidPhysics.ROOM_TEMPERATURE + 15, Color.RED);
     }
 
-    private static void inputHotMass(FluidEntity[][] entities) {
-        entities[79][0].addMass(12, FluidPhysics.ROOM_TEMPERATURE + 25, Color.ORANGERED);
-        entities[80][0].addMass(20, FluidPhysics.ROOM_TEMPERATURE + 30, Color.RED);
-        entities[81][0].addMass(12, FluidPhysics.ROOM_TEMPERATURE + 25, Color.ORANGERED);
+    private static void inputCandle(FluidEntity[][] entities) {
+        entities[79][0].addMass(12, FluidPhysics.ROOM_TEMPERATURE + 25, Color.ORANGERED, 0, 1);
+        entities[80][0].addMass(20, FluidPhysics.ROOM_TEMPERATURE + 30, Color.RED, 0, 1);
+        entities[81][0].addMass(12, FluidPhysics.ROOM_TEMPERATURE + 25, Color.ORANGERED, 0, 1);
     }
 
     private static void inputHeat(FluidEntity[][] entities, int step) {
@@ -73,8 +72,8 @@ public class ExternalInput {
     }
 
     private static void inputBreeze(FluidEntity[][] entities) {
-        entities[0][entities[0].length * 2/3].addMass(3, FluidPhysics.ROOM_TEMPERATURE - 1, Color.BLUE, 2, 0);
-        entities[0][entities[0].length * 2/3 + 1].addMass(3, FluidPhysics.ROOM_TEMPERATURE - 1, Color.BLUE, 2, 0);
+        entities[0][entities[0].length * 2/3].addMass(5, FluidPhysics.ROOM_TEMPERATURE - 1, Color.BLUE, 4, 0);
+        entities[0][entities[0].length * 2/3 + 1].addMass(5, FluidPhysics.ROOM_TEMPERATURE - 1, Color.BLUE, 4, 0);
     }
 
     private static void inputExplosion(FluidEntity[][] entities, int timestep) {
