@@ -17,7 +17,8 @@ public class FluidPhysics {
 
     private static final double CELL_AREA = Math.pow(FluidEntity.SPACE, 2);
 
-    private static final double GRAVITATIONAL_CONSTANT = .02; // TODO: Better handle gravity
+    private static final double WEIGHT_ABOVE = 1000;
+    private static final double GRAVITATIONAL_CONSTANT = .00001;
 
     public enum BorderType {REFLECTIVE, OPEN, NULLING};
 
@@ -91,14 +92,30 @@ public class FluidPhysics {
     }
 
     private static void applyGravity(FluidEntity[][] entities) {
-        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length - 1).forEach(y -> {
-            FluidEntity lower = entities[x][y];
-            FluidEntity upper = entities[x][y + 1];
-            double massDifference = upper.getMass() - lower.getMass();
-            if (massDifference > 0) {
-                upper.addForceY(-massDifference * GRAVITATIONAL_CONSTANT);
+        final double[][] downwardPressure = new double[entities.length][entities[0].length];
+        for (int i = 0; i < entities.length; i++) {
+            downwardPressure[i][entities[i].length - 1] = WEIGHT_ABOVE * GRAVITATIONAL_CONSTANT;
+        };
+
+        for (int i = 0; i < entities.length; i++) {
+            for (int j = entities[i].length - 2; j >= 0; j--) {
+                downwardPressure[i][j] = downwardPressure[i][j + 1] + (entities[i][j].getMass() * GRAVITATIONAL_CONSTANT);
             }
+        }
+
+        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> {
+            entities[x][y].addForceY(-downwardPressure[x][y]);
         }));
+
+
+//        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length - 1).forEach(y -> {
+//            FluidEntity lower = entities[x][y];
+//            FluidEntity upper = entities[x][y + 1];
+//            double massDifference = upper.getMass() - lower.getMass();
+//            if (massDifference > 0) {
+//                upper.addForceY(-massDifference * GRAVITATIONAL_CONSTANT);
+//            }
+//        }));
     }
 
     /**
@@ -193,6 +210,40 @@ public class FluidPhysics {
         transferTo(entity, entities, t2x, t2y, topRightRatio);
     }
 
+    private static void transferTo(FluidEntity entity, FluidEntity[][] entities, int targetXIndex, int targetYIndex, double ratio) {
+        FluidEntity targetEntity = null;
+
+        // If this is true, the target entity is on screen.
+        if (!(targetXIndex < 0 || targetYIndex < 0 || targetXIndex >= entities.length || targetYIndex >= entities[targetXIndex].length)) {
+            targetEntity = entities[targetXIndex][targetYIndex];
+        }
+
+        if (targetEntity == null) {
+            if (sBorderType.equals(BorderType.OPEN)) {
+                entity.recordRelativeTransfer(targetEntity, ratio);
+            } else {
+                // Testing, if the entity would target off screen, reflect/bounce back
+                // Or just neutralize?
+                if (targetXIndex < 0 || targetXIndex >= entities.length) {
+                    if (sBorderType.equals(BorderType.REFLECTIVE)) {
+                        entity.setDeltaX(-entity.getDeltaX());
+                    } else if (sBorderType.equals(BorderType.NULLING)) {
+                        entity.setDeltaX(0);
+                    }
+                }
+                if (targetYIndex < 0 || targetYIndex >= entities[0].length) {
+                    if (sBorderType.equals(BorderType.REFLECTIVE)) {
+                        entity.setDeltaY(-entity.getDeltaY());
+                    } else if (sBorderType.equals(BorderType.NULLING)) {
+                        entity.setDeltaY(0);
+                    }
+                }
+            }
+        } else {
+            entity.recordRelativeTransfer(targetEntity, ratio);
+        }
+    }
+
     /**
      * https://en.wikipedia.org/wiki/Bilinear_interpolation
      */
@@ -251,6 +302,13 @@ public class FluidPhysics {
         transferFrom(entity, entities, t2x, t2y, topRightRatio);
     }
 
+    private static void transferFrom(FluidEntity entity, FluidEntity[][] entities, int originXIndex, int originYIndex, double ratio) {
+        if (originXIndex < 0) return;
+        if (originYIndex < 0) return;
+        if (originXIndex >= entities.length) return;
+        if (originYIndex >= entities[originXIndex].length) return;
+        entities[originXIndex][originYIndex].recordRelativeTransfer(entity, ratio);
+    }
 
     private static int getLesserTargetIndex(int sourceIndex, int indexOffset, boolean directionPositive) {
 
@@ -263,51 +321,6 @@ public class FluidPhysics {
         }
 
         return targetIndex;
-    }
-
-
-    private static void transferTo(FluidEntity entity, FluidEntity[][] entities, int targetXIndex, int targetYIndex, double ratio) {
-        FluidEntity targetEntity = null;
-
-        // If this is true, the target entity is on screen.
-        if (!(targetXIndex < 0 || targetYIndex < 0 || targetXIndex >= entities.length || targetYIndex >= entities[targetXIndex].length)) {
-            targetEntity = entities[targetXIndex][targetYIndex];
-
-        }
-
-        if (targetEntity == null) {
-            if (sBorderType.equals(BorderType.OPEN)) {
-                entity.recordRelativeTransfer(targetEntity, ratio);
-            } else {
-                // Testing, if the entity would target off screen, reflect/bounce back
-                // Or just neutralize?
-                if (targetXIndex < 0 || targetXIndex >= entities.length) {
-                    if (sBorderType.equals(BorderType.REFLECTIVE)) {
-                        entity.setDeltaX(-entity.getDeltaX());
-                    } else if (sBorderType.equals(BorderType.NULLING)) {
-                        entity.setDeltaX(0);
-                    }
-                }
-                if (targetYIndex < 0 || targetYIndex >= entities[0].length) {
-                    if (sBorderType.equals(BorderType.REFLECTIVE)) {
-                        entity.setDeltaY(-entity.getDeltaY());
-                    } else if (sBorderType.equals(BorderType.NULLING)) {
-                        entity.setDeltaY(0);
-                    }
-                }
-            }
-
-        } else {
-            entity.recordRelativeTransfer(targetEntity, ratio);
-        }
-    }
-
-    private static void transferFrom(FluidEntity entity, FluidEntity[][] entities, int originXIndex, int originYIndex, double ratio) {
-        if (originXIndex < 0) return;
-        if (originYIndex < 0) return;
-        if (originXIndex >= entities.length) return;
-        if (originYIndex >= entities[originXIndex].length) return;
-        entities[originXIndex][originYIndex].recordRelativeTransfer(entity, ratio);
     }
 
 }
