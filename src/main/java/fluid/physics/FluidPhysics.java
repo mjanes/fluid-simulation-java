@@ -17,12 +17,21 @@ public class FluidPhysics {
 
     private static final double CELL_AREA = Math.pow(FluidEntity.SPACE, 2);
 
-    private static final double WEIGHT_ABOVE = 1000;
+    private static final double WEIGHT_ABOVE = 100;
     private static final double GRAVITATIONAL_CONSTANT = .00001;
 
-    public enum BorderType {REFLECTIVE, OPEN, NULLING};
+    // TODO: Other border types to introduce:
+    // - viscous
+    // - something that isn't 100% reflective, but say converts x into y or something...
+    public enum BorderType {
+        REFLECTIVE,
+        OPEN, // TODO: Need to improve open, to deal with off screen pressure, and issues with reverse advection
+        NULLING};
 
-    private static BorderType sBorderType = BorderType.NULLING;
+    private static BorderType sBottomBorderType = BorderType.REFLECTIVE;
+    private static BorderType sLeftBorderType = BorderType.REFLECTIVE;
+    private static BorderType sRightBorderType = BorderType.REFLECTIVE;
+    private static BorderType sUpperBorderType = BorderType.OPEN;
 
     public static void incrementFluid(FluidEntity[][] entities) {
         if (entities == null) return;
@@ -33,11 +42,16 @@ public class FluidPhysics {
         applyGravity(entities);
         applyViscosity(entities);
 
+        // check for border effect
+        checkBorder(entities);
+
         // transfer logging
         advection(entities);
 
         // transfer application
-        applyStep(entities);
+        IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferRelativeValues()));
+        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferOutgoingValues()));
+        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferIncomingValues()));
     }
 
 
@@ -57,6 +71,10 @@ public class FluidPhysics {
         }));
     }
 
+    /**
+     * TODO: As this step is modifying the heat value based on the current temp, we should probably be storing these
+     * as transfers, so that order of operations doesn't affect things.
+     */
     private static void applyConductionBetweenCells(FluidEntity a, FluidEntity b) {
         double temperatureDifference = a.getTemperature() - b.getTemperature();
         a.addHeat(-temperatureDifference * b.getConductivity() * b.getMass());
@@ -106,19 +124,12 @@ public class FluidPhysics {
         IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> {
             entities[x][y].addForceY(-downwardPressure[x][y]);
         }));
-
-
-//        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length - 1).forEach(y -> {
-//            FluidEntity lower = entities[x][y];
-//            FluidEntity upper = entities[x][y + 1];
-//            double massDifference = upper.getMass() - lower.getMass();
-//            if (massDifference > 0) {
-//                upper.addForceY(-massDifference * GRAVITATIONAL_CONSTANT);
-//            }
-//        }));
     }
 
     /**
+     * TODO: As this step is modifying the delta values based on current deltas, we should probably be storing these
+     * as transfers, so that order of operations doesn't affect things.
+     *
      * https://en.wikipedia.org/wiki/Shear_stress
      */
     private static void applyViscosity(FluidEntity[][] entities) {
@@ -129,16 +140,71 @@ public class FluidPhysics {
             if (x + 1 < entities.length) {
                 FluidEntity b = entities[x + 1][y];
                 double deltaYDifference = a.getDeltaY() - b.getDeltaY();
-                a.addForceY(-deltaYDifference * b.getViscosity() * b.getMass());
-                b.addForceY(deltaYDifference * a.getViscosity() * a.getMass());
+                double totalMass = a.getMass() + b.getMass();
+                double combinedViscosity = a.getViscosity() * (a.getMass() / totalMass)
+                        + b.getViscosity() * (b.getMass() / totalMass);
+
+                a.addDeltaY((b.getMass() / totalMass) * deltaYDifference * combinedViscosity);
+                b.addDeltaY((a.getMass() / totalMass) * deltaYDifference * combinedViscosity);
             }
 
             // Upper entity
             if (y + 1 < entities[x].length) {
                 FluidEntity b = entities[x][y + 1];
                 double deltaXDifference = a.getDeltaX() - b.getDeltaX();
-                a.addForceX(-deltaXDifference * b.getViscosity() * b.getMass());
-                b.addForceX(deltaXDifference * a.getViscosity() * a.getMass());
+                double totalMass = a.getMass() + b.getMass();
+                double combinedViscosity = a.getViscosity() * (a.getMass() / totalMass)
+                        + b.getViscosity() * (b.getMass() / totalMass);
+
+                a.addDeltaX((b.getMass() / totalMass) * deltaXDifference * combinedViscosity);
+                b.addDeltaX((a.getMass() / totalMass) * deltaXDifference * combinedViscosity);
+            }
+        }));
+    }
+
+    private static void checkBorder(FluidEntity[][] entities) {
+        // Presume everything is in grid for simplicty's sake
+        // get max and min x and y for everything
+        double minX = entities[0][0].getX();
+        double minY = entities[0][0].getY();
+        double maxX = entities[entities.length - 1][0].getX();
+        double maxY = entities[0][entities[0].length - 1].getY();
+
+        IntStream.range(0, entities.length).parallel().forEach(i -> IntStream.range(0, entities[i].length).forEach(j -> {
+            FluidEntity entity = entities[i][j];
+            double nextX = entity.getX() + entity.getDeltaX();
+            double nextY = entity.getY() + entity.getDeltaY();
+
+            if (nextX < minX) {
+                if (sLeftBorderType.equals(BorderType.REFLECTIVE)) {
+                    entity.setDeltaX(-entity.getDeltaX());
+                } else if (sLeftBorderType.equals(BorderType.NULLING)) {
+                    entity.setDeltaX(0);
+                }
+            }
+
+            if (nextX > maxX) {
+                if (sRightBorderType.equals(BorderType.REFLECTIVE)) {
+                    entity.setDeltaX(-entity.getDeltaX());
+                } else if (sRightBorderType.equals(BorderType.NULLING)) {
+                    entity.setDeltaX(0);
+                }
+            }
+
+            if (nextY < minY) {
+                if (sBottomBorderType.equals(BorderType.REFLECTIVE)) {
+                    entity.setDeltaY(-entity.getDeltaY());
+                } else if (sBottomBorderType.equals(BorderType.NULLING)) {
+                    entity.setDeltaY(0);
+                }
+            }
+
+            if (nextY > maxY){
+                if (sUpperBorderType.equals(BorderType.REFLECTIVE)) {
+                    entity.setDeltaY(-entity.getDeltaY());
+                } else if (sUpperBorderType.equals(BorderType.NULLING)) {
+                    entity.setDeltaY(0);
+                }
             }
         }));
     }
@@ -148,29 +214,21 @@ public class FluidPhysics {
      * The amount moved from one point to another is based on the given point's velocity.
      */
     private static void advection(FluidEntity[][] entities) {
-        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> {
-            forwardAdvectionCellTransfer(entities, x, y);
-            reverseAdvectionCellTransfer(entities, x, y);
+        IntStream.range(0, entities.length).parallel().forEach(i -> IntStream.range(0, entities[i].length).forEach(j -> {
+            forwardAdvectionCellTransfer(entities, i, j);
+            reverseAdvectionCellTransfer(entities, i, j);
         }));
-    }
-
-
-    private static void applyStep(FluidEntity[][] entities) {
-        IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferRelativeValues()));
-        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferOutgoingValues()));
-        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferIncomingValues()));
     }
 
     /**
      * https://en.wikipedia.org/wiki/Bilinear_interpolation
      */
     private static void forwardAdvectionCellTransfer(FluidEntity[][] entities, int xIndex, int yIndex) {
-
         FluidEntity entity = entities[xIndex][yIndex];
         double deltaX = entity.getDeltaX();
         double deltaY = entity.getDeltaY();
 
-        if (deltaX == 0 && deltaY == 0) return; // unsure this is needed
+        if (deltaX == 0 && deltaY == 0) return;
 
         int xIndexOffset = (int) deltaX / FluidEntity.SPACE;
         int yIndexOffset = (int) deltaY / FluidEntity.SPACE;
@@ -218,30 +276,7 @@ public class FluidPhysics {
             targetEntity = entities[targetXIndex][targetYIndex];
         }
 
-        if (targetEntity == null) {
-            if (sBorderType.equals(BorderType.OPEN)) {
-                entity.recordRelativeTransfer(targetEntity, ratio);
-            } else {
-                // Testing, if the entity would target off screen, reflect/bounce back
-                // Or just neutralize?
-                if (targetXIndex < 0 || targetXIndex >= entities.length) {
-                    if (sBorderType.equals(BorderType.REFLECTIVE)) {
-                        entity.setDeltaX(-entity.getDeltaX());
-                    } else if (sBorderType.equals(BorderType.NULLING)) {
-                        entity.setDeltaX(0);
-                    }
-                }
-                if (targetYIndex < 0 || targetYIndex >= entities[0].length) {
-                    if (sBorderType.equals(BorderType.REFLECTIVE)) {
-                        entity.setDeltaY(-entity.getDeltaY());
-                    } else if (sBorderType.equals(BorderType.NULLING)) {
-                        entity.setDeltaY(0);
-                    }
-                }
-            }
-        } else {
-            entity.recordRelativeTransfer(targetEntity, ratio);
-        }
+        entity.recordRelativeTransfer(targetEntity, ratio);
     }
 
     /**
@@ -311,16 +346,7 @@ public class FluidPhysics {
     }
 
     private static int getLesserTargetIndex(int sourceIndex, int indexOffset, boolean directionPositive) {
-
-        int targetIndex;
-
-        if (directionPositive) {
-            targetIndex = sourceIndex + indexOffset;
-        } else {
-            targetIndex = sourceIndex + indexOffset - 1;
-        }
-
-        return targetIndex;
+        return sourceIndex + indexOffset + (directionPositive ? 0 : -1);
     }
 
 }

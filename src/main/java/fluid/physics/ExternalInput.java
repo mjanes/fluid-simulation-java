@@ -9,17 +9,21 @@ import javafx.scene.paint.Color;
 public class ExternalInput {
 
     public static void applyInput(FluidEntity[][] entities, int timestep) {
-        neutralizeBorder(entities);
+        //neutralizeBorder(entities);
         //inputExplosion(entities, timestep);
 
-        inputCandle(entities);
-        inputBreeze(entities);
+        //inputCandle(entities);
+        //inputBreeze(entities);
 
         //inputHeat(entities, timestep);
+        inputHotplate(entities, timestep);
 
         //smallInput(entities, timestep);
     }
 
+    /**
+     * TODO: Now that we're doing pressure differential from top to bottom, need to improve how this done.
+     */
     private static void neutralizeBorder(FluidEntity[][] entities) {
         // left side
         for (FluidEntity entity : entities[0]) {
@@ -83,4 +87,13 @@ public class ExternalInput {
         }
     }
 
+    /**
+     * https://en.wikipedia.org/wiki/Rayleigh%E2%80%93B%C3%A9nard_convection
+     */
+    private static void inputHotplate(FluidEntity[][] entities, int timestep) {
+        for (FluidEntity[] entityRow : entities) {
+            // bottom side
+            entityRow[0].setTemperature(FluidPhysics.ROOM_TEMPERATURE * 3);
+        }
+    }
 }

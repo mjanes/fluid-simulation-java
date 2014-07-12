@@ -296,6 +296,10 @@ public class FluidEntity implements IDimensionalEntity {
         mHeat = heat;
     }
 
+    /**
+     * TODO: Should probably make efficiency thing so that if you try to add too much heat to something with too little
+     * mass the temperature doesn't skyrocket. Just some... efficiency of transfer?
+     */
     public synchronized void addHeat(double deltaHeat) {
         setHeat(mHeat + deltaHeat);
     }
@@ -409,10 +413,16 @@ public class FluidEntity implements IDimensionalEntity {
         mRelativeTransferRecords.put(new RelativeTransferRecord(targetEntity, ratio), 0);
     }
 
+    /**
+     * Transferring mass to a fluid entity
+     */
     public void recordTransferTo(TransferToRecord record) {
         mIncomingTransferRecords.put(record, 0);
     }
 
+    /**
+     * Transferring mass away from entity.
+     */
     public void recordTransferAway(TransferAwayRecord record) {
         mOutgoingTransferRecords.put(record, 0);
     }

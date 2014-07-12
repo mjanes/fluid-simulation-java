@@ -13,13 +13,15 @@ public class Setup {
 
     private static double sZDistance = 5000;
 
-    private static final int SIZE = 175;
+    private static final int SIZE = 150;
+
     public static FluidEntity[][] create() {
-        return grid(SIZE);
+        //return square(SIZE);
+        return rectangle(300, 60);
         //return rayleighTaylor(SIZE);
     }
 
-    private static FluidEntity[][] grid(int numEntitiesOnSide) {
+    private static FluidEntity[][] square(int numEntitiesOnSide) {
         FluidEntity[][] entities = new FluidEntity[numEntitiesOnSide][numEntitiesOnSide];
 
         IntStream.range(0, numEntitiesOnSide).forEach(i -> {
@@ -37,6 +39,26 @@ public class Setup {
 
         return entities;
     }
+
+    private static FluidEntity[][] rectangle(int width, int height) {
+        FluidEntity[][] entities = new FluidEntity[width][height];
+
+        IntStream.range(0, width).forEach(i -> {
+
+            double x = (i - width / 2) * FluidEntity.SPACE;
+
+            IntStream.range(0, height).forEach(j -> {
+                double y = (j - height / 2) * FluidEntity.SPACE;
+                double z = sZDistance;
+
+                FluidEntity entity = new FluidEntity(x, y, z, FluidPhysics.DEFAULT_MASS, FluidPhysics.ROOM_TEMPERATURE);
+                entities[i][j] = entity;
+            });
+        });
+
+        return entities;
+    }
+
 
     /**
      * https://en.wikipedia.org/wiki/Rayleigh%E2%80%93Taylor_instability
