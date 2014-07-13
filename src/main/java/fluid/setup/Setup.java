@@ -1,7 +1,7 @@
 package fluid.setup;
 
 import fluid.entity.FluidEntity;
-import fluid.physics.FluidPhysics;
+import fluid.entity.IFluidEntity;
 import javafx.scene.paint.Color;
 
 import java.util.stream.IntStream;
@@ -16,8 +16,8 @@ public class Setup {
     private static final int SIZE = 150;
 
     public static FluidEntity[][] create() {
-        //return square(SIZE);
-        return rectangle(300, 50);
+        return square(SIZE);
+        //return rectangle(300, 50);
         //return rayleighTaylor(SIZE);
     }
 
@@ -32,7 +32,7 @@ public class Setup {
                 double y = (j - numEntitiesOnSide / 2) * FluidEntity.SPACE;
                 double z = sZDistance;
 
-                FluidEntity entity = new FluidEntity(x, y, z, FluidPhysics.DEFAULT_MASS, FluidPhysics.ROOM_TEMPERATURE);
+                FluidEntity entity = new FluidEntity(x, y, z, IFluidEntity.DEFAULT_MASS, IFluidEntity.DEFAULT_TEMPERATURE);
                 entities[i][j] = entity;
             });
         });
@@ -51,7 +51,7 @@ public class Setup {
                 double y = (j - height / 2) * FluidEntity.SPACE;
                 double z = sZDistance;
 
-                FluidEntity entity = new FluidEntity(x, y, z, FluidPhysics.DEFAULT_MASS, FluidPhysics.ROOM_TEMPERATURE);
+                FluidEntity entity = new FluidEntity(x, y, z, IFluidEntity.DEFAULT_MASS, IFluidEntity.DEFAULT_TEMPERATURE);
                 entities[i][j] = entity;
             });
         });
@@ -77,13 +77,13 @@ public class Setup {
 
                 FluidEntity entity;
                 if (j > numEntitiesOnSide / 2) {
-                    entity = new FluidEntity(x, y, z, FluidPhysics.DEFAULT_MASS * 4, FluidPhysics.ROOM_TEMPERATURE);
+                    entity = new FluidEntity(x, y, z, IFluidEntity.DEFAULT_MASS * 4, IFluidEntity.DEFAULT_TEMPERATURE);
                     entity.setColor(Color.BLUE);
                     if (Math.random() < .01) {
-                        entity.addMass(FluidPhysics.DEFAULT_MASS, FluidPhysics.DEFAULT_MASS, Color.BLACK);
+                        entity.addMass(IFluidEntity.DEFAULT_MASS, IFluidEntity.DEFAULT_MASS, Color.BLACK);
                     }
                 } else {
-                    entity = new FluidEntity(x, y, z, FluidPhysics.DEFAULT_MASS / 4, FluidPhysics.ROOM_TEMPERATURE);
+                    entity = new FluidEntity(x, y, z, IFluidEntity.DEFAULT_MASS / 4, IFluidEntity.DEFAULT_TEMPERATURE);
                     entity.setColor(Color.RED);
                 }
                 entities[i][j] = entity;

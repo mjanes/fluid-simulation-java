@@ -10,9 +10,9 @@ Currently the simulation is 2D only, though the camera is equipped to do 3D.
     fluid behavior, make them come from the fluid entity, and the proportion of the fluid entity that is whatever type
     of material.
 -   Allow phase transitions (This will probably depend upon the above, but changes those variables based on temperature.)
--   Improve handling of gravity, so that pressure is cumulative. Not important now as we're generally simulating small 
-    areas, but if we want to be able to simulate atmospheres, or plate tectonics, we will need this.
 -   Ability to model surface tension in liquids
+-   Fix issue that is preventing Rayleigh-Taylor and Kelvin-Helmholtz instabilities from arising.
+-   Improve border/edge effects. Need to estimate off-screen entities as placeholders for reverse advection and such.
 
 ###References:
 -   http://cowboyprogramming.com/2008/04/01/practical-fluid-mechanics/

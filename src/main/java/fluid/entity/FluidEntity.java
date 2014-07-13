@@ -10,10 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * Created by mjanes on 6/12/2014.
  */
-public class FluidEntity implements IDimensionalEntity {
-
-    public static final int SPACE = 5; // spacing between entities, currently writing this that they must be placed on a grid
-    private static final double GAS_CONSTANT = .02;
+public class FluidEntity implements IFluidEntity {
 
     protected double mX;
     protected double mY;
@@ -29,7 +26,7 @@ public class FluidEntity implements IDimensionalEntity {
     protected Color mColor;
 
     protected final ConcurrentHashMap<RelativeTransferRecord, Integer> mRelativeTransferRecords = new ConcurrentHashMap<>();
-    protected final ConcurrentHashMap<TransferToRecord, Integer> mIncomingTransferRecords = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<TransferIncomingRecord, Integer> mIncomingTransferRecords = new ConcurrentHashMap<>();
     protected final ConcurrentHashMap<TransferAwayRecord, Integer> mOutgoingTransferRecords = new ConcurrentHashMap<>();
 
     public FluidEntity(double x, double y, double z, double mass, double temperature) {
@@ -99,6 +96,7 @@ public class FluidEntity implements IDimensionalEntity {
         return mDeltaX;
     }
 
+    @Override
     public synchronized void addForceX(double forceX) {
         if (mMass <= 0) {
             setDeltaX(0);
@@ -127,6 +125,7 @@ public class FluidEntity implements IDimensionalEntity {
         return mDeltaY;
     }
 
+    @Override
     public synchronized void addForceY(double forceY) {
         if (mMass <= 0) {
             setDeltaY(0);
@@ -155,6 +154,7 @@ public class FluidEntity implements IDimensionalEntity {
         return mDeltaZ;
     }
 
+    @Override
     public synchronized void addForceZ(double forceZ) {
         if (mMass <= 0) {
             setDeltaZ(0);
@@ -172,7 +172,6 @@ public class FluidEntity implements IDimensionalEntity {
     }
 
 
-
     /** Mass */
 
     public synchronized void setMass(double mass) {
@@ -183,6 +182,7 @@ public class FluidEntity implements IDimensionalEntity {
         mMass = mass;
     }
 
+    @Override
     public synchronized double getMass() {
         return mMass;
     }
@@ -250,7 +250,7 @@ public class FluidEntity implements IDimensionalEntity {
      *
      * I suppose force is analogous to heat, and delta is analogous to temperature here.
      */
-    private void subtractMass(double deltaMass) {
+    public void subtractMass(double deltaMass) {
         if (mMass + deltaMass <= 0) {
             setMass(0);
             setHeat(0);
@@ -283,6 +283,7 @@ public class FluidEntity implements IDimensionalEntity {
         mHeat = temperature * mMass;
     }
 
+    @Override
     public synchronized double getTemperature() {
         if (mMass <= 0) return 0;
         return mHeat / mMass;
@@ -300,6 +301,7 @@ public class FluidEntity implements IDimensionalEntity {
      * TODO: Should probably make efficiency thing so that if you try to add too much heat to something with too little
      * mass the temperature doesn't skyrocket. Just some... efficiency of transfer?
      */
+    @Override
     public synchronized void addHeat(double deltaHeat) {
         setHeat(mHeat + deltaHeat);
     }
@@ -322,29 +324,6 @@ public class FluidEntity implements IDimensionalEntity {
     }
 
 
-     // TODO: Make the below variables based on the type of matter within the cell
-
-    /**
-     * https://en.wikipedia.org/wiki/Avogadro%27s_law
-     */
-    private double getMolarWeight() {
-        return 1;
-    }
-
-
-    /**
-     * https://en.wikipedia.org/wiki/Thermal_conductivity
-     */
-    public double getConductivity() {
-        return .01;
-    }
-
-    /**
-     * https://en.wikipedia.org/wiki/Viscosity
-     */
-    public double getViscosity() {
-        return .01;
-    }
 
     /** For display */
 
@@ -353,9 +332,9 @@ public class FluidEntity implements IDimensionalEntity {
     }
 
 
-
     /** Stepping from to the next increment of the simulation */
 
+    @Override
     public void transferRelativeValues() {
         double totalRatio = 0;
         for (RelativeTransferRecord relativeTransferRecord : mRelativeTransferRecords.keySet()) {
@@ -364,9 +343,9 @@ public class FluidEntity implements IDimensionalEntity {
 
         for (RelativeTransferRecord relativeTransferRecord : mRelativeTransferRecords.keySet()) {
             if (totalRatio > 1) {
-                recordAbsoluteTransfer(relativeTransferRecord.getTargetEntity(), relativeTransferRecord.getProportion() / totalRatio);
+                recordTransferTo(relativeTransferRecord.getTargetEntity(), relativeTransferRecord.getProportion() / totalRatio);
             } else {
-                recordAbsoluteTransfer(relativeTransferRecord.getTargetEntity(), relativeTransferRecord.getProportion());
+                recordTransferTo(relativeTransferRecord.getTargetEntity(), relativeTransferRecord.getProportion());
             }
         }
 
@@ -382,41 +361,46 @@ public class FluidEntity implements IDimensionalEntity {
     }
 
     public void transferIncomingValues() {
-        for (TransferToRecord transferRecord : mIncomingTransferRecords.keySet()) {
+        for (TransferIncomingRecord transferRecord : mIncomingTransferRecords.keySet()) {
             transferRecord.transfer(this);
         }
 
         mIncomingTransferRecords.clear();
     }
 
-    private void recordAbsoluteTransfer(FluidEntity targetEntity, double ratio) {
-        if (mMass == 0 || ratio == 0) return;
+    public void recordTransferTo(FluidEntity targetEntity, double proportion) {
+        if (mMass == 0 || proportion == 0) return;
 
-        double massTransfer = mMass * ratio;
+        double massTransfer = mMass * proportion;
 
         recordTransferAway(new TransferAwayRecord(-massTransfer));
 
         // If targetEntity is null, it is because the transfer is going off the border of the universe
         if (targetEntity == null) return;
-        targetEntity.recordTransferTo(new TransferToRecord(massTransfer, getTemperature(), getDeltaX(), getDeltaY(), mColor));
+        targetEntity.recordTransferIncoming(new TransferIncomingRecord(massTransfer, getTemperature(), getDeltaX(), getDeltaY(), mColor));
     }
 
-    public void recordRelativeTransfer(FluidEntity targetEntity, double ratio) {
-        if (ratio < 0 || ratio > 1) {
-            System.out.println("Error, ratio = " + ratio);
+    /**
+     * Records a transfer from this entity to targetEntity, a proportion of this entities values
+     */
+    @Override
+    public void recordRelativeTransferTo(FluidEntity targetEntity, double proportion) {
+        if (proportion < 0 || proportion > 1) {
+            System.out.println("Error, proportion = " + proportion);
             return;
         }
 
         // Do not record transfers to self.
         if (this.equals(targetEntity)) return;
 
-        mRelativeTransferRecords.put(new RelativeTransferRecord(targetEntity, ratio), 0);
+        mRelativeTransferRecords.put(new RelativeTransferRecord(targetEntity, proportion), 0);
     }
 
     /**
      * Transferring mass to a fluid entity
      */
-    public void recordTransferTo(TransferToRecord record) {
+    @Override
+    public void recordTransferIncoming(TransferIncomingRecord record) {
         mIncomingTransferRecords.put(record, 0);
     }
 
@@ -427,60 +411,4 @@ public class FluidEntity implements IDimensionalEntity {
         mOutgoingTransferRecords.put(record, 0);
     }
 
-
-    /**
-     * A RelativeTransferRecord is the a record of what proportion of this entity should be transferred to the target
-     * entity.
-     */
-    private static class RelativeTransferRecord {
-        final private FluidEntity mTargetEntity;
-        final private double mProportion;
-
-        public RelativeTransferRecord(FluidEntity targetEntity, double proportion) {
-            mTargetEntity = targetEntity;
-            mProportion = proportion;
-        }
-
-        public FluidEntity getTargetEntity() { return mTargetEntity; }
-
-        public double getProportion() { return mProportion; }
-
-    }
-
-    /**
-     * An absolute transfer record records values to be added to this entity's.
-     */
-    private static class TransferToRecord {
-
-        final private double mMassTransfer;
-        final private double mMassTemperature;
-        final private double mVelocityX;
-        final private double mVelocityY;
-        final private Color mInkColor;
-
-        public TransferToRecord(double massTransfer, double massTemperature, double velocityX, double velocityY, Color inkColor) {
-            mMassTransfer = massTransfer;
-            mMassTemperature = massTemperature;
-            mVelocityX = velocityX;
-            mVelocityY = velocityY;
-            mInkColor = inkColor;
-        }
-
-        public void transfer(FluidEntity entity) {
-            entity.addMass(mMassTransfer, mMassTemperature, mInkColor, mVelocityX, mVelocityY);
-        }
-    }
-
-    private static class TransferAwayRecord {
-        final private double mMassTransfer;
-
-        public TransferAwayRecord(double massTransfer) {
-            mMassTransfer = massTransfer;
-        }
-
-        public void transfer(FluidEntity entity) {
-            entity.subtractMass(mMassTransfer);
-        }
-
-    }
 }

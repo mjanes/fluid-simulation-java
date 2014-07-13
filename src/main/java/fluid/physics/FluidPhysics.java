@@ -1,6 +1,8 @@
 package fluid.physics;
 
 import fluid.entity.FluidEntity;
+import fluid.entity.IFluidEntity;
+import fluid.entity.MockFluidEntity;
 
 import java.util.stream.IntStream;
 
@@ -12,25 +14,21 @@ import java.util.stream.IntStream;
  */
 public class FluidPhysics {
 
-    public static final double ROOM_TEMPERATURE = 10;
-    public static final double DEFAULT_MASS = 10;
-
-    private static final double CELL_AREA = Math.pow(FluidEntity.SPACE, 2);
-
-    private static final double WEIGHT_ABOVE = 100000;
     private static final double GRAVITATIONAL_CONSTANT = .00001;
+
+    private static final IFluidEntity sMockFluidEntity = new MockFluidEntity();
 
     // TODO: Other border types to introduce:
     // - viscous
     // - something that isn't 100% reflective, but say converts x into y or something...
     public enum BorderType {
         REFLECTIVE,
-        OPEN, // TODO: Need to improve open, to deal with off screen pressure, and issues with reverse advection
+        OPEN, // TODO: Need to improve open, it is still providing resistance
         NULLING};
 
     private static BorderType sBottomBorderType = BorderType.REFLECTIVE;
-    private static BorderType sLeftBorderType = BorderType.REFLECTIVE;
-    private static BorderType sRightBorderType = BorderType.REFLECTIVE;
+    private static BorderType sLeftBorderType = BorderType.OPEN;
+    private static BorderType sRightBorderType = BorderType.OPEN;
     private static BorderType sUpperBorderType = BorderType.OPEN;
 
     public static void incrementFluid(FluidEntity[][] entities) {
@@ -49,6 +47,7 @@ public class FluidPhysics {
         advection(entities);
 
         // transfer application
+        sMockFluidEntity.transferRelativeValues();
         IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferRelativeValues()));
         IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferOutgoingValues()));
         IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferIncomingValues()));
@@ -75,30 +74,43 @@ public class FluidPhysics {
      * TODO: As this step is modifying the heat value based on the current temp, we should probably be storing these
      * as transfers, so that order of operations doesn't affect things.
      */
-    private static void applyConductionBetweenCells(FluidEntity a, FluidEntity b) {
+    private static void applyConductionBetweenCells(IFluidEntity a, IFluidEntity b) {
         double temperatureDifference = a.getTemperature() - b.getTemperature();
         a.addHeat(-temperatureDifference * b.getConductivity() * b.getMass());
         b.addHeat(temperatureDifference * a.getConductivity() * a.getMass());
     }
 
     private static void applyPressure(FluidEntity[][] entities) {
-        // pressure, heat, displacement, etc
-        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> {
-            FluidEntity entity = entities[x][y];
+        IntStream.range(-1, entities.length).parallel().forEach(i -> IntStream.range(-1, entities[0].length).forEach(j -> {
+            IFluidEntity entity;
+
+            if (i == -1 || j == -1) {
+                entity = sMockFluidEntity;
+            } else {
+                entity = entities[i][j];
+            }
 
             // Right entity
-            if (x + 1 < entities.length) {
-                applyPressureBetweenCells(entity, entities[x + 1][y], true, false);
+            if (j != -1) {
+                if (i + 1 < entities.length) {
+                    applyPressureBetweenCells(entity, entities[i + 1][j], true, false);
+                } else if (i + 1 == entities.length && sRightBorderType.equals(BorderType.OPEN)) {
+                    applyPressureBetweenCells(entity, sMockFluidEntity, true, false);
+                }
             }
 
             // Upper entity
-            if (y + 1 < entities[x].length) {
-                applyPressureBetweenCells(entity, entities[x][y + 1], false, true);
+            if (i != -1) {
+                if (j + 1 < entities[i].length) {
+                    applyPressureBetweenCells(entity, entities[i][j + 1], false, true);
+                } else if (j + 1 == entities[i].length && sUpperBorderType.equals(BorderType.OPEN)) {
+                    applyPressureBetweenCells(entity, sMockFluidEntity, false, true);
+                }
             }
         }));
     }
 
-    private static void applyPressureBetweenCells(FluidEntity a, FluidEntity b, boolean xOffset, boolean yOffset) {
+    private static void applyPressureBetweenCells(IFluidEntity a, IFluidEntity b, boolean xOffset, boolean yOffset) {
         double pressureDifference = a.getPressure() - b.getPressure();
         if (pressureDifference > 0) {
             if (xOffset) a.addForceX(pressureDifference);
@@ -111,12 +123,6 @@ public class FluidPhysics {
 
     private static void applyGravity(FluidEntity[][] entities) {
         final double[][] downwardPressure = new double[entities.length][entities[0].length];
-        for (int i = 0; i < entities.length; i++) {
-            double downwardPressureVal = (WEIGHT_ABOVE * GRAVITATIONAL_CONSTANT) - entities[i][entities[i].length - 1].getPressure();
-            if (downwardPressureVal > 0) {
-                downwardPressure[i][entities[i].length - 1] = downwardPressureVal;
-            }
-        };
 
         for (int i = 0; i < entities.length; i++) {
             for (int j = entities[i].length - 2; j >= 0; j--) {
@@ -260,10 +266,10 @@ public class FluidPhysics {
         // area of bottom left
         double topRightAreaInversion = xPosInCell * yPosInCell;
 
-        double bottomLeftRatio = bottomLeftAreaInversion / CELL_AREA;
-        double bottomRightRatio = bottomRightAreaInversion / CELL_AREA;
-        double topLeftRatio = topLeftAreaInversion / CELL_AREA;
-        double topRightRatio = topRightAreaInversion / CELL_AREA;
+        double bottomLeftRatio = bottomLeftAreaInversion / IFluidEntity.CELL_AREA;
+        double bottomRightRatio = bottomRightAreaInversion / IFluidEntity.CELL_AREA;
+        double topLeftRatio = topLeftAreaInversion / IFluidEntity.CELL_AREA;
+        double topRightRatio = topRightAreaInversion / IFluidEntity.CELL_AREA;
 
         transferTo(entity, entities, t1x, t1y, bottomLeftRatio);
         transferTo(entity, entities, t2x, t1y, bottomRightRatio);
@@ -271,7 +277,7 @@ public class FluidPhysics {
         transferTo(entity, entities, t2x, t2y, topRightRatio);
     }
 
-    private static void transferTo(FluidEntity entity, FluidEntity[][] entities, int targetXIndex, int targetYIndex, double ratio) {
+    private static void transferTo(FluidEntity originEntity, FluidEntity[][] entities, int targetXIndex, int targetYIndex, double ratio) {
         FluidEntity targetEntity = null;
 
         // If this is true, the target entity is on screen.
@@ -279,7 +285,7 @@ public class FluidPhysics {
             targetEntity = entities[targetXIndex][targetYIndex];
         }
 
-        entity.recordRelativeTransfer(targetEntity, ratio);
+        originEntity.recordRelativeTransferTo(targetEntity, ratio);
     }
 
     /**
@@ -321,10 +327,10 @@ public class FluidPhysics {
         // area of bottom left
         double topRightAreaInversion = xPosInCell * yPosInCell;
 
-        double bottomLeftRatio = bottomLeftAreaInversion / CELL_AREA;
-        double bottomRightRatio = bottomRightAreaInversion / CELL_AREA;
-        double topLeftRatio = topLeftAreaInversion / CELL_AREA;
-        double topRightRatio = topRightAreaInversion / CELL_AREA;
+        double bottomLeftRatio = bottomLeftAreaInversion / IFluidEntity.CELL_AREA;
+        double bottomRightRatio = bottomRightAreaInversion / IFluidEntity.CELL_AREA;
+        double topLeftRatio = topLeftAreaInversion / IFluidEntity.CELL_AREA;
+        double topRightRatio = topRightAreaInversion / IFluidEntity.CELL_AREA;
 
         if (bottomLeftRatio > 1 || bottomRightRatio > 1 || topLeftRatio > 1 || topRightRatio > 1) {
             System.out.println("Math problem");
@@ -340,12 +346,32 @@ public class FluidPhysics {
         transferFrom(entity, entities, t2x, t2y, topRightRatio);
     }
 
-    private static void transferFrom(FluidEntity entity, FluidEntity[][] entities, int originXIndex, int originYIndex, double ratio) {
-        if (originXIndex < 0) return;
-        if (originYIndex < 0) return;
-        if (originXIndex >= entities.length) return;
-        if (originYIndex >= entities[originXIndex].length) return;
-        entities[originXIndex][originYIndex].recordRelativeTransfer(entity, ratio);
+    private static void transferFrom(FluidEntity targetEntity, FluidEntity[][] entities, int originXIndex, int originYIndex, double ratio) {
+        IFluidEntity originEntity = null;
+
+        if (originXIndex < 0) {
+            if (sLeftBorderType.equals(BorderType.OPEN)) {
+                originEntity = sMockFluidEntity;
+            }
+        } else if (originYIndex < 0) {
+            if (sBottomBorderType.equals(BorderType.OPEN)) {
+                originEntity = sMockFluidEntity;
+            }
+        } else if (originXIndex >= entities.length) {
+            if (sRightBorderType.equals(BorderType.OPEN)) {
+                originEntity = sMockFluidEntity;
+            }
+        } else if (originYIndex >= entities[originXIndex].length) {
+            if (sUpperBorderType.equals(BorderType.OPEN)) {
+                originEntity = sMockFluidEntity;
+            }
+        } else {
+            originEntity = entities[originXIndex][originYIndex];
+        }
+
+        if (originEntity != null) {
+            originEntity.recordRelativeTransferTo(targetEntity, ratio);
+        }
     }
 
     private static int getLesserTargetIndex(int sourceIndex, int indexOffset, boolean directionPositive) {
