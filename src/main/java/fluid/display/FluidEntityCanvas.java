@@ -50,7 +50,7 @@ public class FluidEntityCanvas extends Canvas {
             double temperature = entity.getTemperature();
             if (temperature < FluidPhysics.ROOM_TEMPERATURE) {
                 double normalizedCold = (FluidPhysics.ROOM_TEMPERATURE - temperature) / FluidPhysics.ROOM_TEMPERATURE;
-                color = new Color(0, normalizedCold, 0, 1);
+                color = new Color(0, 0, normalizedCold, 1);
             } else {
                 double normalizedHot = (temperature - FluidPhysics.ROOM_TEMPERATURE) / FluidPhysics.ROOM_TEMPERATURE;
                 color = new Color(Math.min(1, normalizedHot), 0, 0, 1);
@@ -80,7 +80,7 @@ public class FluidEntityCanvas extends Canvas {
         gc.fillOval((int) xP - radius / 2, (int) yP - radius / 2, radius, radius);
 
         if (drawType.equals(DrawType.VELOCITY)) {
-            FluidEntity vector = entity.getNextLocationAsFluidEntity(20); // TODO: Make this factor paramer a user controlled variable
+            FluidEntity vector = entity.getNextLocationAsFluidEntity(25); // TODO: Make this factor parameter a user controlled variable
             Point2D.Double vectorPoint = getCanvasLocation(camera, canvasWidth, canvasHeight, vector);
             gc.setStroke(Color.RED);
             gc.strokeLine(xP, yP, vectorPoint.getX(), vectorPoint.getY());

@@ -17,7 +17,7 @@ public class Setup {
 
     public static FluidEntity[][] create() {
         //return square(SIZE);
-        return rectangle(300, 60);
+        return rectangle(300, 50);
         //return rayleighTaylor(SIZE);
     }
 

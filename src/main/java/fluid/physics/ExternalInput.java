@@ -10,6 +10,7 @@ public class ExternalInput {
 
     public static void applyInput(FluidEntity[][] entities, int timestep) {
         //neutralizeBorder(entities);
+        coolUpperBorder(entities);
         //inputExplosion(entities, timestep);
 
         //inputCandle(entities);
@@ -93,7 +94,14 @@ public class ExternalInput {
     private static void inputHotplate(FluidEntity[][] entities, int timestep) {
         for (FluidEntity[] entityRow : entities) {
             // bottom side
-            entityRow[0].setTemperature(FluidPhysics.ROOM_TEMPERATURE * 3);
+            entityRow[0].setTemperature(FluidPhysics.ROOM_TEMPERATURE * 2);
         }
     }
+
+    private static void coolUpperBorder(FluidEntity[][] entities) {
+        for (FluidEntity[] entityRow : entities) {
+            entityRow[entityRow.length - 1].setTemperature(FluidPhysics.ROOM_TEMPERATURE / 2);
+        }
+    }
+
 }

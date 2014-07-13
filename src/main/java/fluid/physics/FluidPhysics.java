@@ -17,7 +17,7 @@ public class FluidPhysics {
 
     private static final double CELL_AREA = Math.pow(FluidEntity.SPACE, 2);
 
-    private static final double WEIGHT_ABOVE = 100;
+    private static final double WEIGHT_ABOVE = 100000;
     private static final double GRAVITATIONAL_CONSTANT = .00001;
 
     // TODO: Other border types to introduce:
@@ -112,7 +112,10 @@ public class FluidPhysics {
     private static void applyGravity(FluidEntity[][] entities) {
         final double[][] downwardPressure = new double[entities.length][entities[0].length];
         for (int i = 0; i < entities.length; i++) {
-            downwardPressure[i][entities[i].length - 1] = WEIGHT_ABOVE * GRAVITATIONAL_CONSTANT;
+            double downwardPressureVal = (WEIGHT_ABOVE * GRAVITATIONAL_CONSTANT) - entities[i][entities[i].length - 1].getPressure();
+            if (downwardPressureVal > 0) {
+                downwardPressure[i][entities[i].length - 1] = downwardPressureVal;
+            }
         };
 
         for (int i = 0; i < entities.length; i++) {
