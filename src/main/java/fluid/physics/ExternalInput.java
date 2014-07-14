@@ -38,12 +38,12 @@ public class ExternalInput {
     }
 
     private static void inputHeat(FluidEntity[][] entities, int step) {
-        entities[79][0].addHeat(IFluidEntity.DEFAULT_TEMPERATURE + 25);
-        entities[79][0].setColor(Color.ORANGERED);
-        entities[80][0].addHeat(IFluidEntity.DEFAULT_TEMPERATURE + 30);
-        entities[80][0].setColor(Color.RED);
-        entities[81][0].addHeat(IFluidEntity.DEFAULT_TEMPERATURE + 25);
-        entities[81][0].setColor(Color.ORANGERED);
+        entities[entities.length / 2 - 1][0].addHeat(IFluidEntity.DEFAULT_TEMPERATURE + 25);
+        entities[entities.length / 2 - 1][0].setColor(Color.ORANGERED);
+        entities[entities.length / 2][0].addHeat(IFluidEntity.DEFAULT_TEMPERATURE + 30);
+        entities[entities.length / 2][0].setColor(Color.RED);
+        entities[entities.length / 2 + 1][0].addHeat(IFluidEntity.DEFAULT_TEMPERATURE + 25);
+        entities[entities.length / 2 + 1][0].setColor(Color.ORANGERED);
     }
 
     private static void inputBreeze(FluidEntity[][] entities) {

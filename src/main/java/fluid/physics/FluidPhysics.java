@@ -126,23 +126,18 @@ public class FluidPhysics {
         if (xOffset) {
             double deltaYDifference = a.getDeltaY() - b.getDeltaY();
             double totalMass = a.getMass() + b.getMass();
-            double combinedViscosity = a.getViscosity() * (a.getMass() / totalMass)
-                    + b.getViscosity() * (b.getMass() / totalMass);
+            double combinedViscosity = a.getViscosity() * (a.getMass() / totalMass) + b.getViscosity() * (b.getMass() / totalMass);
 
             a.recordDeltaChange(new IFluidEntity.DeltaChangeRecord(0, (b.getMass() / totalMass) * deltaYDifference * combinedViscosity));
-            b.recordDeltaChange(new IFluidEntity.DeltaChangeRecord(0, (a.getMass() / totalMass) * deltaYDifference * combinedViscosity));
+            b.recordDeltaChange(new IFluidEntity.DeltaChangeRecord(0, -(a.getMass() / totalMass) * deltaYDifference * combinedViscosity));
         }
         if (yOffset) {
             double deltaXDifference = a.getDeltaX() - b.getDeltaX();
             double totalMass = a.getMass() + b.getMass();
-            double combinedViscosity = a.getViscosity() * (a.getMass() / totalMass)
-                    + b.getViscosity() * (b.getMass() / totalMass);
-
-            a.addDeltaX((b.getMass() / totalMass) * deltaXDifference * combinedViscosity);
-            b.addDeltaX((a.getMass() / totalMass) * deltaXDifference * combinedViscosity);
+            double combinedViscosity = a.getViscosity() * (a.getMass() / totalMass) + b.getViscosity() * (b.getMass() / totalMass);
 
             a.recordDeltaChange(new IFluidEntity.DeltaChangeRecord((b.getMass() / totalMass) * deltaXDifference * combinedViscosity, 0));
-            b.recordDeltaChange(new IFluidEntity.DeltaChangeRecord((a.getMass() / totalMass) * deltaXDifference * combinedViscosity, 0));
+            b.recordDeltaChange(new IFluidEntity.DeltaChangeRecord(-(a.getMass() / totalMass) * deltaXDifference * combinedViscosity, 0));
         }
     }
 
