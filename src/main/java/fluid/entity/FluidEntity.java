@@ -26,8 +26,9 @@ public class FluidEntity implements IFluidEntity {
     protected Color mColor;
 
     protected final ConcurrentHashMap<RelativeTransferRecord, Integer> mRelativeTransferRecords = new ConcurrentHashMap<>();
-    protected final ConcurrentHashMap<TransferIncomingRecord, Integer> mIncomingTransferRecords = new ConcurrentHashMap<>();
-    protected final ConcurrentHashMap<TransferAwayRecord, Integer> mOutgoingTransferRecords = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<DeltaChangeRecord, Integer> mDeltaChangeRecords = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<IncomingMassRecord, Integer> mIncomingMassRecords = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<OutgoingMassRecord, Integer> mOutgoingMassRecords = new ConcurrentHashMap<>();
 
     public FluidEntity(double x, double y, double z, double mass, double temperature) {
         setX(x);
@@ -321,8 +322,15 @@ public class FluidEntity implements IFluidEntity {
         return new FluidEntity(mX + (mDeltaX * velocityFactor), mY + (mDeltaY * velocityFactor), mZ + (mDeltaZ * velocityFactor), mMass, getTemperature());
     }
 
-
     /** Stepping from to the next increment of the simulation */
+
+    public void changeDeltaValues() {
+        for (DeltaChangeRecord deltaChangeRecord : mDeltaChangeRecords.keySet()) {
+            deltaChangeRecord.transfer(this);
+        }
+
+        mDeltaChangeRecords.clear();
+    }
 
     @Override
     public void transferRelativeValues() {
@@ -342,20 +350,20 @@ public class FluidEntity implements IFluidEntity {
         mRelativeTransferRecords.clear();
     }
 
-    public void transferOutgoingValues() {
-        for (TransferAwayRecord transferRecord : mOutgoingTransferRecords.keySet()) {
+    public void transferOutgoingMass() {
+        for (OutgoingMassRecord transferRecord : mOutgoingMassRecords.keySet()) {
             transferRecord.transfer(this);
         }
 
-        mOutgoingTransferRecords.clear();
+        mOutgoingMassRecords.clear();
     }
 
-    public void transferIncomingValues() {
-        for (TransferIncomingRecord transferRecord : mIncomingTransferRecords.keySet()) {
+    public void transferIncomingMass() {
+        for (IncomingMassRecord transferRecord : mIncomingMassRecords.keySet()) {
             transferRecord.transfer(this);
         }
 
-        mIncomingTransferRecords.clear();
+        mIncomingMassRecords.clear();
     }
 
     public void recordTransferTo(FluidEntity targetEntity, double proportion) {
@@ -363,11 +371,11 @@ public class FluidEntity implements IFluidEntity {
 
         double massTransfer = mMass * proportion;
 
-        recordTransferAway(new TransferAwayRecord(-massTransfer));
+        recordTransferAway(new OutgoingMassRecord(-massTransfer));
 
         // If targetEntity is null, it is because the transfer is going off the border of the universe
         if (targetEntity == null) return;
-        targetEntity.recordTransferIncoming(new TransferIncomingRecord(massTransfer, getTemperature(), getDeltaX(), getDeltaY(), mColor));
+        targetEntity.recordIncomingMass(new IncomingMassRecord(massTransfer, getTemperature(), getDeltaX(), getDeltaY(), mColor));
     }
 
     /**
@@ -390,15 +398,19 @@ public class FluidEntity implements IFluidEntity {
      * Transferring mass to a fluid entity
      */
     @Override
-    public void recordTransferIncoming(TransferIncomingRecord record) {
-        mIncomingTransferRecords.put(record, 0);
+    public void recordIncomingMass(IncomingMassRecord record) {
+        mIncomingMassRecords.put(record, 0);
     }
 
     /**
      * Transferring mass away from entity.
      */
-    public void recordTransferAway(TransferAwayRecord record) {
-        mOutgoingTransferRecords.put(record, 0);
+    public void recordTransferAway(OutgoingMassRecord record) {
+        mOutgoingMassRecords.put(record, 0);
+    }
+
+    public void recordDeltaChange(DeltaChangeRecord record) {
+        mDeltaChangeRecords.put(record, 0);
     }
 
 }

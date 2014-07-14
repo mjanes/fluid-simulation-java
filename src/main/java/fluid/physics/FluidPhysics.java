@@ -38,6 +38,8 @@ public class FluidPhysics {
         applyBidirectionInteractions(entities);
         applyGravity(entities);
 
+        IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].changeDeltaValues()));
+
         // check for border effect
         checkBorder(entities);
 
@@ -47,8 +49,8 @@ public class FluidPhysics {
         // transfer application
         sMockFluidEntity.transferRelativeValues();
         IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferRelativeValues()));
-        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferOutgoingValues()));
-        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferIncomingValues()));
+        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferOutgoingMass()));
+        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferIncomingMass()));
     }
 
 
@@ -118,12 +120,7 @@ public class FluidPhysics {
             if (yOffset) b.addForceY(pressureDifference);
         }
     }
-    /**
-     * TODO: As this step is modifying the delta values based on current deltas, we should probably be storing these
-     * as transfers, so that order of operations doesn't affect things.
-     *
-     * https://en.wikipedia.org/wiki/Shear_stress
-     */
+
     private static void applyViscosityBetweenCells(IFluidEntity a, IFluidEntity b, boolean xOffset, boolean yOffset) {
         if (a == null || b == null) return;
         if (xOffset) {
@@ -132,9 +129,8 @@ public class FluidPhysics {
             double combinedViscosity = a.getViscosity() * (a.getMass() / totalMass)
                     + b.getViscosity() * (b.getMass() / totalMass);
 
-            a.addDeltaY((b.getMass() / totalMass) * deltaYDifference * combinedViscosity);
-            b.addDeltaY((a.getMass() / totalMass) * deltaYDifference * combinedViscosity);
-
+            a.recordDeltaChange(new IFluidEntity.DeltaChangeRecord(0, (b.getMass() / totalMass) * deltaYDifference * combinedViscosity));
+            b.recordDeltaChange(new IFluidEntity.DeltaChangeRecord(0, (a.getMass() / totalMass) * deltaYDifference * combinedViscosity));
         }
         if (yOffset) {
             double deltaXDifference = a.getDeltaX() - b.getDeltaX();
@@ -144,6 +140,9 @@ public class FluidPhysics {
 
             a.addDeltaX((b.getMass() / totalMass) * deltaXDifference * combinedViscosity);
             b.addDeltaX((a.getMass() / totalMass) * deltaXDifference * combinedViscosity);
+
+            a.recordDeltaChange(new IFluidEntity.DeltaChangeRecord((b.getMass() / totalMass) * deltaXDifference * combinedViscosity, 0));
+            b.recordDeltaChange(new IFluidEntity.DeltaChangeRecord((a.getMass() / totalMass) * deltaXDifference * combinedViscosity, 0));
         }
     }
 

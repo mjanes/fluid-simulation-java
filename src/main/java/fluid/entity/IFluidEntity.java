@@ -26,7 +26,8 @@ public interface IFluidEntity extends IDimensionalEntity {
     public void recordRelativeTransferTo(FluidEntity targetEntity, double proportion);
     public void transferRelativeValues();
     public void recordTransferTo(FluidEntity targetEntity, double proportion);
-    public void recordTransferIncoming(TransferIncomingRecord record);
+    public void recordIncomingMass(IncomingMassRecord record);
+    public void recordDeltaChange(DeltaChangeRecord record);
 
     public void addDeltaX(double deltaDeltaX);
     public void addDeltaY(double deltaDeltaY);
@@ -83,7 +84,7 @@ public interface IFluidEntity extends IDimensionalEntity {
     /**
      * An absolute transfer record records values to be added to this entity's.
      */
-    public static class TransferIncomingRecord {
+    public static class IncomingMassRecord {
 
         final private double mMassTransfer;
         final private double mMassTemperature;
@@ -91,7 +92,7 @@ public interface IFluidEntity extends IDimensionalEntity {
         final private double mVelocityY;
         final private Color mInkColor;
 
-        public TransferIncomingRecord(double massTransfer, double massTemperature, double velocityX, double velocityY, Color inkColor) {
+        public IncomingMassRecord(double massTransfer, double massTemperature, double velocityX, double velocityY, Color inkColor) {
             mMassTransfer = massTransfer;
             mMassTemperature = massTemperature;
             mVelocityX = velocityX;
@@ -104,15 +105,30 @@ public interface IFluidEntity extends IDimensionalEntity {
         }
     }
 
-    public static class TransferAwayRecord {
+    public static class OutgoingMassRecord {
         final private double mMassTransfer;
 
-        public TransferAwayRecord(double massTransfer) {
+        public OutgoingMassRecord(double massTransfer) {
             mMassTransfer = massTransfer;
         }
 
         public void transfer(FluidEntity entity) {
             entity.subtractMass(mMassTransfer);
+        }
+    }
+
+    public static class DeltaChangeRecord {
+        final private double mDeltaDeltaX;
+        final private double mDeltaDeltaY;
+
+        public DeltaChangeRecord(double deltaDeltaX, double deltaDeltaY) {
+            mDeltaDeltaX = deltaDeltaX;
+            mDeltaDeltaY = deltaDeltaY;
+        }
+
+        public void transfer(FluidEntity entity) {
+            entity.addDeltaX(mDeltaDeltaX);
+            entity.addDeltaY(mDeltaDeltaY);
         }
     }
 

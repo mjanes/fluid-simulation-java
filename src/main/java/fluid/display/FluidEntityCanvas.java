@@ -80,7 +80,7 @@ public class FluidEntityCanvas extends Canvas {
         gc.fillOval((int) xP - radius / 2, (int) yP - radius / 2, radius, radius);
 
         if (drawType.equals(DrawType.VELOCITY)) {
-            FluidEntity vector = entity.getNextLocationAsFluidEntity(25); // TODO: Make this factor parameter a user controlled variable
+            FluidEntity vector = entity.getNextLocationAsFluidEntity(20); // TODO: Make this factor parameter a user controlled variable
             Point2D.Double vectorPoint = getCanvasLocation(camera, canvasWidth, canvasHeight, vector);
             gc.setStroke(Color.RED);
             gc.strokeLine(xP, yP, vectorPoint.getX(), vectorPoint.getY());

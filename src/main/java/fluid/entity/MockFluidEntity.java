@@ -92,7 +92,10 @@ public class MockFluidEntity implements IFluidEntity {
     }
 
     @Override
-    public void recordTransferIncoming(TransferIncomingRecord record) {}
+    public void recordIncomingMass(IncomingMassRecord record) {}
+
+    @Override
+    public void recordDeltaChange(DeltaChangeRecord record) {}
 
     @Override
     public void transferRelativeValues() {
@@ -111,7 +114,7 @@ public class MockFluidEntity implements IFluidEntity {
 
         // If targetEntity is null, it is because the transfer is going off the border of the universe
         if (targetEntity == null) return;
-        targetEntity.recordTransferIncoming(new TransferIncomingRecord(massTransfer, IFluidEntity.DEFAULT_TEMPERATURE, IFluidEntity.DEFAULT_DX, IFluidEntity.DEFAULT_DY, IFluidEntity.DEFAULT_COLOR));
+        targetEntity.recordIncomingMass(new IncomingMassRecord(massTransfer, IFluidEntity.DEFAULT_TEMPERATURE, IFluidEntity.DEFAULT_DX, IFluidEntity.DEFAULT_DY, IFluidEntity.DEFAULT_COLOR));
     }
 
 }
