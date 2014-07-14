@@ -35,10 +35,8 @@ public class FluidPhysics {
         if (entities == null) return;
 
         // force applications
-        applyConduction(entities);
-        applyPressure(entities);
+        applyBidirectionInteractions(entities);
         applyGravity(entities);
-        applyViscosity(entities);
 
         // check for border effect
         checkBorder(entities);
@@ -54,18 +52,46 @@ public class FluidPhysics {
     }
 
 
-    private static void applyConduction(FluidEntity[][] entities) {
-        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> {
-            FluidEntity entity = entities[x][y];
+    private static void applyBidirectionInteractions(FluidEntity[][] entities) {
+        IntStream.range(-1, entities.length).parallel().forEach(i -> IntStream.range(-1, entities[0].length).forEach(j -> {
+            IFluidEntity entity = null;
+            if (i == -1 || j == -1) {
+                if (!(i == -1 && j == -1)) {
+                    if (i == -1 && sLeftBorderType.equals(BorderType.OPEN)) {
+                        entity = sMockFluidEntity;
+                    }
+                    if (j == -1 && sBottomBorderType.equals(BorderType.OPEN)) {
+                        entity = sMockFluidEntity;
+                    }
+                }
+            } else {
+                entity = entities[i][j];
+            }
 
             // Right entity
-            if (x + 1 < entities.length) {
-                applyConductionBetweenCells(entity, entities[x + 1][y]);
+            if (j != -1) {
+                if (i + 1 < entities.length) {
+                    applyConductionBetweenCells(entity, entities[i + 1][j]);
+                    applyPressureBetweenCells(entity, entities[i + 1][j], true, false);
+                    applyViscosityBetweenCells(entity, entities[i + 1][j], true, false);
+                } else if (i + 1 == entities.length && sRightBorderType.equals(BorderType.OPEN)) {
+                    applyConductionBetweenCells(entity, sMockFluidEntity);
+                    applyPressureBetweenCells(entity, sMockFluidEntity, true, false);
+                    applyViscosityBetweenCells(entity, sMockFluidEntity, true, false);
+                }
             }
 
             // Upper entity
-            if (y + 1 < entities[x].length) {
-                applyConductionBetweenCells(entity, entities[x][y + 1]);
+            if (i != -1) {
+                if (j + 1 < entities[i].length) {
+                    applyConductionBetweenCells(entity, entities[i][j + 1]);
+                    applyPressureBetweenCells(entity, entities[i][j + 1], false, true);
+                    applyViscosityBetweenCells(entity, entities[i][j + 1], false, true);
+                } else if (j + 1 == entities[i].length && sUpperBorderType.equals(BorderType.OPEN)) {
+                    applyConductionBetweenCells(entity, sMockFluidEntity);
+                    applyPressureBetweenCells(entity, sMockFluidEntity, false, true);
+                    applyViscosityBetweenCells(entity, sMockFluidEntity, false, true);
+                }
             }
         }));
     }
@@ -75,42 +101,14 @@ public class FluidPhysics {
      * as transfers, so that order of operations doesn't affect things.
      */
     private static void applyConductionBetweenCells(IFluidEntity a, IFluidEntity b) {
+        if (a == null || b == null) return;
         double temperatureDifference = a.getTemperature() - b.getTemperature();
         a.addHeat(-temperatureDifference * b.getConductivity() * b.getMass());
         b.addHeat(temperatureDifference * a.getConductivity() * a.getMass());
     }
 
-    private static void applyPressure(FluidEntity[][] entities) {
-        IntStream.range(-1, entities.length).parallel().forEach(i -> IntStream.range(-1, entities[0].length).forEach(j -> {
-            IFluidEntity entity;
-
-            if (i == -1 || j == -1) {
-                entity = sMockFluidEntity;
-            } else {
-                entity = entities[i][j];
-            }
-
-            // Right entity
-            if (j != -1) {
-                if (i + 1 < entities.length) {
-                    applyPressureBetweenCells(entity, entities[i + 1][j], true, false);
-                } else if (i + 1 == entities.length && sRightBorderType.equals(BorderType.OPEN)) {
-                    applyPressureBetweenCells(entity, sMockFluidEntity, true, false);
-                }
-            }
-
-            // Upper entity
-            if (i != -1) {
-                if (j + 1 < entities[i].length) {
-                    applyPressureBetweenCells(entity, entities[i][j + 1], false, true);
-                } else if (j + 1 == entities[i].length && sUpperBorderType.equals(BorderType.OPEN)) {
-                    applyPressureBetweenCells(entity, sMockFluidEntity, false, true);
-                }
-            }
-        }));
-    }
-
     private static void applyPressureBetweenCells(IFluidEntity a, IFluidEntity b, boolean xOffset, boolean yOffset) {
+        if (a == null || b == null) return;
         double pressureDifference = a.getPressure() - b.getPressure();
         if (pressureDifference > 0) {
             if (xOffset) a.addForceX(pressureDifference);
@@ -120,11 +118,40 @@ public class FluidPhysics {
             if (yOffset) b.addForceY(pressureDifference);
         }
     }
+    /**
+     * TODO: As this step is modifying the delta values based on current deltas, we should probably be storing these
+     * as transfers, so that order of operations doesn't affect things.
+     *
+     * https://en.wikipedia.org/wiki/Shear_stress
+     */
+    private static void applyViscosityBetweenCells(IFluidEntity a, IFluidEntity b, boolean xOffset, boolean yOffset) {
+        if (a == null || b == null) return;
+        if (xOffset) {
+            double deltaYDifference = a.getDeltaY() - b.getDeltaY();
+            double totalMass = a.getMass() + b.getMass();
+            double combinedViscosity = a.getViscosity() * (a.getMass() / totalMass)
+                    + b.getViscosity() * (b.getMass() / totalMass);
+
+            a.addDeltaY((b.getMass() / totalMass) * deltaYDifference * combinedViscosity);
+            b.addDeltaY((a.getMass() / totalMass) * deltaYDifference * combinedViscosity);
+
+        }
+        if (yOffset) {
+            double deltaXDifference = a.getDeltaX() - b.getDeltaX();
+            double totalMass = a.getMass() + b.getMass();
+            double combinedViscosity = a.getViscosity() * (a.getMass() / totalMass)
+                    + b.getViscosity() * (b.getMass() / totalMass);
+
+            a.addDeltaX((b.getMass() / totalMass) * deltaXDifference * combinedViscosity);
+            b.addDeltaX((a.getMass() / totalMass) * deltaXDifference * combinedViscosity);
+        }
+    }
 
     private static void applyGravity(FluidEntity[][] entities) {
         final double[][] downwardPressure = new double[entities.length][entities[0].length];
 
         for (int i = 0; i < entities.length; i++) {
+            downwardPressure[i][entities[i].length - 1] = sMockFluidEntity.getMass() * GRAVITATIONAL_CONSTANT;
             for (int j = entities[i].length - 2; j >= 0; j--) {
                 downwardPressure[i][j] = downwardPressure[i][j + 1] + (entities[i][j].getMass() * GRAVITATIONAL_CONSTANT);
             }
@@ -132,42 +159,6 @@ public class FluidPhysics {
 
         IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> {
             entities[x][y].addForceY(-downwardPressure[x][y]);
-        }));
-    }
-
-    /**
-     * TODO: As this step is modifying the delta values based on current deltas, we should probably be storing these
-     * as transfers, so that order of operations doesn't affect things.
-     *
-     * https://en.wikipedia.org/wiki/Shear_stress
-     */
-    private static void applyViscosity(FluidEntity[][] entities) {
-        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> {
-            FluidEntity a = entities[x][y];
-
-            // Right entity
-            if (x + 1 < entities.length) {
-                FluidEntity b = entities[x + 1][y];
-                double deltaYDifference = a.getDeltaY() - b.getDeltaY();
-                double totalMass = a.getMass() + b.getMass();
-                double combinedViscosity = a.getViscosity() * (a.getMass() / totalMass)
-                        + b.getViscosity() * (b.getMass() / totalMass);
-
-                a.addDeltaY((b.getMass() / totalMass) * deltaYDifference * combinedViscosity);
-                b.addDeltaY((a.getMass() / totalMass) * deltaYDifference * combinedViscosity);
-            }
-
-            // Upper entity
-            if (y + 1 < entities[x].length) {
-                FluidEntity b = entities[x][y + 1];
-                double deltaXDifference = a.getDeltaX() - b.getDeltaX();
-                double totalMass = a.getMass() + b.getMass();
-                double combinedViscosity = a.getViscosity() * (a.getMass() / totalMass)
-                        + b.getViscosity() * (b.getMass() / totalMass);
-
-                a.addDeltaX((b.getMass() / totalMass) * deltaXDifference * combinedViscosity);
-                b.addDeltaX((a.getMass() / totalMass) * deltaXDifference * combinedViscosity);
-            }
         }));
     }
 

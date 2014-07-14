@@ -48,6 +48,18 @@ public class MockFluidEntity implements IFluidEntity {
         return null;
     }
 
+    @Override
+    public double getDeltaX() {
+        return IFluidEntity.DEFAULT_DX;
+    }
+
+    @Override
+    public double getDeltaY() {
+        return IFluidEntity.DEFAULT_DY;
+    }
+
+    public void addDeltaX(double deltaDeltaX) {}
+    public void addDeltaY(double deltaDeltaY) {}
     public void addForceX(double forceX) {}
     public void addForceY(double forceY) {}
     public void addForceZ(double forceZ) {}

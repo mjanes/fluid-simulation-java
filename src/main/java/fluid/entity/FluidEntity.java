@@ -88,10 +88,12 @@ public class FluidEntity implements IFluidEntity {
         mDeltaX = deltaX;
     }
 
+    @Override
     public synchronized void addDeltaX(double deltaDeltaX) {
         setDeltaX(mDeltaX + deltaDeltaX);
     }
 
+    @Override
     public synchronized double getDeltaX() {
         return mDeltaX;
     }
@@ -108,19 +110,16 @@ public class FluidEntity implements IFluidEntity {
         addDeltaX(forceX / mMass);
     }
 
-    public synchronized double getForceX() {
-        return mDeltaX * mMass;
-    }
-
-
     public synchronized void setDeltaY(double deltaY) {
         mDeltaY = deltaY;
     }
 
+    @Override
     public synchronized void addDeltaY(double deltaDeltaY) {
         setDeltaY(mDeltaY + deltaDeltaY);
     }
 
+    @Override
     public synchronized double getDeltaY() {
         return mDeltaY;
     }
@@ -136,11 +135,6 @@ public class FluidEntity implements IFluidEntity {
         // into heat?
         addDeltaY(forceY / mMass);
     }
-
-    public synchronized double getForceY() {
-        return mDeltaY * mMass;
-    }
-
 
     public synchronized void setDeltaZ(double deltaZ) {
         mDeltaZ = deltaZ;
@@ -165,10 +159,6 @@ public class FluidEntity implements IFluidEntity {
         // TODO: Probably need some efficiency thing here, if mass is too small, and force is too high, turn some energy
         // into heat?
         addDeltaZ(forceZ / mMass);
-    }
-
-    public synchronized double getForceZ() {
-        return mDeltaZ * mMass;
     }
 
 

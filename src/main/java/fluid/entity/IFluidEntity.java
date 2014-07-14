@@ -18,11 +18,8 @@ public interface IFluidEntity extends IDimensionalEntity {
 
     public static final double CELL_AREA = Math.pow(SPACE, 2);
 
-    public void addForceX(double forceX);
-    public void addForceY(double forceY);
-    public void addForceZ(double forceZ);
-    public void addHeat(double deltaHeat);
-
+    public double getDeltaX();
+    public double getDeltaY();
     public double getMass();
     public double getPressure();
     public double getTemperature();
@@ -30,6 +27,14 @@ public interface IFluidEntity extends IDimensionalEntity {
     public void transferRelativeValues();
     public void recordTransferTo(FluidEntity targetEntity, double proportion);
     public void recordTransferIncoming(TransferIncomingRecord record);
+
+    public void addDeltaX(double deltaDeltaX);
+    public void addDeltaY(double deltaDeltaY);
+    public void addForceX(double forceX);
+    public void addForceY(double forceY);
+    public void addForceZ(double forceZ);
+    public void addHeat(double deltaHeat);
+
 
     // TODO: Make the below variables based on the type of matter within the cell, and thus not default
 
