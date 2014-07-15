@@ -24,9 +24,9 @@ public class FluidPhysics {
         NULLING};
 
     private static BorderType sBottomBorderType = BorderType.REFLECTIVE;
-    private static BorderType sLeftBorderType = BorderType.REFLECTIVE;
-    private static BorderType sRightBorderType = BorderType.REFLECTIVE;
-    private static BorderType sUpperBorderType = BorderType.REFLECTIVE;
+    private static BorderType sLeftBorderType = BorderType.OPEN;
+    private static BorderType sRightBorderType = BorderType.OPEN;
+    private static BorderType sUpperBorderType = BorderType.OPEN;
 
     public static void incrementFluid(FluidEntity[][] entities) {
         if (entities == null) return;
@@ -98,7 +98,12 @@ public class FluidPhysics {
     }
 
     /**
+     * If the two entities temperature difference, record a heat transfer from the one with the higher temperature to
+     * the lower. The ammount of heat trasferred is dependant upon the conductivity of the entities.
+     *
      * https://en.wikipedia.org/wiki/Thermal_conductivity
+     *
+     * TODO: Make this math cleaner and easier to understand.
      */
     private static void applyConductionBetweenCells(IFluidEntity a, IFluidEntity b) {
         if (a == null || b == null) return;
@@ -130,23 +135,35 @@ public class FluidPhysics {
         }
     }
 
+    /**
+     * https://en.wikipedia.org/wiki/Viscosity
+     * https://en.wikipedia.org/wiki/Shear_stress
+     *
+     * TODO: Make this math cleaner and easier to understand.
+     */
     private static void applyViscosityBetweenCells(IFluidEntity a, IFluidEntity b, boolean xOffset, boolean yOffset) {
         if (a == null || b == null) return;
         double totalMass = a.getMass() + b.getMass();
-        double meanViscosity = a.getViscosity() * (a.getMass() / totalMass) + b.getViscosity() * (b.getMass() / totalMass);
 
-        // TODO: Make energy conserving
-        if (xOffset) {
-            double deltaYDifference = a.getDeltaY() - b.getDeltaY();
-            double forceTransfer;
-            a.recordForceChange(new IFluidEntity.ForceChangeRecord(0, (b.getMass() / totalMass) * deltaYDifference * meanViscosity));
-            b.recordForceChange(new IFluidEntity.ForceChangeRecord(0, -(a.getMass() / totalMass) * deltaYDifference * meanViscosity));
+        if (xOffset && a.getDeltaY() - b.getDeltaY() != 0) {
+            double forceAvailableForTransfer = a.getForceY() * a.getViscosity() + b.getForceY() * b.getViscosity();
+
+            double forceLossFromA = -(a.getForceY() * a.getViscosity());
+            double forceGainForA = ((a.getMass() / totalMass) * forceAvailableForTransfer);
+            double forceTransfer = forceLossFromA + forceGainForA;
+
+            a.recordForceChange(new IFluidEntity.ForceChangeRecord(0, forceTransfer));
+            a.recordForceChange(new IFluidEntity.ForceChangeRecord(0, -forceTransfer));
         }
-        if (yOffset) {
-            double deltaXDifference = a.getDeltaX() - b.getDeltaX();
-            double forceTransfer;
-            a.recordForceChange(new IFluidEntity.ForceChangeRecord((b.getMass() / totalMass) * deltaXDifference * meanViscosity, 0));
-            b.recordForceChange(new IFluidEntity.ForceChangeRecord(-(a.getMass() / totalMass) * deltaXDifference * meanViscosity, 0));
+        if (yOffset && a.getDeltaX() - b.getDeltaX() != 0) {
+            double forceAvailableForTransfer = a.getForceX() * a.getViscosity() + b.getForceX() * b.getViscosity();
+
+            double forceLossFromA = -(a.getForceX() * a.getViscosity());
+            double forceGainForA = ((a.getMass() / totalMass) * forceAvailableForTransfer);
+            double forceTransfer = forceLossFromA + forceGainForA;
+
+            a.recordForceChange(new IFluidEntity.ForceChangeRecord(forceTransfer, 0));
+            a.recordForceChange(new IFluidEntity.ForceChangeRecord(-forceTransfer, 0));
         }
     }
 

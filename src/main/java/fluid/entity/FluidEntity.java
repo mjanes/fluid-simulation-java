@@ -113,8 +113,19 @@ public class FluidEntity implements IFluidEntity {
         addDeltaX(forceX / mMass);
     }
 
+    @Override
+    public synchronized double getForceX() {
+        return mDeltaX * mMass;
+    }
+
+
     public synchronized void setDeltaY(double deltaY) {
         mDeltaY = deltaY;
+    }
+
+    @Override
+    public synchronized double getForceY() {
+        return mDeltaY * mMass;
     }
 
     public synchronized void addDeltaY(double deltaDeltaY) {
@@ -137,6 +148,7 @@ public class FluidEntity implements IFluidEntity {
         // into heat?
         addDeltaY(forceY / mMass);
     }
+
 
     public synchronized void setDeltaZ(double deltaZ) {
         mDeltaZ = deltaZ;

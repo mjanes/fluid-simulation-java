@@ -20,6 +20,8 @@ public interface IFluidEntity extends IDimensionalEntity {
 
     public double getDeltaX();
     public double getDeltaY();
+    public double getForceX();
+    public double getForceY();
     public double getMass();
     public double getPressure();
     public double getHeat();
@@ -59,7 +61,7 @@ public interface IFluidEntity extends IDimensionalEntity {
      * https://en.wikipedia.org/wiki/Viscosity
      */
     default public double getViscosity() {
-        return .08;
+        return .1;
     }
 
 

@@ -16,6 +16,14 @@ public class Setup {
     private static final int SIZE = 160;
 
     public static FluidEntity[][] create() {
+        /**
+         * NOTE: Because of the possibly effect of gravity, causing pressure to increase downwards, and since all of
+         * these are starting with same mass and pressure everyhere, it will take a while to come to an equilibrium.
+         *
+         * Of course, the mock fluid entities we're using at the moment all have default mass, so the borders will also
+         * provide an instability until we tweak that.
+         */
+
         return square(SIZE);
         //return rectangle(300, 50);
         //return rayleighTaylor(SIZE);

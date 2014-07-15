@@ -15,6 +15,9 @@ Bear in mind I've never taken a physics class.
 -   Ability to model surface tension in liquids
 -   Fix issue that is preventing Rayleigh-Taylor and Kelvin-Helmholtz instabilities from arising. Or at least learn how
     to make them more visible, if they are.
+-   Make engine efficient enough for 3D simulation. Will need a hundredfold speed increase.
+-   Allow users to specify setup, external inputs, and default mass, viscosity, molar mass, heat conduction, etc., from
+    the UI.
 
 ###References:
 -   http://cowboyprogramming.com/2008/04/01/practical-fluid-mechanics/
