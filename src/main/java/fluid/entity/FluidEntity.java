@@ -25,10 +25,13 @@ public class FluidEntity implements IFluidEntity {
     protected double mHeat;
     protected Color mColor;
 
-    protected final ConcurrentHashMap<RelativeTransferRecord, Integer> mRelativeTransferRecords = new ConcurrentHashMap<>();
-    protected final ConcurrentHashMap<DeltaChangeRecord, Integer> mDeltaChangeRecords = new ConcurrentHashMap<>();
-    protected final ConcurrentHashMap<IncomingMassRecord, Integer> mIncomingMassRecords = new ConcurrentHashMap<>();
-    protected final ConcurrentHashMap<OutgoingMassRecord, Integer> mOutgoingMassRecords = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<MassTransferRecord, Integer> mMassTransferRecords = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<MassChangeRecord, Integer> mMassChangeRecords = new ConcurrentHashMap<>();
+
+    protected final ConcurrentHashMap<ForceChangeRecord, Integer> mForceChangeRecords = new ConcurrentHashMap<>();
+
+    protected final ConcurrentHashMap<HeatTransferRecord, Integer> mHeatTransferRecords = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<HeatChangeRecord, Integer> mHeatChangeRecords = new ConcurrentHashMap<>();
 
     public FluidEntity(double x, double y, double z, double mass, double temperature) {
         setX(x);
@@ -89,7 +92,6 @@ public class FluidEntity implements IFluidEntity {
         mDeltaX = deltaX;
     }
 
-    @Override
     public synchronized void addDeltaX(double deltaDeltaX) {
         setDeltaX(mDeltaX + deltaDeltaX);
     }
@@ -115,7 +117,6 @@ public class FluidEntity implements IFluidEntity {
         mDeltaY = deltaY;
     }
 
-    @Override
     public synchronized void addDeltaY(double deltaDeltaY) {
         setDeltaY(mDeltaY + deltaDeltaY);
     }
@@ -322,95 +323,141 @@ public class FluidEntity implements IFluidEntity {
         return new FluidEntity(mX + (mDeltaX * velocityFactor), mY + (mDeltaY * velocityFactor), mZ + (mDeltaZ * velocityFactor), mMass, getTemperature());
     }
 
-    /** Stepping from to the next increment of the simulation */
+    /**
+     * Stepping from to the next increment of the simulation
+     */
 
-    public void changeDeltaValues() {
-        for (DeltaChangeRecord deltaChangeRecord : mDeltaChangeRecords.keySet()) {
-            deltaChangeRecord.transfer(this);
-        }
-
-        mDeltaChangeRecords.clear();
-    }
-
-    @Override
-    public void transferRelativeValues() {
-        double totalRatio = 0;
-        for (RelativeTransferRecord relativeTransferRecord : mRelativeTransferRecords.keySet()) {
-            totalRatio += relativeTransferRecord.getProportion();
-        }
-
-        for (RelativeTransferRecord relativeTransferRecord : mRelativeTransferRecords.keySet()) {
-            if (totalRatio > 1) {
-                recordTransferTo(relativeTransferRecord.getTargetEntity(), relativeTransferRecord.getProportion() / totalRatio);
-            } else {
-                recordTransferTo(relativeTransferRecord.getTargetEntity(), relativeTransferRecord.getProportion());
-            }
-        }
-
-        mRelativeTransferRecords.clear();
-    }
-
-    public void transferOutgoingMass() {
-        for (OutgoingMassRecord transferRecord : mOutgoingMassRecords.keySet()) {
-            transferRecord.transfer(this);
-        }
-
-        mOutgoingMassRecords.clear();
-    }
-
-    public void transferIncomingMass() {
-        for (IncomingMassRecord transferRecord : mIncomingMassRecords.keySet()) {
-            transferRecord.transfer(this);
-        }
-
-        mIncomingMassRecords.clear();
-    }
-
-    public void recordTransferTo(FluidEntity targetEntity, double proportion) {
-        if (mMass == 0 || proportion == 0) return;
-
-        double massTransfer = mMass * proportion;
-
-        recordTransferAway(new OutgoingMassRecord(-massTransfer));
-
-        // If targetEntity is null, it is because the transfer is going off the border of the universe
-        if (targetEntity == null) return;
-        targetEntity.recordIncomingMass(new IncomingMassRecord(massTransfer, getTemperature(), getDeltaX(), getDeltaY(), mColor));
-    }
+    /**
+     * Mass transfers
+     *
+     * These are done in two stages, so that the order in which each method of the same type is applied to a cell does
+     * not matter.
+     */
 
     /**
      * Records a transfer from this entity to targetEntity, a proportion of this entities values
      */
     @Override
-    public void recordRelativeTransferTo(FluidEntity targetEntity, double proportion) {
+    public void recordMassTransfer(FluidEntity targetEntity, double proportion) {
         if (proportion < 0 || proportion > 1) {
             System.out.println("Error, proportion = " + proportion);
             return;
         }
 
+        if (mMass == 0) return;
+
         // Do not record transfers to self.
         if (this.equals(targetEntity)) return;
 
-        mRelativeTransferRecords.put(new RelativeTransferRecord(targetEntity, proportion), 0);
+        mMassTransferRecords.put(new MassTransferRecord(targetEntity, proportion), 0);
+    }
+
+    /**
+     * Stage 1 of the mass transfer steps.
+     */
+    @Override
+    public void convertMassTransferToAbsoluteChange() {
+        double totalRatio = 0;
+        for (MassTransferRecord massTransferRecord : mMassTransferRecords.keySet()) {
+            totalRatio += massTransferRecord.getProportion();
+        }
+
+        for (MassTransferRecord massTransferRecord : mMassTransferRecords.keySet()) {
+            double massTransfer;
+            if (totalRatio > 1) {
+                massTransfer = getMass() * massTransferRecord.getProportion() / totalRatio;
+            } else {
+                massTransfer = getMass() * massTransferRecord.getProportion();
+            }
+
+            recordMassChange(new MassChangeRecord(-massTransfer, getTemperature(), getDeltaX(), getDeltaY(), mColor));
+
+            if (massTransferRecord.getTargetEntity() != null) {
+                massTransferRecord.getTargetEntity().recordMassChange(new MassChangeRecord(massTransfer, getTemperature(), getDeltaX(), getDeltaY(), mColor));
+            }
+        }
+
+        mMassTransferRecords.clear();
     }
 
     /**
      * Transferring mass to a fluid entity
      */
     @Override
-    public void recordIncomingMass(IncomingMassRecord record) {
-        mIncomingMassRecords.put(record, 0);
+    public void recordMassChange(MassChangeRecord record) {
+        mMassChangeRecords.put(record, 0);
+    }
+
+    public void changeMass() {
+        for (MassChangeRecord transferRecord : mMassChangeRecords.keySet()) {
+            transferRecord.transfer(this);
+        }
+
+        mMassChangeRecords.clear();
+    }
+
+
+    /**
+     * Force transfercs
+     */
+
+    @Override
+    public void recordForceChange(ForceChangeRecord record) {
+        mForceChangeRecords.put(record, 0);
+    }
+
+    public void changeForce() {
+        for (ForceChangeRecord forceChangeRecord : mForceChangeRecords.keySet()) {
+            forceChangeRecord.transfer(this);
+        }
+
+        mForceChangeRecords.clear();
     }
 
     /**
-     * Transferring mass away from entity.
+     * Heat transfers
+     *
+     * This is done in two parts, similar to how mass transfers are done, because heat cannot go negative, and thus,
      */
-    public void recordTransferAway(OutgoingMassRecord record) {
-        mOutgoingMassRecords.put(record, 0);
+
+    @Override
+    public void recordHeatTransfer(HeatTransferRecord record) {
+        mHeatTransferRecords.put(record, 0);
     }
 
-    public void recordDeltaChange(DeltaChangeRecord record) {
-        mDeltaChangeRecords.put(record, 0);
+    public void convertHeatTransferToAbsoluteChange() {
+        double totalHeatTransfer = 0;
+        for (HeatTransferRecord heatChangeRecord : mHeatTransferRecords.keySet()) {
+            totalHeatTransfer += heatChangeRecord.getHeatChange();
+        }
+
+        for (HeatTransferRecord heatTransferRecord : mHeatTransferRecords.keySet()) {
+            double heatTransfer;
+            if (totalHeatTransfer - mHeat < 0) {
+                heatTransfer = heatTransferRecord.getHeatChange() / totalHeatTransfer;
+            } else {
+                heatTransfer = heatTransferRecord.getHeatChange();
+            }
+
+            recordHeatChange(new HeatChangeRecord(-heatTransfer));
+
+            if (heatTransferRecord.getTargetEntity() != null) {
+                heatTransferRecord.getTargetEntity().recordHeatChange(new HeatChangeRecord(heatTransfer));
+            }
+        }
+
+        mHeatTransferRecords.clear();
     }
 
+    public void recordHeatChange(HeatChangeRecord record) {
+        mHeatChangeRecords.put(record, 0);
+    }
+
+    public void changeHeat() {
+        for (HeatChangeRecord heatChangeRecord : mHeatChangeRecords.keySet()) {
+            heatChangeRecord.transfer(this);
+        }
+
+        mHeatChangeRecords.clear();
+    }
 }

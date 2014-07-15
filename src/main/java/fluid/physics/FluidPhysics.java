@@ -38,7 +38,9 @@ public class FluidPhysics {
         applyBidirectionInteractions(entities);
         applyGravity(entities);
 
-        IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].changeDeltaValues()));
+        IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].convertHeatTransferToAbsoluteChange()));
+        IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].changeHeat()));
+        IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].changeForce()));
 
         // check for border effect
         checkBorder(entities);
@@ -47,10 +49,9 @@ public class FluidPhysics {
         advection(entities);
 
         // transfer application
-        sMockFluidEntity.transferRelativeValues();
-        IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferRelativeValues()));
-        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferOutgoingMass()));
-        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].transferIncomingMass()));
+        sMockFluidEntity.convertMassTransferToAbsoluteChange();
+        IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].convertMassTransferToAbsoluteChange()));
+        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].changeMass()));
     }
 
 
@@ -99,12 +100,15 @@ public class FluidPhysics {
     }
 
     /**
-     * TODO: As this step is modifying the heat value based on the current temp, we should probably be storing these
-     * as transfers, so that order of operations doesn't affect things.
+     * https://en.wikipedia.org/wiki/Thermal_conductivity
+     * TODO: Fix
      */
     private static void applyConductionBetweenCells(IFluidEntity a, IFluidEntity b) {
         if (a == null || b == null) return;
         double temperatureDifference = a.getTemperature() - b.getTemperature();
+        double totalMass = a.getMass() + b.getMass();
+        double meanConductivity = a.getConductivity() * (a.getMass() / totalMass) + b.getConductivity() * (b.getMass() / totalMass);
+
         a.addHeat(-temperatureDifference * b.getConductivity() * b.getMass());
         b.addHeat(temperatureDifference * a.getConductivity() * a.getMass());
     }
@@ -123,21 +127,20 @@ public class FluidPhysics {
 
     private static void applyViscosityBetweenCells(IFluidEntity a, IFluidEntity b, boolean xOffset, boolean yOffset) {
         if (a == null || b == null) return;
+        double totalMass = a.getMass() + b.getMass();
+        double meanViscosity = a.getViscosity() * (a.getMass() / totalMass) + b.getViscosity() * (b.getMass() / totalMass);
+
         if (xOffset) {
             double deltaYDifference = a.getDeltaY() - b.getDeltaY();
-            double totalMass = a.getMass() + b.getMass();
-            double combinedViscosity = a.getViscosity() * (a.getMass() / totalMass) + b.getViscosity() * (b.getMass() / totalMass);
-
-            a.recordDeltaChange(new IFluidEntity.DeltaChangeRecord(0, (b.getMass() / totalMass) * deltaYDifference * combinedViscosity));
-            b.recordDeltaChange(new IFluidEntity.DeltaChangeRecord(0, -(a.getMass() / totalMass) * deltaYDifference * combinedViscosity));
+            double forceTransfer;
+            a.recordForceChange(new IFluidEntity.ForceChangeRecord(0, (b.getMass() / totalMass) * deltaYDifference * meanViscosity));
+            b.recordForceChange(new IFluidEntity.ForceChangeRecord(0, -(a.getMass() / totalMass) * deltaYDifference * meanViscosity));
         }
         if (yOffset) {
             double deltaXDifference = a.getDeltaX() - b.getDeltaX();
-            double totalMass = a.getMass() + b.getMass();
-            double combinedViscosity = a.getViscosity() * (a.getMass() / totalMass) + b.getViscosity() * (b.getMass() / totalMass);
-
-            a.recordDeltaChange(new IFluidEntity.DeltaChangeRecord((b.getMass() / totalMass) * deltaXDifference * combinedViscosity, 0));
-            b.recordDeltaChange(new IFluidEntity.DeltaChangeRecord(-(a.getMass() / totalMass) * deltaXDifference * combinedViscosity, 0));
+            double forceTransfer;
+            a.recordForceChange(new IFluidEntity.ForceChangeRecord((b.getMass() / totalMass) * deltaXDifference * meanViscosity, 0));
+            b.recordForceChange(new IFluidEntity.ForceChangeRecord(-(a.getMass() / totalMass) * deltaXDifference * meanViscosity, 0));
         }
     }
 
@@ -270,7 +273,7 @@ public class FluidPhysics {
             targetEntity = entities[targetXIndex][targetYIndex];
         }
 
-        originEntity.recordRelativeTransferTo(targetEntity, ratio);
+        originEntity.recordMassTransfer(targetEntity, ratio);
     }
 
     /**
@@ -355,7 +358,7 @@ public class FluidPhysics {
         }
 
         if (originEntity != null) {
-            originEntity.recordRelativeTransferTo(targetEntity, ratio);
+            originEntity.recordMassTransfer(targetEntity, ratio);
         }
     }
 

@@ -9,11 +9,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MockFluidEntity implements IFluidEntity {
 
-    protected final ConcurrentHashMap<RelativeTransferRecord, Integer> mRelativeTransferRecords = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<MassTransferRecord, Integer> mMassTransferRecords = new ConcurrentHashMap<>();
 
     @Override
-    public void setX(double x) {
-    }
+    public void setX(double x) {}
 
     @Override
     public double getX() {
@@ -21,8 +20,7 @@ public class MockFluidEntity implements IFluidEntity {
     }
 
     @Override
-    public void setY(double y) {
-    }
+    public void setY(double y) {}
 
     @Override
     public double getY() {
@@ -30,8 +28,7 @@ public class MockFluidEntity implements IFluidEntity {
     }
 
     @Override
-    public void setZ(double z) {
-    }
+    public void setZ(double z) {}
 
     @Override
     public double getZ() {
@@ -82,39 +79,34 @@ public class MockFluidEntity implements IFluidEntity {
     }
 
     @Override
-    public void recordRelativeTransferTo(FluidEntity targetEntity, double proportion) {
+    public void recordMassTransfer(FluidEntity targetEntity, double proportion) {
         if (proportion < 0 || proportion > 1) {
             System.out.println("Error, proportion = " + proportion);
             return;
         }
 
-        mRelativeTransferRecords.put(new RelativeTransferRecord(targetEntity, proportion), 0);
+        mMassTransferRecords.put(new MassTransferRecord(targetEntity, proportion), 0);
     }
 
     @Override
-    public void recordIncomingMass(IncomingMassRecord record) {}
+    public void recordMassChange(MassChangeRecord record) {}
 
     @Override
-    public void recordDeltaChange(DeltaChangeRecord record) {}
+    public void recordForceChange(ForceChangeRecord record) {}
 
     @Override
-    public void transferRelativeValues() {
-     for (RelativeTransferRecord relativeTransferRecord : mRelativeTransferRecords.keySet()) {
-            recordTransferTo(relativeTransferRecord.getTargetEntity(), relativeTransferRecord.getProportion());
+    public void recordHeatTransfer(HeatTransferRecord record) {}
+
+    @Override
+    public void convertMassTransferToAbsoluteChange() {
+        for (MassTransferRecord massTransferRecord : mMassTransferRecords.keySet()) {
+            if (massTransferRecord.getTargetEntity() != null) {
+                double massTransfer = massTransferRecord.getProportion() * getMass();
+                massTransferRecord.getTargetEntity().recordMassChange(new MassChangeRecord(massTransfer, getTemperature(), getDeltaX(), getDeltaY(), DEFAULT_COLOR));
+            }
         }
 
-        mRelativeTransferRecords.clear();
-    }
-
-    @Override
-    public void recordTransferTo(FluidEntity targetEntity, double proportion) {
-        if (proportion == 0) return;
-
-        double massTransfer = IFluidEntity.DEFAULT_MASS * proportion;
-
-        // If targetEntity is null, it is because the transfer is going off the border of the universe
-        if (targetEntity == null) return;
-        targetEntity.recordIncomingMass(new IncomingMassRecord(massTransfer, IFluidEntity.DEFAULT_TEMPERATURE, IFluidEntity.DEFAULT_DX, IFluidEntity.DEFAULT_DY, IFluidEntity.DEFAULT_COLOR));
+        mMassTransferRecords.clear();
     }
 
 }

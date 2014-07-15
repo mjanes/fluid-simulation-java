@@ -13,7 +13,7 @@ public class Setup {
 
     private static double sZDistance = 5000;
 
-    private static final int SIZE = 150;
+    private static final int SIZE = 160;
 
     public static FluidEntity[][] create() {
         return square(SIZE);

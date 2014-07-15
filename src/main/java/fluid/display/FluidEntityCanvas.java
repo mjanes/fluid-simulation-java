@@ -32,7 +32,6 @@ public class FluidEntityCanvas extends Canvas {
         final GraphicsContext gc = getGraphicsContext2D();
         gc.clearRect(0, 0, canvasWidth, canvasHeight);
 
-
         IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> drawEntity(gc, mCamera, entities[x][y], canvasWidth, canvasHeight, drawType)));
     }
 
