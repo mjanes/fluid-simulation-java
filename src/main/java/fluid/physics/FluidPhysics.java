@@ -18,18 +18,15 @@ public class FluidPhysics {
 
     private static final IFluidEntity sMockFluidEntity = new MockFluidEntity();
 
-    // TODO: Other border types to introduce:
-    // - viscous
-    // - something that isn't 100% reflective, but say converts x into y or something...
     public enum BorderType {
         REFLECTIVE,
-        OPEN, // TODO: Need to improve open, it is still providing resistance
+        OPEN,
         NULLING};
 
     private static BorderType sBottomBorderType = BorderType.REFLECTIVE;
-    private static BorderType sLeftBorderType = BorderType.OPEN;
-    private static BorderType sRightBorderType = BorderType.OPEN;
-    private static BorderType sUpperBorderType = BorderType.OPEN;
+    private static BorderType sLeftBorderType = BorderType.REFLECTIVE;
+    private static BorderType sRightBorderType = BorderType.REFLECTIVE;
+    private static BorderType sUpperBorderType = BorderType.REFLECTIVE;
 
     public static void incrementFluid(FluidEntity[][] entities) {
         if (entities == null) return;
@@ -38,6 +35,7 @@ public class FluidPhysics {
         applyBidirectionInteractions(entities);
         applyGravity(entities);
 
+        sMockFluidEntity.convertHeatTransferToAbsoluteChange();
         IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].convertHeatTransferToAbsoluteChange()));
         IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].changeHeat()));
         IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].changeForce()));
@@ -101,16 +99,23 @@ public class FluidPhysics {
 
     /**
      * https://en.wikipedia.org/wiki/Thermal_conductivity
-     * TODO: Fix
      */
     private static void applyConductionBetweenCells(IFluidEntity a, IFluidEntity b) {
         if (a == null || b == null) return;
-        double temperatureDifference = a.getTemperature() - b.getTemperature();
-        double totalMass = a.getMass() + b.getMass();
-        double meanConductivity = a.getConductivity() * (a.getMass() / totalMass) + b.getConductivity() * (b.getMass() / totalMass);
+        if (a.getTemperature() == b.getTemperature()) return;
 
-        a.addHeat(-temperatureDifference * b.getConductivity() * b.getMass());
-        b.addHeat(temperatureDifference * a.getConductivity() * a.getMass());
+        double totalMass = a.getMass() + b.getMass();
+        double heatAvailableForTransfer = a.getHeat() * a.getConductivity() + b.getHeat() * b.getConductivity();
+
+        double heatLossFromA = -(a.getHeat() * a.getConductivity());
+        double heatGainForA = ((a.getMass() / totalMass) * heatAvailableForTransfer);
+        double heatTransferToA = heatLossFromA + heatGainForA;
+
+        if (heatTransferToA > 0) {
+            b.recordHeatTransfer(new IFluidEntity.HeatTransferRecord(a, heatTransferToA));
+        } else if (heatTransferToA < 0) {
+            a.recordHeatTransfer(new IFluidEntity.HeatTransferRecord(b, -heatTransferToA));
+        }
     }
 
     private static void applyPressureBetweenCells(IFluidEntity a, IFluidEntity b, boolean xOffset, boolean yOffset) {
@@ -130,6 +135,7 @@ public class FluidPhysics {
         double totalMass = a.getMass() + b.getMass();
         double meanViscosity = a.getViscosity() * (a.getMass() / totalMass) + b.getViscosity() * (b.getMass() / totalMass);
 
+        // TODO: Make energy conserving
         if (xOffset) {
             double deltaYDifference = a.getDeltaY() - b.getDeltaY();
             double forceTransfer;

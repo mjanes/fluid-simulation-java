@@ -56,18 +56,22 @@ public class ExternalInput {
             if (i < entities[0].length / 3) {
                 inputInverseBreezeOnEntity(entities[entities.length - 1][i]);
             }
-//            else {
-//                inputBreezeOnEntity(entities[0][i]);
-//            }
+            else if (i > 2 * entities[0].length / 3) {
+                inputBreezeOnEntity(entities[0][i]);
+            }
         }
     }
 
     public static void inputBreezeOnEntity(FluidEntity entity) {
-        entity.addMass(1, IFluidEntity.DEFAULT_TEMPERATURE + 2, Color.RED, 6, 0);
+        //entity.addMass(1, IFluidEntity.DEFAULT_TEMPERATURE + 2, Color.RED, 6, 0);
+        entity.setDeltaX(3);
+        entity.setColor(Color.WHITE);
     }
 
     public static void inputInverseBreezeOnEntity(FluidEntity entity) {
-        entity.addMass(4, IFluidEntity.DEFAULT_TEMPERATURE - 2, Color.BLUE, -1, 0);
+        entity.addMass(2, IFluidEntity.DEFAULT_TEMPERATURE / 10, Color.BLUE, -2, 0);
+//        entity.setDeltaX(-3);
+//        entity.setColor(Color.BLUE);
     }
 
     private static void inputExplosion(FluidEntity[][] entities, int timestep) {
@@ -82,7 +86,6 @@ public class ExternalInput {
      */
     private static void inputHotplate(FluidEntity[][] entities, int timestep) {
         for (FluidEntity[] entityRow : entities) {
-            // bottom side
             entityRow[0].setTemperature(IFluidEntity.DEFAULT_TEMPERATURE * 2);
         }
     }

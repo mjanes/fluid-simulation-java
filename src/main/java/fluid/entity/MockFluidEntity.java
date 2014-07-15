@@ -10,6 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MockFluidEntity implements IFluidEntity {
 
     protected final ConcurrentHashMap<MassTransferRecord, Integer> mMassTransferRecords = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<HeatTransferRecord, Integer> mHeatTransferRecords = new ConcurrentHashMap<>();
+
 
     @Override
     public void setX(double x) {}
@@ -55,8 +57,6 @@ public class MockFluidEntity implements IFluidEntity {
         return IFluidEntity.DEFAULT_DY;
     }
 
-    public void addDeltaX(double deltaDeltaX) {}
-    public void addDeltaY(double deltaDeltaY) {}
     public void addForceX(double forceX) {}
     public void addForceY(double forceY) {}
     public void addForceZ(double forceZ) {}
@@ -71,6 +71,11 @@ public class MockFluidEntity implements IFluidEntity {
     @Override
     public double getPressure() {
         return GAS_CONSTANT * IFluidEntity.DEFAULT_MASS * getTemperature() / getMolarWeight();
+    }
+
+    @Override
+    public double getHeat() {
+        return IFluidEntity.DEFAULT_TEMPERATURE * IFluidEntity.DEFAULT_MASS;
     }
 
     @Override
@@ -89,15 +94,6 @@ public class MockFluidEntity implements IFluidEntity {
     }
 
     @Override
-    public void recordMassChange(MassChangeRecord record) {}
-
-    @Override
-    public void recordForceChange(ForceChangeRecord record) {}
-
-    @Override
-    public void recordHeatTransfer(HeatTransferRecord record) {}
-
-    @Override
     public void convertMassTransferToAbsoluteChange() {
         for (MassTransferRecord massTransferRecord : mMassTransferRecords.keySet()) {
             if (massTransferRecord.getTargetEntity() != null) {
@@ -108,5 +104,34 @@ public class MockFluidEntity implements IFluidEntity {
 
         mMassTransferRecords.clear();
     }
+
+    @Override
+    public void recordMassChange(MassChangeRecord record) {}
+
+    @Override
+    public void recordForceChange(ForceChangeRecord record) {}
+
+    @Override
+    public void recordHeatTransfer(HeatTransferRecord record) {
+        mHeatTransferRecords.put(record, 0);
+    }
+
+    @Override
+    public void convertHeatTransferToAbsoluteChange() {
+        for (HeatTransferRecord heatTransferRecord : mHeatTransferRecords.keySet()) {
+            if (heatTransferRecord.getTargetEntity() != null) {
+                double heatTransfer = heatTransferRecord.getHeatChange();
+
+                if (heatTransferRecord.getTargetEntity() != null) {
+                    heatTransferRecord.getTargetEntity().recordHeatChange(new HeatChangeRecord(heatTransfer));
+                }
+            }
+        }
+
+        mHeatTransferRecords.clear();
+    }
+
+    @Override
+    public void recordHeatChange(HeatChangeRecord record) {}
 
 }

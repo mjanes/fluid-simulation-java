@@ -5,14 +5,16 @@ Teaching myself how to do a basic fluid simulation. Also my introduction to Java
 
 Currently the simulation is 2D only, though the camera is equipped to do 3D.
 
+Bear in mind I've never taken a physics class.
+
 ###TODO:
 -   Allow different types of fluids/gasses/etc such as air and water. At the moment we have some constants that define 
     fluid behavior, make them come from the fluid entity, and the proportion of the fluid entity that is whatever type
     of material.
 -   Allow phase transitions (This will probably depend upon the above, but changes those variables based on temperature.)
 -   Ability to model surface tension in liquids
--   Fix issue that is preventing Rayleigh-Taylor and Kelvin-Helmholtz instabilities from arising.
--   Improve border/edge effects. Need to estimate off-screen entities as placeholders for reverse advection and such.
+-   Fix issue that is preventing Rayleigh-Taylor and Kelvin-Helmholtz instabilities from arising. Or at least learn how
+    to make them more visible, if they are.
 
 ###References:
 -   http://cowboyprogramming.com/2008/04/01/practical-fluid-mechanics/

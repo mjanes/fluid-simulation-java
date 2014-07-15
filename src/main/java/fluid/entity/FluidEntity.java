@@ -289,15 +289,12 @@ public class FluidEntity implements IFluidEntity {
         mHeat = heat;
     }
 
-    /**
-     * TODO: Should probably make efficiency thing so that if you try to add too much heat to something with too little
-     * mass the temperature doesn't skyrocket. Just some... efficiency of transfer?
-     */
     @Override
     public synchronized void addHeat(double deltaHeat) {
         setHeat(mHeat + deltaHeat);
     }
 
+    @Override
     public synchronized double getHeat() { return mHeat; }
 
 
@@ -420,6 +417,9 @@ public class FluidEntity implements IFluidEntity {
      * This is done in two parts, similar to how mass transfers are done, because heat cannot go negative, and thus,
      */
 
+    /**
+     * Record heat transfer away from this entity, to target entity, in HeatTransferRecord.
+     */
     @Override
     public void recordHeatTransfer(HeatTransferRecord record) {
         mHeatTransferRecords.put(record, 0);
@@ -449,6 +449,7 @@ public class FluidEntity implements IFluidEntity {
         mHeatTransferRecords.clear();
     }
 
+    @Override
     public void recordHeatChange(HeatChangeRecord record) {
         mHeatChangeRecords.put(record, 0);
     }

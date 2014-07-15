@@ -22,12 +22,15 @@ public interface IFluidEntity extends IDimensionalEntity {
     public double getDeltaY();
     public double getMass();
     public double getPressure();
+    public double getHeat();
     public double getTemperature();
     public void recordMassTransfer(FluidEntity targetEntity, double proportion);
     public void convertMassTransferToAbsoluteChange();
     public void recordMassChange(MassChangeRecord record);
     public void recordForceChange(ForceChangeRecord record);
     public void recordHeatTransfer(HeatTransferRecord record);
+    public void convertHeatTransferToAbsoluteChange();
+    public void recordHeatChange(HeatChangeRecord record);
 
     public void addForceX(double forceX);
     public void addForceY(double forceY);
@@ -49,14 +52,14 @@ public interface IFluidEntity extends IDimensionalEntity {
      * https://en.wikipedia.org/wiki/Thermal_conductivity
      */
     default public double getConductivity() {
-        return .02;
+        return .0001;
     }
 
     /**
      * https://en.wikipedia.org/wiki/Viscosity
      */
     default public double getViscosity() {
-        return .02;
+        return .08;
     }
 
 
@@ -119,15 +122,20 @@ public interface IFluidEntity extends IDimensionalEntity {
     }
 
     public static class HeatTransferRecord {
-        final private FluidEntity mTargetEntity;
+        final private IFluidEntity mTargetEntity;
         final private double mHeatChange;
 
-        public HeatTransferRecord(FluidEntity targetEntity, double heatChange) {
+        /**
+         *
+         * @param targetEntity
+         * @param heatChange    Should always be positive.
+         */
+        public HeatTransferRecord(IFluidEntity targetEntity, double heatChange) {
             mTargetEntity = targetEntity;
             mHeatChange = heatChange;
         }
 
-        public FluidEntity getTargetEntity() { return mTargetEntity; }
+        public IFluidEntity getTargetEntity() { return mTargetEntity; }
 
         public double getHeatChange() { return mHeatChange; }
     }
