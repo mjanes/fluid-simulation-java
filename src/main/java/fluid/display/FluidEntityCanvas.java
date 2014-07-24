@@ -44,6 +44,8 @@ public class FluidEntityCanvas extends Canvas {
         if (drawType.equals(DrawType.INK)) {
             radius = Math.sqrt(entity.getMass()); // NOTE: Probably want to change this to cube root when we go 3d
             color = entity.getColor();
+            // TODO: Some UI controlled value to do this instead
+            color = color.saturate().saturate().darker().darker().saturate();
         } else if (drawType.equals(DrawType.TEMPERATURE)) {
             radius = Math.sqrt(entity.getMass());
             double temperature = entity.getTemperature();
