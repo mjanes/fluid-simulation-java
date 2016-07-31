@@ -11,7 +11,7 @@ import java.util.stream.IntStream;
  */
 public class Setup {
 
-    private static double sZDistance = 5000;
+    private static final double sZDistance = 5000;
 
     private static final int SIZE = 160;
 

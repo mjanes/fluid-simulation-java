@@ -9,7 +9,7 @@ import java.util.stream.IntStream;
 /**
  * http://cowboyprogramming.com/2008/04/01/practical-fluid-mechanics/
  * http://www.dgp.toronto.edu/people/stam/reality/Research/pdf/GDC03.pdf
- *
+ * <p>
  * Created by mjanes on 6/16/2014.
  */
 public class FluidPhysics {
@@ -21,12 +21,13 @@ public class FluidPhysics {
     public enum BorderType {
         REFLECTIVE,
         OPEN,
-        NULLING};
+        NULLING
+    }
 
-    private static BorderType sBottomBorderType = BorderType.REFLECTIVE;
-    private static BorderType sLeftBorderType = BorderType.OPEN;
-    private static BorderType sRightBorderType = BorderType.OPEN;
-    private static BorderType sUpperBorderType = BorderType.OPEN;
+    private static final BorderType sBottomBorderType = BorderType.REFLECTIVE;
+    private static final BorderType sLeftBorderType = BorderType.OPEN;
+    private static final BorderType sRightBorderType = BorderType.OPEN;
+    private static final BorderType sUpperBorderType = BorderType.OPEN;
 
     public static void incrementFluid(FluidEntity[][] entities) {
         if (entities == null) return;
@@ -100,9 +101,9 @@ public class FluidPhysics {
     /**
      * If the two entities temperature difference, record a heat transfer from the one with the higher temperature to
      * the lower. The ammount of heat trasferred is dependant upon the conductivity of the entities.
-     *
+     * <p>
      * https://en.wikipedia.org/wiki/Thermal_conductivity
-     *
+     * <p>
      * TODO: Make this math cleaner and easier to understand.
      */
     private static void applyConductionBetweenCells(IFluidEntity a, IFluidEntity b) {
@@ -138,7 +139,7 @@ public class FluidPhysics {
     /**
      * https://en.wikipedia.org/wiki/Viscosity
      * https://en.wikipedia.org/wiki/Shear_stress
-     *
+     * <p>
      * TODO: Make this math cleaner and easier to understand.
      */
     private static void applyViscosityBetweenCells(IFluidEntity a, IFluidEntity b, boolean xOffset, boolean yOffset) {
@@ -177,9 +178,7 @@ public class FluidPhysics {
             }
         }
 
-        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> {
-            entities[x][y].addForceY(-downwardPressure[x][y]);
-        }));
+        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].addForceY(-downwardPressure[x][y])));
     }
 
     private static void checkBorder(FluidEntity[][] entities) {
@@ -219,7 +218,7 @@ public class FluidPhysics {
                 }
             }
 
-            if (nextY > maxY){
+            if (nextY > maxY) {
                 if (sUpperBorderType.equals(BorderType.REFLECTIVE)) {
                     entity.setDeltaY(-entity.getDeltaY());
                 } else if (sUpperBorderType.equals(BorderType.NULLING)) {

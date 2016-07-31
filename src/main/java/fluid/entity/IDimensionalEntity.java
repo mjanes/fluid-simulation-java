@@ -4,18 +4,21 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 
 public interface IDimensionalEntity {
 
-    public void setX(double x);
-    public double getX();
+    void setX(double x);
 
-    public void setY(double y);
-    public double getY();
+    double getX();
 
-	public void setZ(double z);
-	public double getZ();
+    void setY(double y);
 
-    public double getDistance(IDimensionalEntity other);
+    double getY();
 
-    public static double getDistance(IDimensionalEntity a, IDimensionalEntity b) {
+    void setZ(double z);
+
+    double getZ();
+
+    double getDistance(IDimensionalEntity other);
+
+    static double getDistance(IDimensionalEntity a, IDimensionalEntity b) {
         return Math.sqrt(
                 Math.pow((a.getX() - b.getX()), 2) +
                         Math.pow((a.getY() - b.getY()), 2) +
@@ -23,5 +26,5 @@ public interface IDimensionalEntity {
         );
     }
 
-    public Array2DRowRealMatrix getR4Matrix();
+    Array2DRowRealMatrix getR4Matrix();
 }

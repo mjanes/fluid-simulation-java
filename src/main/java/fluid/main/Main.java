@@ -26,10 +26,10 @@ import java.util.concurrent.Executors;
 
 public class Main extends Application {
 
-    private int mFrameDelay = 80;
-    private boolean mRunning = true;
+    private final int mFrameDelay = 80;
+    private final boolean mRunning = true;
 
-    protected static final FluidEntity[][] ENTITIES = Setup.create();
+    private static final FluidEntity[][] ENTITIES = Setup.create();
     private FluidEntityCanvas mCanvas;
     private Camera mCamera;
 
@@ -116,11 +116,11 @@ public class Main extends Application {
         return mFrameDelay;
     }
 
-    public boolean isRunning() {
+    private boolean isRunning() {
         return mRunning;
     }
 
-    public void runSimulation() {
+    private void runSimulation() {
         mExecutorService = Executors.newSingleThreadExecutor();
 
         Timeline timeline = new Timeline();
@@ -131,7 +131,7 @@ public class Main extends Application {
     }
 
 
-    protected void increment() {
+    private void increment() {
         // Perform physics simulations
         if (isRunning()) {
 
@@ -143,9 +143,7 @@ public class Main extends Application {
                 mCanvas.drawEntities(ENTITIES, mDrawType);
             });
 
-            incrementStep.setOnFailed(e -> {
-                System.out.println(e.toString());
-            });
+            incrementStep.setOnFailed(e -> System.out.println(e.toString()));
 
             mExecutorService.submit(incrementStep);
         }

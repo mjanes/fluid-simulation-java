@@ -13,9 +13,9 @@ import java.util.stream.IntStream;
 
 public class FluidEntityCanvas extends Canvas {
 
-    private Camera mCamera;
+    private final Camera mCamera;
 
-    public static final int EYE_DISTANCE = 5000;
+    private static final int EYE_DISTANCE = 5000;
 
     public enum DrawType {
         INK, TEMPERATURE, VELOCITY, MASS
@@ -90,13 +90,12 @@ public class FluidEntityCanvas extends Canvas {
 
     /**
      * Looking into doing this all with matrix math for speed improvement.
-     *
+     * <p>
      * http://www.matrix44.net/cms/notes/opengl-3d-graphics/basic-3d-math-matrices
      *
      * @param camera
      * @param canvasWidth
      * @param canvasHeight
-     *
      * @return
      */
     private static Point2D.Double getCanvasLocation(Camera camera, final double canvasWidth, final double canvasHeight, FluidEntity entity) {

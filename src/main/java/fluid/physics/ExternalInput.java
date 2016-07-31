@@ -7,9 +7,9 @@ import javafx.scene.paint.Color;
 /**
  * Created by mjanes on 6/29/2014.
  */
-public class ExternalInput {
+class ExternalInput {
 
-    public static void applyInput(FluidEntity[][] entities, int timestep) {
+    static void applyInput(FluidEntity[][] entities, int timestep) {
         //inputExplosion(entities, timestep);
 
         //inputCandle(entities);
@@ -47,28 +47,27 @@ public class ExternalInput {
     }
 
     private static void inputBreeze(FluidEntity[][] entities) {
-        inputBreezeOnEntity(entities[0][entities[0].length * 2/3]);
-        inputBreezeOnEntity(entities[0][entities[0].length * 2/3 + 1]);
+        inputBreezeOnEntity(entities[0][entities[0].length * 2 / 3]);
+        inputBreezeOnEntity(entities[0][entities[0].length * 2 / 3 + 1]);
     }
 
     public static void kelvinHelmholtz(FluidEntity[][] entities) {
         for (int i = 0; i < entities[0].length; i++) {
             if (i < entities[0].length / 3) {
                 inputInverseBreezeOnEntity(entities[entities.length - 1][i]);
-            }
-            else if (i > 2 * entities[0].length / 3) {
+            } else if (i > 2 * entities[0].length / 3) {
                 inputBreezeOnEntity(entities[0][i]);
             }
         }
     }
 
-    public static void inputBreezeOnEntity(FluidEntity entity) {
+    private static void inputBreezeOnEntity(FluidEntity entity) {
         //entity.addMass(1, IFluidEntity.DEFAULT_TEMPERATURE + 2, Color.RED, 6, 0);
         entity.setDeltaX(3);
         entity.setColor(Color.WHITE);
     }
 
-    public static void inputInverseBreezeOnEntity(FluidEntity entity) {
+    private static void inputInverseBreezeOnEntity(FluidEntity entity) {
         entity.addMass(2, IFluidEntity.DEFAULT_TEMPERATURE / 10, Color.BLUE, -2, 0);
 //        entity.setDeltaX(-3);
 //        entity.setColor(Color.BLUE);

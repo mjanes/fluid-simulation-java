@@ -7,31 +7,31 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * http://cowboyprogramming.com/2008/04/01/practical-fluid-mechanics/
- *
+ * <p>
  * Created by mjanes on 6/12/2014.
  */
 public class FluidEntity implements IFluidEntity {
 
-    protected double mX;
-    protected double mY;
-    protected double mZ;
+    private double mX;
+    private double mY;
+    private double mZ;
 
-    protected Array2DRowRealMatrix r4Matrix = new Array2DRowRealMatrix(new double[] {0, 0, 0, 1});
+    private final Array2DRowRealMatrix r4Matrix = new Array2DRowRealMatrix(new double[]{0, 0, 0, 1});
 
-    protected double mDeltaX;
-    protected double mDeltaY;
-    protected double mDeltaZ;
-    protected double mMass;
-    protected double mHeat;
-    protected Color mColor;
+    private double mDeltaX;
+    private double mDeltaY;
+    private double mDeltaZ;
+    private double mMass;
+    private double mHeat;
+    private Color mColor;
 
-    protected final ConcurrentHashMap<MassTransferRecord, Integer> mMassTransferRecords = new ConcurrentHashMap<>();
-    protected final ConcurrentHashMap<MassChangeRecord, Integer> mMassChangeRecords = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<MassTransferRecord, Integer> mMassTransferRecords = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<MassChangeRecord, Integer> mMassChangeRecords = new ConcurrentHashMap<>();
 
-    protected final ConcurrentHashMap<ForceChangeRecord, Integer> mForceChangeRecords = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<ForceChangeRecord, Integer> mForceChangeRecords = new ConcurrentHashMap<>();
 
-    protected final ConcurrentHashMap<HeatTransferRecord, Integer> mHeatTransferRecords = new ConcurrentHashMap<>();
-    protected final ConcurrentHashMap<HeatChangeRecord, Integer> mHeatChangeRecords = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<HeatTransferRecord, Integer> mHeatTransferRecords = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<HeatChangeRecord, Integer> mHeatChangeRecords = new ConcurrentHashMap<>();
 
     public FluidEntity(double x, double y, double z, double mass, double temperature) {
         setX(x);
@@ -86,13 +86,15 @@ public class FluidEntity implements IFluidEntity {
     }
 
 
-    /** Velocity */
+    /**
+     * Velocity
+     */
 
     public synchronized void setDeltaX(double deltaX) {
         mDeltaX = deltaX;
     }
 
-    public synchronized void addDeltaX(double deltaDeltaX) {
+    private synchronized void addDeltaX(double deltaDeltaX) {
         setDeltaX(mDeltaX + deltaDeltaX);
     }
 
@@ -128,7 +130,7 @@ public class FluidEntity implements IFluidEntity {
         return mDeltaY * mMass;
     }
 
-    public synchronized void addDeltaY(double deltaDeltaY) {
+    private synchronized void addDeltaY(double deltaDeltaY) {
         setDeltaY(mDeltaY + deltaDeltaY);
     }
 
@@ -150,11 +152,11 @@ public class FluidEntity implements IFluidEntity {
     }
 
 
-    public synchronized void setDeltaZ(double deltaZ) {
+    private synchronized void setDeltaZ(double deltaZ) {
         mDeltaZ = deltaZ;
     }
 
-    public synchronized void addDeltaZ(double deltaDeltaZ) {
+    private synchronized void addDeltaZ(double deltaDeltaZ) {
         setDeltaZ(mDeltaZ + deltaDeltaZ);
     }
 
@@ -176,9 +178,11 @@ public class FluidEntity implements IFluidEntity {
     }
 
 
-    /** Mass */
+    /**
+     * Mass
+     */
 
-    public synchronized void setMass(double mass) {
+    private synchronized void setMass(double mass) {
         if (mass < 0) {
             mMass = 0;
             return;
@@ -249,9 +253,9 @@ public class FluidEntity implements IFluidEntity {
     /**
      * If the change in mass is negative, then the delta of the remaining mass will be the same, though the force
      * of that mass will be correspondingly lessened.
-     *
+     * <p>
      * Heat though will be decreased.
-     *
+     * <p>
      * I suppose force is analogous to heat, and delta is analogous to temperature here.
      */
     public void subtractMass(double deltaMass) {
@@ -269,8 +273,9 @@ public class FluidEntity implements IFluidEntity {
     }
 
 
-
-    /** Ink */
+    /**
+     * Ink
+     */
 
     public synchronized Color getColor() {
         return mColor;
@@ -281,7 +286,9 @@ public class FluidEntity implements IFluidEntity {
     }
 
 
-    /** Heat */
+    /**
+     * Heat
+     */
 
     public synchronized void setTemperature(double temperature) {
         mHeat = temperature * mMass;
@@ -293,7 +300,7 @@ public class FluidEntity implements IFluidEntity {
         return mHeat / mMass;
     }
 
-    public synchronized void setHeat(double heat) {
+    private synchronized void setHeat(double heat) {
         if (heat < 0) {
             mHeat = 0;
             return;
@@ -307,15 +314,17 @@ public class FluidEntity implements IFluidEntity {
     }
 
     @Override
-    public synchronized double getHeat() { return mHeat; }
+    public synchronized double getHeat() {
+        return mHeat;
+    }
 
 
     /**
      * Pressure
-     *
+     * <p>
      * We are presuming that the volume of of a fluid entity cell is constant, but the amount of mass, and
      * the temperature of that mass may change.
-     *
+     * <p>
      * https://en.wikipedia.org/wiki/Pressure
      * http://www.passmyexams.co.uk/GCSE/physics/pressure-temperature-relationship-of-gas-pressure-law.html
      * https://en.wikipedia.org/wiki/Charles%27s_Law
@@ -325,8 +334,9 @@ public class FluidEntity implements IFluidEntity {
     }
 
 
-
-    /** For display */
+    /**
+     * For display
+     */
 
     public synchronized FluidEntity getNextLocationAsFluidEntity(double velocityFactor) {
         return new FluidEntity(mX + (mDeltaX * velocityFactor), mY + (mDeltaY * velocityFactor), mZ + (mDeltaZ * velocityFactor), mMass, getTemperature());
