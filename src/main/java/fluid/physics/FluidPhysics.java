@@ -16,7 +16,7 @@ public class FluidPhysics {
 
     private static final double GRAVITATIONAL_CONSTANT = .00001;
 
-    private static final IFluidEntity sMockFluidEntity = new MockFluidEntity();
+    private static final IFluidEntity mockFluidEntity = new MockFluidEntity();
 
     public enum BorderType {
         REFLECTIVE,
@@ -24,10 +24,10 @@ public class FluidPhysics {
         NULLING
     }
 
-    private static final BorderType sBottomBorderType = BorderType.REFLECTIVE;
-    private static final BorderType sLeftBorderType = BorderType.OPEN;
-    private static final BorderType sRightBorderType = BorderType.OPEN;
-    private static final BorderType sUpperBorderType = BorderType.OPEN;
+    private static final BorderType bottomBorderType = BorderType.REFLECTIVE;
+    private static final BorderType leftBorderType = BorderType.OPEN;
+    private static final BorderType rightBorderType = BorderType.OPEN;
+    private static final BorderType upperBorderType = BorderType.OPEN;
 
     public static void incrementFluid(FluidEntity[][] entities) {
         if (entities == null) return;
@@ -36,7 +36,7 @@ public class FluidPhysics {
         applyBidirectionInteractions(entities);
         applyGravity(entities);
 
-        sMockFluidEntity.convertHeatTransferToAbsoluteChange();
+        mockFluidEntity.convertHeatTransferToAbsoluteChange();
         IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].convertHeatTransferToAbsoluteChange()));
         IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].changeHeat()));
         IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].changeForce()));
@@ -48,7 +48,7 @@ public class FluidPhysics {
         advection(entities);
 
         // transfer application
-        sMockFluidEntity.convertMassTransferToAbsoluteChange();
+        mockFluidEntity.convertMassTransferToAbsoluteChange();
         IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].convertMassTransferToAbsoluteChange()));
         IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].changeMass()));
     }
@@ -59,11 +59,11 @@ public class FluidPhysics {
             IFluidEntity entity = null;
             if (i == -1 || j == -1) {
                 if (!(i == -1 && j == -1)) {
-                    if (i == -1 && sLeftBorderType.equals(BorderType.OPEN)) {
-                        entity = sMockFluidEntity;
+                    if (i == -1 && leftBorderType.equals(BorderType.OPEN)) {
+                        entity = mockFluidEntity;
                     }
-                    if (j == -1 && sBottomBorderType.equals(BorderType.OPEN)) {
-                        entity = sMockFluidEntity;
+                    if (j == -1 && bottomBorderType.equals(BorderType.OPEN)) {
+                        entity = mockFluidEntity;
                     }
                 }
             } else {
@@ -76,10 +76,10 @@ public class FluidPhysics {
                     applyConductionBetweenCells(entity, entities[i + 1][j]);
                     applyPressureBetweenCells(entity, entities[i + 1][j], true, false);
                     applyViscosityBetweenCells(entity, entities[i + 1][j], true, false);
-                } else if (i + 1 == entities.length && sRightBorderType.equals(BorderType.OPEN)) {
-                    applyConductionBetweenCells(entity, sMockFluidEntity);
-                    applyPressureBetweenCells(entity, sMockFluidEntity, true, false);
-                    applyViscosityBetweenCells(entity, sMockFluidEntity, true, false);
+                } else if (i + 1 == entities.length && rightBorderType.equals(BorderType.OPEN)) {
+                    applyConductionBetweenCells(entity, mockFluidEntity);
+                    applyPressureBetweenCells(entity, mockFluidEntity, true, false);
+                    applyViscosityBetweenCells(entity, mockFluidEntity, true, false);
                 }
             }
 
@@ -89,10 +89,10 @@ public class FluidPhysics {
                     applyConductionBetweenCells(entity, entities[i][j + 1]);
                     applyPressureBetweenCells(entity, entities[i][j + 1], false, true);
                     applyViscosityBetweenCells(entity, entities[i][j + 1], false, true);
-                } else if (j + 1 == entities[i].length && sUpperBorderType.equals(BorderType.OPEN)) {
-                    applyConductionBetweenCells(entity, sMockFluidEntity);
-                    applyPressureBetweenCells(entity, sMockFluidEntity, false, true);
-                    applyViscosityBetweenCells(entity, sMockFluidEntity, false, true);
+                } else if (j + 1 == entities[i].length && upperBorderType.equals(BorderType.OPEN)) {
+                    applyConductionBetweenCells(entity, mockFluidEntity);
+                    applyPressureBetweenCells(entity, mockFluidEntity, false, true);
+                    applyViscosityBetweenCells(entity, mockFluidEntity, false, true);
                 }
             }
         }));
@@ -172,7 +172,7 @@ public class FluidPhysics {
         final double[][] downwardPressure = new double[entities.length][entities[0].length];
 
         for (int i = 0; i < entities.length; i++) {
-            downwardPressure[i][entities[i].length - 1] = sMockFluidEntity.getMass() * GRAVITATIONAL_CONSTANT;
+            downwardPressure[i][entities[i].length - 1] = mockFluidEntity.getMass() * GRAVITATIONAL_CONSTANT;
             for (int j = entities[i].length - 2; j >= 0; j--) {
                 downwardPressure[i][j] = downwardPressure[i][j + 1] + (entities[i][j].getMass() * GRAVITATIONAL_CONSTANT);
             }
@@ -195,33 +195,33 @@ public class FluidPhysics {
             double nextY = entity.getY() + entity.getDeltaY();
 
             if (nextX < minX) {
-                if (sLeftBorderType.equals(BorderType.REFLECTIVE)) {
+                if (leftBorderType.equals(BorderType.REFLECTIVE)) {
                     entity.setDeltaX(-entity.getDeltaX());
-                } else if (sLeftBorderType.equals(BorderType.NULLING)) {
+                } else if (leftBorderType.equals(BorderType.NULLING)) {
                     entity.setDeltaX(0);
                 }
             }
 
             if (nextX > maxX) {
-                if (sRightBorderType.equals(BorderType.REFLECTIVE)) {
+                if (rightBorderType.equals(BorderType.REFLECTIVE)) {
                     entity.setDeltaX(-entity.getDeltaX());
-                } else if (sRightBorderType.equals(BorderType.NULLING)) {
+                } else if (rightBorderType.equals(BorderType.NULLING)) {
                     entity.setDeltaX(0);
                 }
             }
 
             if (nextY < minY) {
-                if (sBottomBorderType.equals(BorderType.REFLECTIVE)) {
+                if (bottomBorderType.equals(BorderType.REFLECTIVE)) {
                     entity.setDeltaY(-entity.getDeltaY());
-                } else if (sBottomBorderType.equals(BorderType.NULLING)) {
+                } else if (bottomBorderType.equals(BorderType.NULLING)) {
                     entity.setDeltaY(0);
                 }
             }
 
             if (nextY > maxY) {
-                if (sUpperBorderType.equals(BorderType.REFLECTIVE)) {
+                if (upperBorderType.equals(BorderType.REFLECTIVE)) {
                     entity.setDeltaY(-entity.getDeltaY());
-                } else if (sUpperBorderType.equals(BorderType.NULLING)) {
+                } else if (upperBorderType.equals(BorderType.NULLING)) {
                     entity.setDeltaY(0);
                 }
             }
@@ -360,20 +360,20 @@ public class FluidPhysics {
         IFluidEntity originEntity = null;
 
         if (originXIndex < 0) {
-            if (sLeftBorderType.equals(BorderType.OPEN)) {
-                originEntity = sMockFluidEntity;
+            if (leftBorderType.equals(BorderType.OPEN)) {
+                originEntity = mockFluidEntity;
             }
         } else if (originYIndex < 0) {
-            if (sBottomBorderType.equals(BorderType.OPEN)) {
-                originEntity = sMockFluidEntity;
+            if (bottomBorderType.equals(BorderType.OPEN)) {
+                originEntity = mockFluidEntity;
             }
         } else if (originXIndex >= entities.length) {
-            if (sRightBorderType.equals(BorderType.OPEN)) {
-                originEntity = sMockFluidEntity;
+            if (rightBorderType.equals(BorderType.OPEN)) {
+                originEntity = mockFluidEntity;
             }
         } else if (originYIndex >= entities[originXIndex].length) {
-            if (sUpperBorderType.equals(BorderType.OPEN)) {
-                originEntity = sMockFluidEntity;
+            if (upperBorderType.equals(BorderType.OPEN)) {
+                originEntity = mockFluidEntity;
             }
         } else {
             originEntity = entities[originXIndex][originYIndex];

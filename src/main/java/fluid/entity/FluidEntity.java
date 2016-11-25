@@ -12,26 +12,26 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class FluidEntity implements IFluidEntity {
 
-    private double mX;
-    private double mY;
-    private double mZ;
+    private double x;
+    private double y;
+    private double z;
 
     private final Array2DRowRealMatrix r4Matrix = new Array2DRowRealMatrix(new double[]{0, 0, 0, 1});
 
-    private double mDeltaX;
-    private double mDeltaY;
-    private double mDeltaZ;
-    private double mMass;
-    private double mHeat;
-    private Color mColor;
+    private double deltaX;
+    private double deltaY;
+    private double deltaZ;
+    private double mass;
+    private double heat;
+    private Color color;
 
-    private final ConcurrentHashMap<MassTransferRecord, Integer> mMassTransferRecords = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<MassChangeRecord, Integer> mMassChangeRecords = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<MassTransferRecord, Integer> massTransferRecords = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<MassChangeRecord, Integer> massChangeRecords = new ConcurrentHashMap<>();
 
-    private final ConcurrentHashMap<ForceChangeRecord, Integer> mForceChangeRecords = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<ForceChangeRecord, Integer> forceChangeRecords = new ConcurrentHashMap<>();
 
-    private final ConcurrentHashMap<HeatTransferRecord, Integer> mHeatTransferRecords = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<HeatChangeRecord, Integer> mHeatChangeRecords = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<HeatTransferRecord, Integer> heatTransferRecords = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<HeatChangeRecord, Integer> heatChangeRecords = new ConcurrentHashMap<>();
 
     public FluidEntity(double x, double y, double z, double mass, double temperature) {
         setX(x);
@@ -44,35 +44,35 @@ public class FluidEntity implements IFluidEntity {
 
     @Override
     public synchronized void setX(double x) {
-        mX = x;
+        this.x = x;
         r4Matrix.setEntry(0, 0, x);
     }
 
     @Override
     public synchronized double getX() {
-        return mX;
+        return x;
     }
 
     @Override
     public synchronized void setY(double y) {
-        mY = y;
+        this.y = y;
         r4Matrix.setEntry(1, 0, y);
     }
 
     @Override
     public synchronized double getY() {
-        return mY;
+        return y;
     }
 
     @Override
     public synchronized void setZ(double z) {
-        mZ = z;
+        this.z = z;
         r4Matrix.setEntry(2, 0, z);
     }
 
     @Override
     public synchronized double getZ() {
-        return mZ;
+        return z;
     }
 
     @Override
@@ -91,82 +91,82 @@ public class FluidEntity implements IFluidEntity {
      */
 
     public synchronized void setDeltaX(double deltaX) {
-        mDeltaX = deltaX;
+        this.deltaX = deltaX;
     }
 
     private synchronized void addDeltaX(double deltaDeltaX) {
-        setDeltaX(mDeltaX + deltaDeltaX);
+        setDeltaX(deltaX + deltaDeltaX);
     }
 
     @Override
     public synchronized double getDeltaX() {
-        return mDeltaX;
+        return deltaX;
     }
 
     @Override
     public synchronized void addForceX(double forceX) {
-        if (mMass <= 0) {
+        if (mass <= 0) {
             setDeltaX(0);
             return;
         }
 
         // TODO: Probably need some efficiency thing here, if mass is too small, and force is too high, turn some energy
         // into heat?
-        addDeltaX(forceX / mMass);
+        addDeltaX(forceX / mass);
     }
 
     @Override
     public synchronized double getForceX() {
-        return mDeltaX * mMass;
+        return deltaX * mass;
     }
 
 
     public synchronized void setDeltaY(double deltaY) {
-        mDeltaY = deltaY;
+        this.deltaY = deltaY;
     }
 
     @Override
     public synchronized double getForceY() {
-        return mDeltaY * mMass;
+        return deltaY * mass;
     }
 
     private synchronized void addDeltaY(double deltaDeltaY) {
-        setDeltaY(mDeltaY + deltaDeltaY);
+        setDeltaY(deltaY + deltaDeltaY);
     }
 
     @Override
     public synchronized double getDeltaY() {
-        return mDeltaY;
+        return deltaY;
     }
 
     @Override
     public synchronized void addForceY(double forceY) {
-        if (mMass <= 0) {
+        if (mass <= 0) {
             setDeltaY(0);
             return;
         }
 
         // TODO: Probably need some efficiency thing here, if mass is too small, and force is too high, turn some energy
         // into heat?
-        addDeltaY(forceY / mMass);
+        addDeltaY(forceY / mass);
     }
 
 
     private synchronized void setDeltaZ(double deltaZ) {
-        mDeltaZ = deltaZ;
+        this.deltaZ = deltaZ;
     }
 
     private synchronized void addDeltaZ(double deltaDeltaZ) {
-        setDeltaZ(mDeltaZ + deltaDeltaZ);
+        setDeltaZ(deltaZ + deltaDeltaZ);
     }
 
     public synchronized double getDeltaZ() {
-        return mDeltaZ;
+        return deltaZ;
     }
 
     @Override
     public synchronized void addForceZ(double forceZ) {
-        if (mMass <= 0) {
+        if (mass <= 0) {
             setDeltaZ(0);
             return;
         }
@@ -174,7 +174,7 @@ public class FluidEntity implements IFluidEntity {
 
         // TODO: Probably need some efficiency thing here, if mass is too small, and force is too high, turn some energy
         // into heat?
-        addDeltaZ(forceZ / mMass);
+        addDeltaZ(forceZ / mass);
     }
 
 
@@ -184,15 +184,15 @@ public class FluidEntity implements IFluidEntity {
 
     private synchronized void setMass(double mass) {
         if (mass < 0) {
-            mMass = 0;
+            this.mass = 0;
             return;
         }
-        mMass = mass;
+        this.mass = mass;
     }
 
     @Override
     public synchronized double getMass() {
-        return mMass;
+        return mass;
     }
 
     public synchronized void addMass(double deltaMass, double massTemperature, Color color) {
@@ -211,10 +211,10 @@ public class FluidEntity implements IFluidEntity {
         double oldDeltaX = getDeltaX();
         double oldDeltaY = getDeltaY();
 
-        setMass(mMass + deltaMass);
+        setMass(mass + deltaMass);
 
-        double oldProportion = (mMass - deltaMass) / mMass;
-        double newProportion = deltaMass / mMass;
+        double oldProportion = (mass - deltaMass) / mass;
+        double newProportion = deltaMass / mass;
 
         double newDeltaX = oldDeltaX * oldProportion + incomingDeltaX * newProportion;
         double newDeltaY = oldDeltaY * oldProportion + incomingDeltaY * newProportion;
@@ -225,12 +225,12 @@ public class FluidEntity implements IFluidEntity {
         // Unlike force, heat is independent of mass.
         addHeat(deltaMass * massTemperature);
 
-        if (!(color == null || color.equals(mColor))) {
+        if (!(color == null || color.equals(this.color))) {
             // Ink - doing this in a separate block
-            double prevRed = mColor.getRed();
-            double prevGreen = mColor.getGreen();
-            double prevBlue = mColor.getBlue();
-            double prevAlpha = mColor.getOpacity();
+            double prevRed = this.color.getRed();
+            double prevGreen = this.color.getGreen();
+            double prevBlue = this.color.getBlue();
+            double prevAlpha = this.color.getOpacity();
 
             double newRed = prevRed * oldProportion + color.getRed() * newProportion;
             double newGreen = prevGreen * oldProportion + color.getGreen() * newProportion;
@@ -259,16 +259,16 @@ public class FluidEntity implements IFluidEntity {
      * I suppose force is analogous to heat, and delta is analogous to temperature here.
      */
     public void subtractMass(double deltaMass) {
-        if (mMass + deltaMass <= 0) {
+        if (mass + deltaMass <= 0) {
             setMass(0);
             setHeat(0);
             setDeltaX(0);
             setDeltaY(0);
             setDeltaZ(0);
         } else {
-            double proportion = deltaMass / mMass;
-            setMass(mMass + deltaMass);
-            addHeat(mHeat * proportion);
+            double proportion = deltaMass / mass;
+            setMass(mass + deltaMass);
+            addHeat(heat * proportion);
         }
     }
 
@@ -278,11 +278,11 @@ public class FluidEntity implements IFluidEntity {
      */
 
     public synchronized Color getColor() {
-        return mColor;
+        return color;
     }
 
     public synchronized void setColor(Color color) {
-        mColor = color;
+        this.color = color;
     }
 
 
@@ -291,31 +291,31 @@ public class FluidEntity implements IFluidEntity {
      */
 
     public synchronized void setTemperature(double temperature) {
-        mHeat = temperature * mMass;
+        heat = temperature * mass;
     }
 
     @Override
     public synchronized double getTemperature() {
-        if (mMass <= 0) return 0;
-        return mHeat / mMass;
+        if (mass <= 0) return 0;
+        return heat / mass;
     }
 
     private synchronized void setHeat(double heat) {
         if (heat < 0) {
-            mHeat = 0;
+            this.heat = 0;
             return;
         }
-        mHeat = heat;
+        this.heat = heat;
     }
 
     @Override
     public synchronized void addHeat(double deltaHeat) {
-        setHeat(mHeat + deltaHeat);
+        setHeat(heat + deltaHeat);
     }
 
     @Override
     public synchronized double getHeat() {
-        return mHeat;
+        return heat;
     }
 
 
@@ -330,7 +330,7 @@ public class FluidEntity implements IFluidEntity {
      * https://en.wikipedia.org/wiki/Charles%27s_Law
      */
     public synchronized double getPressure() {
-        return GAS_CONSTANT * mMass * getTemperature() / getMolarWeight();
+        return GAS_CONSTANT * mass * getTemperature() / getMolarWeight();
     }
 
 
@@ -339,7 +339,7 @@ public class FluidEntity implements IFluidEntity {
      */
 
     public synchronized FluidEntity getNextLocationAsFluidEntity(double velocityFactor) {
-        return new FluidEntity(mX + (mDeltaX * velocityFactor), mY + (mDeltaY * velocityFactor), mZ + (mDeltaZ * velocityFactor), mMass, getTemperature());
+        return new FluidEntity(x + (deltaX * velocityFactor), y + (deltaY * velocityFactor), z + (deltaZ * velocityFactor), mass, getTemperature());
     }
 
     /**
@@ -363,12 +363,12 @@ public class FluidEntity implements IFluidEntity {
             return;
         }
 
-        if (mMass == 0) return;
+        if (mass == 0) return;
 
         // Do not record transfers to self.
         if (this.equals(targetEntity)) return;
 
-        mMassTransferRecords.put(new MassTransferRecord(targetEntity, proportion), 0);
+        massTransferRecords.put(new MassTransferRecord(targetEntity, proportion), 0);
     }
 
     /**
@@ -377,11 +377,11 @@ public class FluidEntity implements IFluidEntity {
     @Override
     public void convertMassTransferToAbsoluteChange() {
         double totalRatio = 0;
-        for (MassTransferRecord massTransferRecord : mMassTransferRecords.keySet()) {
+        for (MassTransferRecord massTransferRecord : massTransferRecords.keySet()) {
             totalRatio += massTransferRecord.getProportion();
         }
 
-        for (MassTransferRecord massTransferRecord : mMassTransferRecords.keySet()) {
+        for (MassTransferRecord massTransferRecord : massTransferRecords.keySet()) {
             double massTransfer;
             if (totalRatio > 1) {
                 massTransfer = getMass() * massTransferRecord.getProportion() / totalRatio;
@@ -389,14 +389,14 @@ public class FluidEntity implements IFluidEntity {
                 massTransfer = getMass() * massTransferRecord.getProportion();
             }
 
-            recordMassChange(new MassChangeRecord(-massTransfer, getTemperature(), getDeltaX(), getDeltaY(), mColor));
+            recordMassChange(new MassChangeRecord(-massTransfer, getTemperature(), getDeltaX(), getDeltaY(), color));
 
             if (massTransferRecord.getTargetEntity() != null) {
-                massTransferRecord.getTargetEntity().recordMassChange(new MassChangeRecord(massTransfer, getTemperature(), getDeltaX(), getDeltaY(), mColor));
+                massTransferRecord.getTargetEntity().recordMassChange(new MassChangeRecord(massTransfer, getTemperature(), getDeltaX(), getDeltaY(), color));
             }
         }
 
-        mMassTransferRecords.clear();
+        massTransferRecords.clear();
     }
 
     /**
@@ -404,15 +404,15 @@ public class FluidEntity implements IFluidEntity {
      */
     @Override
     public void recordMassChange(MassChangeRecord record) {
-        mMassChangeRecords.put(record, 0);
+        massChangeRecords.put(record, 0);
     }
 
     public void changeMass() {
-        for (MassChangeRecord transferRecord : mMassChangeRecords.keySet()) {
+        for (MassChangeRecord transferRecord : massChangeRecords.keySet()) {
             transferRecord.transfer(this);
         }
 
-        mMassChangeRecords.clear();
+        massChangeRecords.clear();
     }
 
 
@@ -422,15 +422,15 @@ public class FluidEntity implements IFluidEntity {
 
     @Override
     public void recordForceChange(ForceChangeRecord record) {
-        mForceChangeRecords.put(record, 0);
+        forceChangeRecords.put(record, 0);
     }
 
     public void changeForce() {
-        for (ForceChangeRecord forceChangeRecord : mForceChangeRecords.keySet()) {
+        for (ForceChangeRecord forceChangeRecord : forceChangeRecords.keySet()) {
             forceChangeRecord.transfer(this);
         }
 
-        mForceChangeRecords.clear();
+        forceChangeRecords.clear();
     }
 
     /**
@@ -444,18 +444,18 @@ public class FluidEntity implements IFluidEntity {
      */
     @Override
     public void recordHeatTransfer(HeatTransferRecord record) {
-        mHeatTransferRecords.put(record, 0);
+        heatTransferRecords.put(record, 0);
     }
 
     public void convertHeatTransferToAbsoluteChange() {
         double totalHeatTransfer = 0;
-        for (HeatTransferRecord heatChangeRecord : mHeatTransferRecords.keySet()) {
+        for (HeatTransferRecord heatChangeRecord : heatTransferRecords.keySet()) {
             totalHeatTransfer += heatChangeRecord.getHeatChange();
         }
 
-        for (HeatTransferRecord heatTransferRecord : mHeatTransferRecords.keySet()) {
+        for (HeatTransferRecord heatTransferRecord : heatTransferRecords.keySet()) {
             double heatTransfer;
-            if (totalHeatTransfer - mHeat < 0) {
+            if (totalHeatTransfer - heat < 0) {
                 heatTransfer = heatTransferRecord.getHeatChange() / totalHeatTransfer;
             } else {
                 heatTransfer = heatTransferRecord.getHeatChange();
@@ -468,19 +468,19 @@ public class FluidEntity implements IFluidEntity {
             }
         }
 
-        mHeatTransferRecords.clear();
+        heatTransferRecords.clear();
     }
 
     @Override
     public void recordHeatChange(HeatChangeRecord record) {
-        mHeatChangeRecords.put(record, 0);
+        heatChangeRecords.put(record, 0);
     }
 
     public void changeHeat() {
-        for (HeatChangeRecord heatChangeRecord : mHeatChangeRecords.keySet()) {
+        for (HeatChangeRecord heatChangeRecord : heatChangeRecords.keySet()) {
             heatChangeRecord.transfer(this);
         }
 
-        mHeatChangeRecords.clear();
+        heatChangeRecords.clear();
     }
 }

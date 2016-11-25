@@ -17,16 +17,16 @@ import fluid.entity.IDimensionalEntity;
  */
 public class Camera implements IMobileDimensionalEntity {
 
-    private double mX;
-    private double mY;
-    private double mZ;
+    private double x;
+    private double y;
+    private double z;
 
-    private double mDeltaX;
-    private double mDeltaY;
-    private double mDeltaZ;
+    private double deltaX;
+    private double deltaY;
+    private double deltaZ;
 
     // Matrices for display math
-    private final Array2DRowRealMatrix mTranslationMatrix = new Array2DRowRealMatrix(new double[][]{
+    private final Array2DRowRealMatrix translationMatrix = new Array2DRowRealMatrix(new double[][]{
             {1, 0, 0, 0},
             {0, 1, 0, 0},
             {0, 0, 1, 0},
@@ -34,54 +34,54 @@ public class Camera implements IMobileDimensionalEntity {
 
     // Orientation values
     // All of these are angles
-    // Such that if the camera is located at mX = 0, mY = 0, mZ = 1,
-    // With orientation mXAngle = 0, mYAngle = 0, and mZAngle = 0
-    // A point located at mX = 0, mY = 0, mZ = 0, would appear in the center of the field of view
+    // Such that if the camera is located at x = 0, y = 0, z = 1,
+    // With orientation xAngle = 0, yAngle = 0, and zAngle = 0
+    // A point located at x = 0, y = 0, z = 0, would appear in the center of the field of view
 
-    // If the camera is located at mX = 0, mY = 0, mZ = -1,
-    // With orientation mXAngle = 0, mYAngle = 0, and mZAngle = 0
-    // A point located at mX = 0, mY = 180, mZ = 0, would appear in the center of the field of view
+    // If the camera is located at x = 0, y = 0, z = -1,
+    // With orientation xAngle = 0, yAngle = 0, and zAngle = 0
+    // A point located at x = 0, y = 180, z = 0, would appear in the center of the field of view
 
     // Imagine each axis, and each of these angles as a clockwise rotation around that axis
-    private double mXAngle;
-    private double mYAngle;
-    private double mZAngle;
+    private double xAngle;
+    private double yAngle;
+    private double zAngle;
 
-    private final Array2DRowRealMatrix mXRotationMatrix = new Array2DRowRealMatrix(new double[][]{
+    private final Array2DRowRealMatrix xRotationMatrix = new Array2DRowRealMatrix(new double[][]{
             {1, 0, 0, 0},
-            {0, Math.cos(-Math.toRadians(mXAngle)), Math.sin(Math.toRadians(mXAngle)), 0},
-            {0, Math.sin(-Math.toRadians(mXAngle)), -Math.cos(Math.toRadians(mXAngle)), 0},
+            {0, Math.cos(-Math.toRadians(xAngle)), Math.sin(Math.toRadians(xAngle)), 0},
+            {0, Math.sin(-Math.toRadians(xAngle)), -Math.cos(Math.toRadians(xAngle)), 0},
             {0, 0, 0, 1}});
 
-    private final Array2DRowRealMatrix mYRotationMatrix = new Array2DRowRealMatrix(new double[][]{
-            {-Math.cos(Math.toRadians(mYAngle)), 0, -Math.sin(Math.toRadians(mYAngle)), 0},
+    private final Array2DRowRealMatrix yRotationMatrix = new Array2DRowRealMatrix(new double[][]{
+            {-Math.cos(Math.toRadians(yAngle)), 0, -Math.sin(Math.toRadians(yAngle)), 0},
             {0, 1, 0, 0},
-            {Math.sin(Math.toRadians(mYAngle)), 0, -Math.cos(Math.toRadians(mYAngle)), 0},
+            {Math.sin(Math.toRadians(yAngle)), 0, -Math.cos(Math.toRadians(yAngle)), 0},
             {0, 0, 0, 1}});
 
-    private final Array2DRowRealMatrix mZRotationMatrix = new Array2DRowRealMatrix(new double[][]{
-            {-Math.cos(Math.toRadians(mZAngle)), Math.sin(Math.toRadians(mZAngle)), 0, 0},
-            {-Math.sin(Math.toRadians(mYAngle)), -Math.cos(Math.toRadians(mYAngle)), 0, 0},
+    private final Array2DRowRealMatrix zRotationMatrix = new Array2DRowRealMatrix(new double[][]{
+            {-Math.cos(Math.toRadians(zAngle)), Math.sin(Math.toRadians(zAngle)), 0, 0},
+            {-Math.sin(Math.toRadians(yAngle)), -Math.cos(Math.toRadians(yAngle)), 0, 0},
             {0, 0, 1, 0},
             {0, 0, 0, 1}});
 
 
     public Camera(double x, double y, double z) {
-        mX = x;
-        mY = y;
-        mZ = z;
-        mXAngle = 0;
-        mYAngle = 0;
-        mZAngle = 0;
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        xAngle = 0;
+        yAngle = 0;
+        zAngle = 0;
     }
 
     public Camera(double x, double y, double z, double xAngle, double yAngle, double zAngle) {
-        mX = x;
-        mY = y;
-        mZ = z;
-        mXAngle = xAngle;
-        mYAngle = yAngle;
-        mZAngle = zAngle;
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.xAngle = xAngle;
+        this.yAngle = yAngle;
+        this.zAngle = zAngle;
     }
 
     /**********************************************************************
@@ -90,102 +90,102 @@ public class Camera implements IMobileDimensionalEntity {
 
     @Override
     public void setX(double x) {
-        mX = x;
-        mTranslationMatrix.setEntry(0, 3, -x);
+        this.x = x;
+        translationMatrix.setEntry(0, 3, -x);
     }
 
     @Override
     public double getX() {
-        return mX;
+        return x;
     }
 
     @Override
     public void setDeltaX(double deltaX) {
-        mDeltaX = deltaX;
+        this.deltaX = deltaX;
     }
 
     @Override
     public void addDeltaX(double deltaDeltaX) {
-        mDeltaX += deltaDeltaX;
+        deltaX += deltaDeltaX;
     }
 
     @Override
     public double getDeltaX() {
-        return mDeltaX;
+        return deltaX;
     }
 
     @Override
     public void moveX(double deltaX) {
-        setX(mX + deltaX);
+        setX(x + deltaX);
     }
 
     @Override
     public void setY(double y) {
-        mY = y;
-        mTranslationMatrix.setEntry(1, 3, -y);
+        this.y = y;
+        translationMatrix.setEntry(1, 3, -y);
     }
 
     @Override
     public double getY() {
-        return mY;
+        return y;
     }
 
     @Override
     public void setDeltaY(double deltaY) {
-        mDeltaY = deltaY;
+        this.deltaY = deltaY;
     }
 
     @Override
     public void addDeltaY(double deltaDeltaY) {
-        mDeltaY += deltaDeltaY;
+        deltaY += deltaDeltaY;
     }
 
     @Override
     public double getDeltaY() {
-        return mDeltaY;
+        return deltaY;
     }
 
     @Override
     public void moveY(double deltaY) {
-        setY(mY + deltaY);
+        setY(y + deltaY);
     }
 
     @Override
     public void setZ(double z) {
-        mZ = z;
-        mTranslationMatrix.setEntry(2, 3, -z);
+        this.z = z;
+        translationMatrix.setEntry(2, 3, -z);
     }
 
     @Override
     public double getZ() {
-        return mZ;
+        return z;
     }
 
     @Override
     public void setDeltaZ(double deltaZ) {
-        mDeltaZ = deltaZ;
+        this.deltaZ = deltaZ;
     }
 
     @Override
     public void addDeltaZ(double deltaDeltaZ) {
-        mDeltaZ += deltaDeltaZ;
+        deltaZ += deltaDeltaZ;
     }
 
     @Override
     public double getDeltaZ() {
-        return mDeltaZ;
+        return deltaZ;
     }
 
     @Override
     public void moveZ(double deltaZ) {
-        setZ(mZ + deltaZ);
+        setZ(z + deltaZ);
     }
 
     @Override
     public void move() {
-        moveX(mDeltaX);
-        moveY(mDeltaY);
-        moveZ(mDeltaZ);
+        moveX(deltaX);
+        moveY(deltaY);
+        moveZ(deltaZ);
     }
 
 
@@ -209,51 +209,51 @@ public class Camera implements IMobileDimensionalEntity {
      *********************************************************************/
 
     private double getXAngle() {
-        return mXAngle;
+        return xAngle;
     }
 
     private void setXAngle(double xAngle) {
-        mXAngle = xAngle % 360;
-        mXRotationMatrix.setEntry(1, 1, -Math.cos(Math.toRadians(mXAngle)));
-        mXRotationMatrix.setEntry(1, 2, Math.sin(Math.toRadians(mXAngle)));
-        mXRotationMatrix.setEntry(2, 1, -Math.sin(Math.toRadians(mXAngle)));
-        mXRotationMatrix.setEntry(2, 2, -Math.cos(Math.toRadians(mXAngle)));
+        this.xAngle = xAngle % 360;
+        xRotationMatrix.setEntry(1, 1, -Math.cos(Math.toRadians(this.xAngle)));
+        xRotationMatrix.setEntry(1, 2, Math.sin(Math.toRadians(this.xAngle)));
+        xRotationMatrix.setEntry(2, 1, -Math.sin(Math.toRadians(this.xAngle)));
+        xRotationMatrix.setEntry(2, 2, -Math.cos(Math.toRadians(this.xAngle)));
     }
 
     private void incrementXAngle(double increment) {
-        setXAngle(mXAngle + increment);
+        setXAngle(xAngle + increment);
     }
 
     private double getYAngle() {
-        return mYAngle;
+        return yAngle;
     }
 
     private void setYAngle(double yAngle) {
-        mYAngle = yAngle % 360;
-        mYRotationMatrix.setEntry(0, 0, -Math.cos(Math.toRadians(mYAngle)));
-        mYRotationMatrix.setEntry(0, 2, -Math.sin(Math.toRadians(mYAngle)));
-        mYRotationMatrix.setEntry(2, 0, Math.sin(Math.toRadians(mYAngle)));
-        mYRotationMatrix.setEntry(2, 2, -Math.cos(Math.toRadians(mYAngle)));
+        this.yAngle = yAngle % 360;
+        yRotationMatrix.setEntry(0, 0, -Math.cos(Math.toRadians(this.yAngle)));
+        yRotationMatrix.setEntry(0, 2, -Math.sin(Math.toRadians(this.yAngle)));
+        yRotationMatrix.setEntry(2, 0, Math.sin(Math.toRadians(this.yAngle)));
+        yRotationMatrix.setEntry(2, 2, -Math.cos(Math.toRadians(this.yAngle)));
     }
 
     private void incrementYAngle(double increment) {
-        setYAngle(mYAngle + increment);
+        setYAngle(yAngle + increment);
     }
 
     private double getZAngle() {
-        return mZAngle;
+        return zAngle;
     }
 
     private void setZAngle(double zAngle) {
-        mZAngle = zAngle % 360;
-        mZRotationMatrix.setEntry(0, 0, -Math.cos(Math.toRadians(mZAngle)));
-        mZRotationMatrix.setEntry(0, 1, Math.sin(Math.toRadians(mZAngle)));
-        mZRotationMatrix.setEntry(1, 0, -Math.sin(Math.toRadians(mZAngle)));
-        mZRotationMatrix.setEntry(1, 1, -Math.cos(Math.toRadians(mZAngle)));
+        this.zAngle = zAngle % 360;
+        zRotationMatrix.setEntry(0, 0, -Math.cos(Math.toRadians(this.zAngle)));
+        zRotationMatrix.setEntry(0, 1, Math.sin(Math.toRadians(this.zAngle)));
+        zRotationMatrix.setEntry(1, 0, -Math.sin(Math.toRadians(this.zAngle)));
+        zRotationMatrix.setEntry(1, 1, -Math.cos(Math.toRadians(this.zAngle)));
     }
 
     private void incrementZAngle(double increment) {
-        setZAngle(mZAngle + increment);
+        setZAngle(zAngle + increment);
     }
 
 
@@ -262,9 +262,9 @@ public class Camera implements IMobileDimensionalEntity {
      ********************************************************************************/
 
     /**
-     * Incrementing the relative mX angle, meaning, moving the camera angle up and
-     * down relative to the monitor. If the mZ angle is 90 degrees, then incrementing
-     * the mX angle 1 degree would instead increment the mY angle 1 degree
+     * Incrementing the relative x angle, meaning, moving the camera angle up and
+     * down relative to the monitor. If the z angle is 90 degrees, then incrementing
+     * the x angle 1 degree would instead increment the y angle 1 degree
      *
      * @param increment
      */
@@ -369,19 +369,19 @@ public class Camera implements IMobileDimensionalEntity {
      ***************************************************************************************************/
 
     public Array2DRowRealMatrix translate(IDimensionalEntity dimensionalEntity) {
-        return mTranslationMatrix.multiply(dimensionalEntity.getR4Matrix());
+        return translationMatrix.multiply(dimensionalEntity.getR4Matrix());
     }
 
     public Array2DRowRealMatrix performXRotation(Array2DRowRealMatrix matrix) {
-        return mXRotationMatrix.multiply(matrix);
+        return xRotationMatrix.multiply(matrix);
     }
 
     public Array2DRowRealMatrix performYRotation(Array2DRowRealMatrix matrix) {
-        return mYRotationMatrix.multiply(matrix);
+        return yRotationMatrix.multiply(matrix);
     }
 
     public Array2DRowRealMatrix performZRotation(Array2DRowRealMatrix matrix) {
-        return mZRotationMatrix.multiply(matrix);
+        return zRotationMatrix.multiply(matrix);
     }
 
 }

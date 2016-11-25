@@ -87,94 +87,94 @@ public interface IFluidEntity extends IDimensionalEntity {
      * entity.
      */
     class MassTransferRecord {
-        final private FluidEntity mTargetEntity;
-        final private double mProportion;
+        final private FluidEntity targetEntity;
+        final private double proportion;
 
         MassTransferRecord(FluidEntity targetEntity, double proportion) {
-            mTargetEntity = targetEntity;
-            mProportion = proportion;
+            this.targetEntity = targetEntity;
+            this.proportion = proportion;
         }
 
         FluidEntity getTargetEntity() {
-            return mTargetEntity;
+            return targetEntity;
         }
 
         double getProportion() {
-            return mProportion;
+            return proportion;
         }
     }
 
     class MassChangeRecord {
 
-        final private double mMassChange;
-        final private double mMassTemperature;
-        final private double mVelocityX;
-        final private double mVelocityY;
-        final private Color mInkColor;
+        final private double massChange;
+        final private double massTemperature;
+        final private double velocityX;
+        final private double velocityY;
+        final private Color inkColor;
 
         MassChangeRecord(double massChange, double massTemperature, double velocityX, double velocityY, Color inkColor) {
-            mMassChange = massChange;
-            mMassTemperature = massTemperature;
-            mVelocityX = velocityX;
-            mVelocityY = velocityY;
-            mInkColor = inkColor;
+            this.massChange = massChange;
+            this.massTemperature = massTemperature;
+            this.velocityX = velocityX;
+            this.velocityY = velocityY;
+            this.inkColor = inkColor;
         }
 
         void transfer(FluidEntity entity) {
-            if (mMassChange < 0) {
-                entity.subtractMass(mMassChange);
-            } else if (mMassChange > 0) {
-                entity.addMass(mMassChange, mMassTemperature, mInkColor, mVelocityX, mVelocityY);
+            if (massChange < 0) {
+                entity.subtractMass(massChange);
+            } else if (massChange > 0) {
+                entity.addMass(massChange, massTemperature, inkColor, velocityX, velocityY);
             }
         }
     }
 
     class ForceChangeRecord {
-        final private double mForceX;
-        final private double mForceY;
+        final private double forceX;
+        final private double forceY;
 
         public ForceChangeRecord(double forceX, double forceY) {
-            mForceX = forceX;
-            mForceY = forceY;
+            this.forceX = forceX;
+            this.forceY = forceY;
         }
 
         void transfer(FluidEntity entity) {
-            entity.addForceX(mForceX);
-            entity.addForceY(mForceY);
+            entity.addForceX(forceX);
+            entity.addForceY(forceY);
         }
     }
 
     class HeatTransferRecord {
-        final private IFluidEntity mTargetEntity;
-        final private double mHeatChange;
+        final private IFluidEntity targetEntity;
+        final private double heatChange;
 
         /**
          * @param targetEntity
          * @param heatChange   Should always be positive.
          */
         public HeatTransferRecord(IFluidEntity targetEntity, double heatChange) {
-            mTargetEntity = targetEntity;
-            mHeatChange = heatChange;
+            this.targetEntity = targetEntity;
+            this.heatChange = heatChange;
         }
 
         IFluidEntity getTargetEntity() {
-            return mTargetEntity;
+            return targetEntity;
         }
 
         double getHeatChange() {
-            return mHeatChange;
+            return heatChange;
         }
     }
 
     class HeatChangeRecord {
-        final private double mHeatChange;
+        final private double heatChange;
 
         HeatChangeRecord(double heatChange) {
-            mHeatChange = heatChange;
+            this.heatChange = heatChange;
         }
 
         void transfer(FluidEntity entity) {
-            entity.addHeat(mHeatChange);
+            entity.addHeat(heatChange);
         }
     }
 

@@ -7,7 +7,7 @@ import fluid.entity.FluidEntity;
  */
 public class UniversePhysics {
 
-    private static int sStep = 0;
+    private static int step = 0;
 
     /**
      * Run round of physics
@@ -17,10 +17,10 @@ public class UniversePhysics {
     public static synchronized void updateUniverseState(FluidEntity[][] entities) {
         //getStats(entities);
 
-        ExternalInput.applyInput(entities, sStep);
+        ExternalInput.applyInput(entities, step);
         FluidPhysics.incrementFluid(entities);
 
-        sStep++;
+        step++;
     }
 
     private static void getStats(FluidEntity[][] entities) {
@@ -69,7 +69,7 @@ public class UniversePhysics {
             }
         }
 
-        System.out.println("Step " + sStep);
+        System.out.println("Step " + step);
         System.out.println("Total mass: " + totalMass);
         System.out.println("Max entity mass: " + maxMass);
         System.out.println("Min entity mass: " + minMass);

@@ -9,8 +9,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MockFluidEntity implements IFluidEntity {
 
-    private final ConcurrentHashMap<MassTransferRecord, Integer> mMassTransferRecords = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<HeatTransferRecord, Integer> mHeatTransferRecords = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<MassTransferRecord, Integer> massTransferRecords = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<HeatTransferRecord, Integer> heatTransferRecords = new ConcurrentHashMap<>();
 
 
     @Override
@@ -110,17 +110,17 @@ public class MockFluidEntity implements IFluidEntity {
             return;
         }
 
-        mMassTransferRecords.put(new MassTransferRecord(targetEntity, proportion), 0);
+        massTransferRecords.put(new MassTransferRecord(targetEntity, proportion), 0);
     }
 
     @Override
     public void convertMassTransferToAbsoluteChange() {
-        mMassTransferRecords.keySet().stream().filter(massTransferRecord -> massTransferRecord.getTargetEntity() != null).forEach(massTransferRecord -> {
+        massTransferRecords.keySet().stream().filter(massTransferRecord -> massTransferRecord.getTargetEntity() != null).forEach(massTransferRecord -> {
             double massTransfer = massTransferRecord.getProportion() * getMass();
             massTransferRecord.getTargetEntity().recordMassChange(new MassChangeRecord(massTransfer, getTemperature(), getDeltaX(), getDeltaY(), DEFAULT_COLOR));
         });
 
-        mMassTransferRecords.clear();
+        massTransferRecords.clear();
     }
 
     @Override
@@ -133,12 +133,12 @@ public class MockFluidEntity implements IFluidEntity {
 
     @Override
     public void recordHeatTransfer(HeatTransferRecord record) {
-        mHeatTransferRecords.put(record, 0);
+        heatTransferRecords.put(record, 0);
     }
 
     @Override
     public void convertHeatTransferToAbsoluteChange() {
-        mHeatTransferRecords.keySet().stream().filter(heatTransferRecord -> heatTransferRecord.getTargetEntity() != null).forEach(heatTransferRecord -> {
+        heatTransferRecords.keySet().stream().filter(heatTransferRecord -> heatTransferRecord.getTargetEntity() != null).forEach(heatTransferRecord -> {
             double heatTransfer = heatTransferRecord.getHeatChange();
 
             if (heatTransferRecord.getTargetEntity() != null) {
@@ -146,7 +146,7 @@ public class MockFluidEntity implements IFluidEntity {
             }
         });
 
-        mHeatTransferRecords.clear();
+        heatTransferRecords.clear();
     }
 
     @Override

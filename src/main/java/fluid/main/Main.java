@@ -26,16 +26,16 @@ import java.util.concurrent.Executors;
 
 public class Main extends Application {
 
-    private final int mFrameDelay = 80;
-    private final boolean mRunning = true;
+    private final int FRAME_DELAY = 80;
+    private final boolean IS_RUNNING = true;
 
     private static final FluidEntity[][] ENTITIES = Setup.create();
-    private FluidEntityCanvas mCanvas;
-    private Camera mCamera;
+    private FluidEntityCanvas canvas;
+    private Camera camera;
 
-    private ExecutorService mExecutorService;
+    private ExecutorService executorService;
 
-    private volatile FluidEntityCanvas.DrawType mDrawType;
+    private volatile FluidEntityCanvas.DrawType drawType;
 
     /**
      * http://cowboyprogramming.com/2008/04/01/practical-fluid-mechanics/
@@ -48,7 +48,7 @@ public class Main extends Application {
     public void start(Stage stage) throws Exception {
         stage.setTitle("Fluid simulation");
 
-        mCamera = new Camera(0, 0, 0);
+        camera = new Camera(0, 0, 0);
 
         StackPane root = new StackPane();
 
@@ -56,11 +56,11 @@ public class Main extends Application {
         // TODO: Camera moving buttons
 
         // Canvas
-        mCanvas = new FluidEntityCanvas(1400, 900, mCamera);
+        canvas = new FluidEntityCanvas(1400, 900, camera);
 
         HBox parentBox = new HBox();
         parentBox.getChildren().add(displayType);
-        parentBox.getChildren().add(mCanvas);
+        parentBox.getChildren().add(canvas);
         parentBox.setPadding(new Insets(20, 20, 20, 20));
 
         root.getChildren().add(parentBox);
@@ -90,13 +90,13 @@ public class Main extends Application {
 
         displayTypeGroup.selectedToggleProperty().addListener((observableValue, oldToggle, newToggle) -> {
             if (displayTypeGroup.getSelectedToggle().equals(inkButton)) {
-                mDrawType = FluidEntityCanvas.DrawType.INK;
+                drawType = FluidEntityCanvas.DrawType.INK;
             } else if (displayTypeGroup.getSelectedToggle().equals(massButton)) {
-                mDrawType = FluidEntityCanvas.DrawType.MASS;
+                drawType = FluidEntityCanvas.DrawType.MASS;
             } else if (displayTypeGroup.getSelectedToggle().equals(heatButton)) {
-                mDrawType = FluidEntityCanvas.DrawType.TEMPERATURE;
+                drawType = FluidEntityCanvas.DrawType.TEMPERATURE;
             } else if (displayTypeGroup.getSelectedToggle().equals(velocityButton)) {
-                mDrawType = FluidEntityCanvas.DrawType.VELOCITY;
+                drawType = FluidEntityCanvas.DrawType.VELOCITY;
             }
         });
 
@@ -113,15 +113,15 @@ public class Main extends Application {
     }
 
     public int getFrameDelay() {
-        return mFrameDelay;
+        return FRAME_DELAY;
     }
 
     private boolean isRunning() {
-        return mRunning;
+        return IS_RUNNING;
     }
 
     private void runSimulation() {
-        mExecutorService = Executors.newSingleThreadExecutor();
+        executorService = Executors.newSingleThreadExecutor();
 
         Timeline timeline = new Timeline();
         timeline.setCycleCount(Animation.INDEFINITE);
@@ -137,15 +137,15 @@ public class Main extends Application {
 
             SimulationTask incrementStep = new SimulationTask();
             incrementStep.setOnSucceeded(e -> {
-                mCamera.move();
+                camera.move();
 
                 // tell graphics to repaint
-                mCanvas.drawEntities(ENTITIES, mDrawType);
+                canvas.drawEntities(ENTITIES, drawType);
             });
 
             incrementStep.setOnFailed(e -> System.out.println(e.toString()));
 
-            mExecutorService.submit(incrementStep);
+            executorService.submit(incrementStep);
         }
     }
 

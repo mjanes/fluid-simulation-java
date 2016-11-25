@@ -11,7 +11,7 @@ import java.util.stream.IntStream;
  */
 public class Setup {
 
-    private static final double sZDistance = 5000;
+    private static final double Z_DISTANCE = 5000;
 
     private static final int SIZE = 160;
 
@@ -38,9 +38,8 @@ public class Setup {
 
             IntStream.range(0, numEntitiesOnSide).forEach(j -> {
                 double y = (j - numEntitiesOnSide / 2) * FluidEntity.SPACE;
-                double z = sZDistance;
 
-                FluidEntity entity = new FluidEntity(x, y, z, IFluidEntity.DEFAULT_MASS, IFluidEntity.DEFAULT_TEMPERATURE);
+                FluidEntity entity = new FluidEntity(x, y, Z_DISTANCE, IFluidEntity.DEFAULT_MASS, IFluidEntity.DEFAULT_TEMPERATURE);
                 entities[i][j] = entity;
             });
         });
@@ -57,9 +56,8 @@ public class Setup {
 
             IntStream.range(0, height).forEach(j -> {
                 double y = (j - height / 2) * FluidEntity.SPACE;
-                double z = sZDistance;
 
-                FluidEntity entity = new FluidEntity(x, y, z, IFluidEntity.DEFAULT_MASS, IFluidEntity.DEFAULT_TEMPERATURE);
+                FluidEntity entity = new FluidEntity(x, y, Z_DISTANCE, IFluidEntity.DEFAULT_MASS, IFluidEntity.DEFAULT_TEMPERATURE);
                 entities[i][j] = entity;
             });
         });
@@ -81,7 +79,7 @@ public class Setup {
             for (int j = numEntitiesOnSide - 1; j >= 0; j--) {
 
                 double y = (j - numEntitiesOnSide / 2) * FluidEntity.SPACE;
-                double z = sZDistance;
+                double z = Z_DISTANCE;
 
                 FluidEntity entity;
                 if (j > numEntitiesOnSide / 2) {

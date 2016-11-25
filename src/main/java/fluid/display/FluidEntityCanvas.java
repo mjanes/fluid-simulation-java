@@ -13,7 +13,7 @@ import java.util.stream.IntStream;
 
 public class FluidEntityCanvas extends Canvas {
 
-    private final Camera mCamera;
+    private final Camera camera;
 
     private static final int EYE_DISTANCE = 5000;
 
@@ -23,7 +23,7 @@ public class FluidEntityCanvas extends Canvas {
 
     public FluidEntityCanvas(int width, int height, Camera camera) {
         super(width, height);
-        mCamera = camera;
+        this.camera = camera;
     }
 
     public void drawEntities(final FluidEntity[][] entities, final DrawType drawType) {
@@ -32,7 +32,7 @@ public class FluidEntityCanvas extends Canvas {
         final GraphicsContext gc = getGraphicsContext2D();
         gc.clearRect(0, 0, canvasWidth, canvasHeight);
 
-        IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> drawEntity(gc, mCamera, entities[x][y], canvasWidth, canvasHeight, drawType)));
+        IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> drawEntity(gc, camera, entities[x][y], canvasWidth, canvasHeight, drawType)));
     }
 
     private void drawEntity(final GraphicsContext gc, Camera camera, final FluidEntity entity, final double canvasWidth, final double canvasHeight, final DrawType drawType) {
