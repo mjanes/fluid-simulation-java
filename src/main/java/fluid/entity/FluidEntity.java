@@ -1,5 +1,6 @@
 package fluid.entity;
 
+import fluid.physics.Universe;
 import javafx.scene.paint.Color;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 
@@ -18,8 +19,6 @@ public class FluidEntity implements DimensionalEntity {
     public static final double DEFAULT_TEMPERATURE = 10;
     public static final double DEFAULT_MASS = 10;
     static final Color DEFAULT_COLOR = Color.TRANSPARENT;
-    static final double DEFAULT_DX = 0;
-    static final double DEFAULT_DY = 0;
 
     public static final double CELL_AREA = Math.pow(SPACE, 2);
 
@@ -340,7 +339,11 @@ public class FluidEntity implements DimensionalEntity {
      */
 
     public synchronized FluidEntity getNextLocationAsFluidEntity(double velocityFactor) {
-        return new FluidEntity(x + (deltaX * velocityFactor), y + (deltaY * velocityFactor), z + (deltaZ * velocityFactor), mass, getTemperature());
+        return new FluidEntity(getX() + (getDeltaX() * velocityFactor),
+                getY() + (getDeltaY() * velocityFactor),
+                getZ() + (getDeltaZ() * velocityFactor),
+                getMass(),
+                getTemperature());
     }
 
     /**
@@ -355,9 +358,9 @@ public class FluidEntity implements DimensionalEntity {
      */
 
     /**
-     * Records a transfer from this entity to targetEntity, a proportion of this entities values
+     * Records a transfer from this entity to targetEntity, a proportion of this entity's values
      */
-    public void recordMassTransfer(FluidEntity targetEntity, double proportion) {
+    public void recordMassTransferTo(FluidEntity targetEntity, double proportion) {
         if (proportion < 0 || proportion > 1) {
             System.out.println("Error, proportion = " + proportion);
             return;
@@ -510,7 +513,7 @@ public class FluidEntity implements DimensionalEntity {
      */
 
     /**
-     * A RelativeTransferRecord is the a record of what proportion of this entity should be transferred to the target
+     * A {@link MassTransferRecord} is a record of what proportion of this entity should be transferred to the target
      * entity.
      */
     class MassTransferRecord {
@@ -531,7 +534,7 @@ public class FluidEntity implements DimensionalEntity {
         }
     }
 
-    public static class MassChangeRecord {
+    static class MassChangeRecord {
 
         final private double massChange;
         final private double massTemperature;
@@ -602,6 +605,87 @@ public class FluidEntity implements DimensionalEntity {
 
         void transfer(FluidEntity entity) {
             entity.addHeat(heatChange);
+        }
+    }
+
+
+    /****
+     * Interactions
+     */
+
+
+    public void applyBidirectionalInteractions(FluidEntity other) {
+        applyConductionBetweenCells(other);
+        applyPressureBetweenCells(other);
+        applyViscosityBetweenCells(other);
+    }
+
+    /**
+     * If the two entities temperature difference, record a heat transfer from the one with the higher temperature to
+     * the lower. The amount of heat transferred is dependant upon the conductivity of the entities.
+     * <p>
+     * https://en.wikipedia.org/wiki/Thermal_conductivity
+     * <p>
+     * TODO: Make this math cleaner and easier to understand.
+     */
+    private void applyConductionBetweenCells(FluidEntity other) {
+        if (other == null) return;
+        if (getTemperature() == other.getTemperature()) return;
+
+        double totalMass = getMass() + other.getMass();
+        double heatAvailableForTransfer = getHeat() * getConductivity() + other.getHeat() * other.getConductivity();
+
+        double heatLossFromA = -(getHeat() * getConductivity());
+        double heatGainForA = ((getMass() / totalMass) * heatAvailableForTransfer);
+        double heatTransferToA = heatLossFromA + heatGainForA;
+
+        if (heatTransferToA > 0) {
+            other.recordHeatTransfer(new FluidEntity.HeatTransferRecord(this, heatTransferToA));
+        } else if (heatTransferToA < 0) {
+            recordHeatTransfer(new FluidEntity.HeatTransferRecord(other, -heatTransferToA));
+        }
+    }
+
+    private void applyPressureBetweenCells(FluidEntity other) {
+        if (other == null) return;
+        double pressureDifference = getPressure() - other.getPressure();
+        if (pressureDifference > 0) {
+            if (getX() != other.getX()) addForceX(pressureDifference);
+            if (getY() != other.getY()) addForceY(pressureDifference);
+        } else if (pressureDifference < 0) {
+            if (getX() != other.getX()) other.addForceX(pressureDifference);
+            if (getY() != other.getY()) other.addForceY(pressureDifference);
+        }
+    }
+
+    /**
+     * https://en.wikipedia.org/wiki/Viscosity
+     * https://en.wikipedia.org/wiki/Shear_stress
+     * <p>
+     * TODO: Make this math cleaner and easier to understand.
+     */
+    private void applyViscosityBetweenCells(FluidEntity other) {
+        if (other == null) return;
+        double totalMass = getMass() + other.getMass();
+
+        if (getX() != other.getX() && getDeltaY() - other.getDeltaY() != 0) {
+            double forceAvailableForTransfer = getForceY() * getViscosity() + other.getForceY() * other.getViscosity();
+
+            double forceLossFromA = -(getForceY() * getViscosity());
+            double forceGainForA = ((getMass() / totalMass) * forceAvailableForTransfer);
+            double forceTransfer = forceLossFromA + forceGainForA;
+
+            recordForceChange(new FluidEntity.ForceChangeRecord(0, forceTransfer));
+            recordForceChange(new FluidEntity.ForceChangeRecord(0, -forceTransfer));
+        } else if (getY() != other.getY() && getDeltaX() - other.getDeltaX() != 0) {
+            double forceAvailableForTransfer = getForceX() * getViscosity() + other.getForceX() * other.getViscosity();
+
+            double forceLossFromA = -(getForceX() * getViscosity());
+            double forceGainForA = ((getMass() / totalMass) * forceAvailableForTransfer);
+            double forceTransfer = forceLossFromA + forceGainForA;
+
+            recordForceChange(new FluidEntity.ForceChangeRecord(forceTransfer, 0));
+            recordForceChange(new FluidEntity.ForceChangeRecord(-forceTransfer, 0));
         }
     }
 }

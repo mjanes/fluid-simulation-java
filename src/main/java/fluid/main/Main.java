@@ -142,7 +142,7 @@ public class Main extends Application {
                 canvas.drawEntities(universe.getEntities(), drawType);
             });
 
-            incrementStep.setOnFailed(e -> System.out.println(e.toString()));
+            incrementStep.setOnFailed(e -> System.out.println("Error: " + e.toString()));
 
             executorService.submit(incrementStep);
         }

@@ -1,6 +1,6 @@
 package fluid.entity;
 
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import javafx.scene.paint.Color;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -12,69 +12,20 @@ public class MockFluidEntity extends FluidEntity {
     private final ConcurrentHashMap<MassTransferRecord, Integer> massTransferRecords = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<HeatTransferRecord, Integer> heatTransferRecords = new ConcurrentHashMap<>();
 
-    public MockFluidEntity(double x, double y, double z, double mass, double temperature) {
-        super(x, y, z, mass, temperature);
+    MockFluidEntity(double x, double y, double z) {
+        super(x, y, z, DEFAULT_MASS, DEFAULT_TEMPERATURE);
     }
 
 
     @Override
-    public void setX(double x) {
-    }
-
-    @Override
-    public double getX() {
-        return 0;
-    }
-
-    @Override
-    public void setY(double y) {
-    }
-
-    @Override
-    public double getY() {
-        return 0;
-    }
-
-    @Override
-    public void setZ(double z) {
-    }
-
-    @Override
-    public double getZ() {
-        return 0;
-    }
-
-    @Override
-    public double getDistance(DimensionalEntity other) {
-        return 0;
-    }
-
-    @Override
-    public Array2DRowRealMatrix getR4Matrix() {
-        return null;
-    }
-
-    @Override
-    public double getDeltaX() {
-        return FluidEntity.DEFAULT_DX;
-    }
-
-    @Override
-    public double getForceX() {
-        return FluidEntity.DEFAULT_DX * FluidEntity.DEFAULT_MASS;
-    }
-
-    @Override
-    public double getDeltaY() {
-        return FluidEntity.DEFAULT_DY;
-    }
-
-    @Override
-    public double getForceY() {
-        return FluidEntity.DEFAULT_DY * FluidEntity.DEFAULT_MASS;
+    public synchronized void setDeltaX(double deltaX) {
     }
 
     public void addForceX(double forceX) {
+    }
+
+    @Override
+    public synchronized void setDeltaY(double deltaY) {
     }
 
     public void addForceY(double forceY) {
@@ -86,29 +37,16 @@ public class MockFluidEntity extends FluidEntity {
     public void addHeat(double deltaHeat) {
     }
 
-
     @Override
-    public double getMass() {
-        return FluidEntity.DEFAULT_MASS;
+    public synchronized void addMass(double deltaMass, double massTemperature, Color color) {
     }
 
     @Override
-    public double getPressure() {
-        return GAS_CONSTANT * FluidEntity.DEFAULT_MASS * getTemperature() / getMolarWeight();
+    public synchronized void addMass(double deltaMass, double massTemperature, Color color, double incomingDeltaX, double incomingDeltaY) {
     }
 
     @Override
-    public double getHeat() {
-        return FluidEntity.DEFAULT_TEMPERATURE * FluidEntity.DEFAULT_MASS;
-    }
-
-    @Override
-    public double getTemperature() {
-        return FluidEntity.DEFAULT_TEMPERATURE;
-    }
-
-    @Override
-    public void recordMassTransfer(FluidEntity targetEntity, double proportion) {
+    public void recordMassTransferTo(FluidEntity targetEntity, double proportion) {
         if (proportion < 0 || proportion > 1) {
             System.out.println("Error, proportion = " + proportion);
             return;

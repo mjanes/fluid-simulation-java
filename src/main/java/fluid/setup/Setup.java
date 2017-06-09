@@ -1,6 +1,8 @@
 package fluid.setup;
 
 import fluid.entity.FluidEntity;
+import fluid.entity.OpenMockFluidEntity;
+import fluid.entity.ReflectiveMockFluidEntity;
 import fluid.physics.Universe;
 import javafx.scene.paint.Color;
 
@@ -24,27 +26,35 @@ public class Setup {
          * provide an instability until we tweak that.
          */
 
-        return new Universe(square(SIZE));
+        FluidEntity[][] entities = rectangle(SIZE, SIZE);
+        //FluidEntity[][] entities = rayleighTaylor(SIZE);
+
+        // Set boundary conditions of the universe
+        FluidEntity otherEntity;
+        // Right border
+        for (int y = 0; y < entities[entities.length - 1].length; y++) {
+            otherEntity = entities[entities.length - 1][y];
+            entities[entities.length - 1][y] = new OpenMockFluidEntity(otherEntity.getX(), otherEntity.getY(), otherEntity.getZ());
+        }
+        // Left border
+        for (int y = 0; y < entities[0].length; y++) {
+            otherEntity = entities[0][y];
+            entities[0][y] = new OpenMockFluidEntity(otherEntity.getX(), otherEntity.getY(), otherEntity.getZ());
+        }
+        // Top border
+        for (int x = 0; x < entities.length; x++) {
+            otherEntity = entities[x][entities[x].length - 1];
+            entities[x][entities[x].length - 1] = new OpenMockFluidEntity(otherEntity.getX(), otherEntity.getY(), otherEntity.getZ());
+        }
+        // Bottom border
+        for (int x = 0; x < entities.length; x++) {
+            otherEntity = entities[x][0];
+            entities[x][0] = new ReflectiveMockFluidEntity(otherEntity.getX(), otherEntity.getY(), otherEntity.getZ());
+        }
+
+        return new Universe(entities);
         //return rectangle(300, 50);
         //return rayleighTaylor(SIZE);
-    }
-
-    private static FluidEntity[][] square(int numEntitiesOnSide) {
-        FluidEntity[][] entities = new FluidEntity[numEntitiesOnSide][numEntitiesOnSide];
-
-        IntStream.range(0, numEntitiesOnSide).forEach(i -> {
-
-            double x = (i - numEntitiesOnSide / 2) * FluidEntity.SPACE;
-
-            IntStream.range(0, numEntitiesOnSide).forEach(j -> {
-                double y = (j - numEntitiesOnSide / 2) * FluidEntity.SPACE;
-
-                FluidEntity entity = new FluidEntity(x, y, Z_DISTANCE, FluidEntity.DEFAULT_MASS, FluidEntity.DEFAULT_TEMPERATURE);
-                entities[i][j] = entity;
-            });
-        });
-
-        return entities;
     }
 
     private static FluidEntity[][] rectangle(int width, int height) {

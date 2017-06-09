@@ -79,6 +79,7 @@ public class FluidEntityCanvas extends Canvas {
         gc.setFill(color);
         gc.fillOval((int) xP - radius / 2, (int) yP - radius / 2, radius, radius);
 
+        // Drawing where the entity is moving towards
         if (drawType.equals(DrawType.VELOCITY)) {
             FluidEntity vector = entity.getNextLocationAsFluidEntity(20); // TODO: Make this factor parameter a user controlled variable
             Point2D.Double vectorPoint = getCanvasLocation(camera, canvasWidth, canvasHeight, vector);
