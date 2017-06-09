@@ -2,8 +2,7 @@ package fluid.main;
 
 import fluid.camera.Camera;
 import fluid.display.FluidEntityCanvas;
-import fluid.entity.FluidEntity;
-import fluid.physics.UniversePhysics;
+import fluid.physics.Universe;
 import fluid.setup.Setup;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
@@ -29,7 +28,7 @@ public class Main extends Application {
     private final int FRAME_DELAY = 80;
     private final boolean IS_RUNNING = true;
 
-    private static final FluidEntity[][] ENTITIES = Setup.create();
+    private final Universe universe = Setup.create();
     private FluidEntityCanvas canvas;
     private Camera camera;
 
@@ -135,12 +134,12 @@ public class Main extends Application {
         // Perform physics simulations
         if (isRunning()) {
 
-            SimulationTask incrementStep = new SimulationTask();
+            SimulationTask incrementStep = new SimulationTask(universe);
             incrementStep.setOnSucceeded(e -> {
                 camera.move();
 
                 // tell graphics to repaint
-                canvas.drawEntities(ENTITIES, drawType);
+                canvas.drawEntities(universe.getEntities(), drawType);
             });
 
             incrementStep.setOnFailed(e -> System.out.println(e.toString()));
@@ -152,9 +151,15 @@ public class Main extends Application {
 
     private static class SimulationTask extends Task<Void> {
 
+        final Universe universe;
+
+        SimulationTask(Universe universe) {
+            this.universe = universe;
+        }
+
         @Override
         protected Void call() throws Exception {
-            UniversePhysics.updateUniverseState(Main.ENTITIES);
+            universe.updateUniverseState();
             return null;
         }
     }

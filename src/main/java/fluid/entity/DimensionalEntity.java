@@ -2,7 +2,7 @@ package fluid.entity;
 
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 
-public interface IDimensionalEntity {
+public interface DimensionalEntity {
 
     void setX(double x);
 
@@ -16,9 +16,9 @@ public interface IDimensionalEntity {
 
     double getZ();
 
-    double getDistance(IDimensionalEntity other);
+    double getDistance(DimensionalEntity other);
 
-    static double getDistance(IDimensionalEntity a, IDimensionalEntity b) {
+    static double getDistance(DimensionalEntity a, DimensionalEntity b) {
         return Math.sqrt(
                 Math.pow((a.getX() - b.getX()), 2) +
                         Math.pow((a.getY() - b.getY()), 2) +

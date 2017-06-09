@@ -10,7 +10,19 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * Created by mjanes on 6/12/2014.
  */
-public class FluidEntity implements IFluidEntity {
+public class FluidEntity implements DimensionalEntity {
+
+    public static final int SPACE = 5; // spacing between entities, currently writing this that they must be placed on a grid
+    static final double GAS_CONSTANT = .02;
+
+    public static final double DEFAULT_TEMPERATURE = 10;
+    public static final double DEFAULT_MASS = 10;
+    static final Color DEFAULT_COLOR = Color.TRANSPARENT;
+    static final double DEFAULT_DX = 0;
+    static final double DEFAULT_DY = 0;
+
+    public static final double CELL_AREA = Math.pow(SPACE, 2);
+
 
     private double x;
     private double y;
@@ -76,8 +88,8 @@ public class FluidEntity implements IFluidEntity {
     }
 
     @Override
-    public synchronized double getDistance(IDimensionalEntity other) {
-        return IDimensionalEntity.getDistance(this, other);
+    public synchronized double getDistance(DimensionalEntity other) {
+        return DimensionalEntity.getDistance(this, other);
     }
 
     @Override
@@ -98,12 +110,10 @@ public class FluidEntity implements IFluidEntity {
         setDeltaX(deltaX + deltaDeltaX);
     }
 
-    @Override
     public synchronized double getDeltaX() {
         return deltaX;
     }
 
-    @Override
     public synchronized void addForceX(double forceX) {
         if (mass <= 0) {
             setDeltaX(0);
@@ -115,7 +125,6 @@ public class FluidEntity implements IFluidEntity {
         addDeltaX(forceX / mass);
     }
 
-    @Override
     public synchronized double getForceX() {
         return deltaX * mass;
     }
@@ -125,7 +134,6 @@ public class FluidEntity implements IFluidEntity {
         this.deltaY = deltaY;
     }
 
-    @Override
     public synchronized double getForceY() {
         return deltaY * mass;
     }
@@ -134,12 +142,10 @@ public class FluidEntity implements IFluidEntity {
         setDeltaY(deltaY + deltaDeltaY);
     }
 
-    @Override
     public synchronized double getDeltaY() {
         return deltaY;
     }
 
-    @Override
     public synchronized void addForceY(double forceY) {
         if (mass <= 0) {
             setDeltaY(0);
@@ -164,7 +170,6 @@ public class FluidEntity implements IFluidEntity {
         return deltaZ;
     }
 
-    @Override
     public synchronized void addForceZ(double forceZ) {
         if (mass <= 0) {
             setDeltaZ(0);
@@ -190,7 +195,6 @@ public class FluidEntity implements IFluidEntity {
         this.mass = mass;
     }
 
-    @Override
     public synchronized double getMass() {
         return mass;
     }
@@ -258,7 +262,7 @@ public class FluidEntity implements IFluidEntity {
      * <p>
      * I suppose force is analogous to heat, and delta is analogous to temperature here.
      */
-    public void subtractMass(double deltaMass) {
+    private void subtractMass(double deltaMass) {
         if (mass + deltaMass <= 0) {
             setMass(0);
             setHeat(0);
@@ -294,7 +298,6 @@ public class FluidEntity implements IFluidEntity {
         heat = temperature * mass;
     }
 
-    @Override
     public synchronized double getTemperature() {
         if (mass <= 0) return 0;
         return heat / mass;
@@ -308,12 +311,10 @@ public class FluidEntity implements IFluidEntity {
         this.heat = heat;
     }
 
-    @Override
     public synchronized void addHeat(double deltaHeat) {
         setHeat(heat + deltaHeat);
     }
 
-    @Override
     public synchronized double getHeat() {
         return heat;
     }
@@ -356,7 +357,6 @@ public class FluidEntity implements IFluidEntity {
     /**
      * Records a transfer from this entity to targetEntity, a proportion of this entities values
      */
-    @Override
     public void recordMassTransfer(FluidEntity targetEntity, double proportion) {
         if (proportion < 0 || proportion > 1) {
             System.out.println("Error, proportion = " + proportion);
@@ -374,7 +374,6 @@ public class FluidEntity implements IFluidEntity {
     /**
      * Stage 1 of the mass transfer steps.
      */
-    @Override
     public void convertMassTransferToAbsoluteChange() {
         double totalRatio = 0;
         for (MassTransferRecord massTransferRecord : massTransferRecords.keySet()) {
@@ -402,8 +401,7 @@ public class FluidEntity implements IFluidEntity {
     /**
      * Transferring mass to a fluid entity
      */
-    @Override
-    public void recordMassChange(MassChangeRecord record) {
+    void recordMassChange(MassChangeRecord record) {
         massChangeRecords.put(record, 0);
     }
 
@@ -417,10 +415,9 @@ public class FluidEntity implements IFluidEntity {
 
 
     /**
-     * Force transfercs
+     * Force transfers
      */
 
-    @Override
     public void recordForceChange(ForceChangeRecord record) {
         forceChangeRecords.put(record, 0);
     }
@@ -442,7 +439,6 @@ public class FluidEntity implements IFluidEntity {
     /**
      * Record heat transfer away from this entity, to target entity, in HeatTransferRecord.
      */
-    @Override
     public void recordHeatTransfer(HeatTransferRecord record) {
         heatTransferRecords.put(record, 0);
     }
@@ -471,8 +467,7 @@ public class FluidEntity implements IFluidEntity {
         heatTransferRecords.clear();
     }
 
-    @Override
-    public void recordHeatChange(HeatChangeRecord record) {
+    void recordHeatChange(HeatChangeRecord record) {
         heatChangeRecords.put(record, 0);
     }
 
@@ -482,5 +477,131 @@ public class FluidEntity implements IFluidEntity {
         }
 
         heatChangeRecords.clear();
+    }
+
+    /*********************************************************************
+     *
+     */
+
+    /**
+     * https://en.wikipedia.org/wiki/Avogadro%27s_law
+     */
+    double getMolarWeight() {
+        return 1;
+    }
+
+
+    /**
+     * https://en.wikipedia.org/wiki/Thermal_conductivity
+     */
+    public double getConductivity() {
+        return .0001;
+    }
+
+    /**
+     * https://en.wikipedia.org/wiki/Viscosity
+     */
+    public double getViscosity() {
+        return .1;
+    }
+
+    /*********************************************************************
+     * Record classes
+     */
+
+    /**
+     * A RelativeTransferRecord is the a record of what proportion of this entity should be transferred to the target
+     * entity.
+     */
+    class MassTransferRecord {
+        final private FluidEntity targetEntity;
+        final private double proportion;
+
+        MassTransferRecord(FluidEntity targetEntity, double proportion) {
+            this.targetEntity = targetEntity;
+            this.proportion = proportion;
+        }
+
+        FluidEntity getTargetEntity() {
+            return targetEntity;
+        }
+
+        double getProportion() {
+            return proportion;
+        }
+    }
+
+    public static class MassChangeRecord {
+
+        final private double massChange;
+        final private double massTemperature;
+        final private double velocityX;
+        final private double velocityY;
+        final private Color inkColor;
+
+        MassChangeRecord(double massChange, double massTemperature, double velocityX, double velocityY, Color inkColor) {
+            this.massChange = massChange;
+            this.massTemperature = massTemperature;
+            this.velocityX = velocityX;
+            this.velocityY = velocityY;
+            this.inkColor = inkColor;
+        }
+
+        void transfer(FluidEntity entity) {
+            if (massChange < 0) {
+                entity.subtractMass(massChange);
+            } else if (massChange > 0) {
+                entity.addMass(massChange, massTemperature, inkColor, velocityX, velocityY);
+            }
+        }
+    }
+
+    public static class ForceChangeRecord {
+        final private double forceX;
+        final private double forceY;
+
+        public ForceChangeRecord(double forceX, double forceY) {
+            this.forceX = forceX;
+            this.forceY = forceY;
+        }
+
+        void transfer(FluidEntity entity) {
+            entity.addForceX(forceX);
+            entity.addForceY(forceY);
+        }
+    }
+
+    public static class HeatTransferRecord {
+        final private FluidEntity targetEntity;
+        final private double heatChange;
+
+        /**
+         * @param targetEntity
+         * @param heatChange   Should always be positive.
+         */
+        public HeatTransferRecord(FluidEntity targetEntity, double heatChange) {
+            this.targetEntity = targetEntity;
+            this.heatChange = heatChange;
+        }
+
+        FluidEntity getTargetEntity() {
+            return targetEntity;
+        }
+
+        double getHeatChange() {
+            return heatChange;
+        }
+    }
+
+    public static class HeatChangeRecord {
+        final private double heatChange;
+
+        HeatChangeRecord(double heatChange) {
+            this.heatChange = heatChange;
+        }
+
+        void transfer(FluidEntity entity) {
+            entity.addHeat(heatChange);
+        }
     }
 }

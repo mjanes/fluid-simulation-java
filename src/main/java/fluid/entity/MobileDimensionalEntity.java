@@ -3,7 +3,7 @@ package fluid.entity;
 /**
  * Created by mjanes on 6/12/2014.
  */
-public interface IMobileDimensionalEntity extends IDimensionalEntity {
+public interface MobileDimensionalEntity extends DimensionalEntity {
 
     void setDeltaX(double deltaX);
 

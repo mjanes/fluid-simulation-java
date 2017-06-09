@@ -2,7 +2,6 @@ package fluid.display;
 
 import fluid.camera.Camera;
 import fluid.entity.FluidEntity;
-import fluid.entity.IFluidEntity;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
@@ -49,11 +48,11 @@ public class FluidEntityCanvas extends Canvas {
         } else if (drawType.equals(DrawType.TEMPERATURE)) {
             radius = Math.sqrt(entity.getMass());
             double temperature = entity.getTemperature();
-            if (temperature < IFluidEntity.DEFAULT_TEMPERATURE) {
-                double normalizedCold = (IFluidEntity.DEFAULT_TEMPERATURE - temperature) / IFluidEntity.DEFAULT_TEMPERATURE;
+            if (temperature < FluidEntity.DEFAULT_TEMPERATURE) {
+                double normalizedCold = (FluidEntity.DEFAULT_TEMPERATURE - temperature) / FluidEntity.DEFAULT_TEMPERATURE;
                 color = new Color(0, 0, normalizedCold, 1);
             } else {
-                double normalizedHot = (temperature - IFluidEntity.DEFAULT_TEMPERATURE) / IFluidEntity.DEFAULT_TEMPERATURE;
+                double normalizedHot = (temperature - FluidEntity.DEFAULT_TEMPERATURE) / FluidEntity.DEFAULT_TEMPERATURE;
                 color = new Color(Math.min(1, normalizedHot), 0, 0, 1);
             }
         } else if (drawType.equals(DrawType.VELOCITY)) {

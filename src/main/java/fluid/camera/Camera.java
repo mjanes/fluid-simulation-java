@@ -1,8 +1,8 @@
 package fluid.camera;
 
-import fluid.entity.IMobileDimensionalEntity;
+import fluid.entity.DimensionalEntity;
+import fluid.entity.MobileDimensionalEntity;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import fluid.entity.IDimensionalEntity;
 
 /**
  * A camera in three dimensional space.
@@ -15,7 +15,7 @@ import fluid.entity.IDimensionalEntity;
  *
  * @author mjanes
  */
-public class Camera implements IMobileDimensionalEntity {
+public class Camera implements MobileDimensionalEntity {
 
     private double x;
     private double y;
@@ -194,8 +194,8 @@ public class Camera implements IMobileDimensionalEntity {
      ******************************************************************************************************************/
 
     @Override
-    public double getDistance(IDimensionalEntity other) {
-        return IDimensionalEntity.getDistance(this, other);
+    public double getDistance(DimensionalEntity other) {
+        return DimensionalEntity.getDistance(this, other);
     }
 
     @Override
@@ -368,7 +368,7 @@ public class Camera implements IMobileDimensionalEntity {
      * Translation and rotation functions to take an entity and create output for use by the camera
      ***************************************************************************************************/
 
-    public Array2DRowRealMatrix translate(IDimensionalEntity dimensionalEntity) {
+    public Array2DRowRealMatrix translate(DimensionalEntity dimensionalEntity) {
         return translationMatrix.multiply(dimensionalEntity.getR4Matrix());
     }
 

@@ -7,10 +7,14 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Immutable mock entity to function as entity off the edge of the simulation.
  */
-public class MockFluidEntity implements IFluidEntity {
+public class MockFluidEntity extends FluidEntity {
 
     private final ConcurrentHashMap<MassTransferRecord, Integer> massTransferRecords = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<HeatTransferRecord, Integer> heatTransferRecords = new ConcurrentHashMap<>();
+
+    public MockFluidEntity(double x, double y, double z, double mass, double temperature) {
+        super(x, y, z, mass, temperature);
+    }
 
 
     @Override
@@ -41,7 +45,7 @@ public class MockFluidEntity implements IFluidEntity {
     }
 
     @Override
-    public double getDistance(IDimensionalEntity other) {
+    public double getDistance(DimensionalEntity other) {
         return 0;
     }
 
@@ -52,22 +56,22 @@ public class MockFluidEntity implements IFluidEntity {
 
     @Override
     public double getDeltaX() {
-        return IFluidEntity.DEFAULT_DX;
+        return FluidEntity.DEFAULT_DX;
     }
 
     @Override
     public double getForceX() {
-        return IFluidEntity.DEFAULT_DX * IFluidEntity.DEFAULT_MASS;
+        return FluidEntity.DEFAULT_DX * FluidEntity.DEFAULT_MASS;
     }
 
     @Override
     public double getDeltaY() {
-        return IFluidEntity.DEFAULT_DY;
+        return FluidEntity.DEFAULT_DY;
     }
 
     @Override
     public double getForceY() {
-        return IFluidEntity.DEFAULT_DY * IFluidEntity.DEFAULT_MASS;
+        return FluidEntity.DEFAULT_DY * FluidEntity.DEFAULT_MASS;
     }
 
     public void addForceX(double forceX) {
@@ -85,22 +89,22 @@ public class MockFluidEntity implements IFluidEntity {
 
     @Override
     public double getMass() {
-        return IFluidEntity.DEFAULT_MASS;
+        return FluidEntity.DEFAULT_MASS;
     }
 
     @Override
     public double getPressure() {
-        return GAS_CONSTANT * IFluidEntity.DEFAULT_MASS * getTemperature() / getMolarWeight();
+        return GAS_CONSTANT * FluidEntity.DEFAULT_MASS * getTemperature() / getMolarWeight();
     }
 
     @Override
     public double getHeat() {
-        return IFluidEntity.DEFAULT_TEMPERATURE * IFluidEntity.DEFAULT_MASS;
+        return FluidEntity.DEFAULT_TEMPERATURE * FluidEntity.DEFAULT_MASS;
     }
 
     @Override
     public double getTemperature() {
-        return IFluidEntity.DEFAULT_TEMPERATURE;
+        return FluidEntity.DEFAULT_TEMPERATURE;
     }
 
     @Override

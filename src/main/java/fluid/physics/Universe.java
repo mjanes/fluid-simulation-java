@@ -1,7 +1,6 @@
 package fluid.physics;
 
 import fluid.entity.FluidEntity;
-import fluid.entity.IFluidEntity;
 import fluid.entity.MockFluidEntity;
 
 import java.util.stream.IntStream;
@@ -9,14 +8,34 @@ import java.util.stream.IntStream;
 /**
  * http://cowboyprogramming.com/2008/04/01/practical-fluid-mechanics/
  * http://www.dgp.toronto.edu/people/stam/reality/Research/pdf/GDC03.pdf
- * <p>
- * Created by mjanes on 6/16/2014.
  */
-public class FluidPhysics {
+public class Universe {
+
+    private int step = 0;
+
+    private final FluidEntity[][] entities;
+
+    public Universe(FluidEntity[][] entities) {
+        this.entities = entities;
+    }
+
+    /**
+     * Run round of physics
+     \*/
+    public synchronized void updateUniverseState() {
+        ExternalInput.applyInput(entities, step);
+        incrementFluid();
+
+        step++;
+    }
+
+    public FluidEntity[][] getEntities() {
+        return entities;
+    }
 
     private static final double GRAVITATIONAL_CONSTANT = .00001;
 
-    private static final IFluidEntity mockFluidEntity = new MockFluidEntity();
+    private static final FluidEntity mockFluidEntity = new MockFluidEntity(0, 0, 0, 0, 0);
 
     public enum BorderType {
         REFLECTIVE,
@@ -29,12 +48,12 @@ public class FluidPhysics {
     private static final BorderType rightBorderType = BorderType.OPEN;
     private static final BorderType upperBorderType = BorderType.OPEN;
 
-    public static void incrementFluid(FluidEntity[][] entities) {
+    private void incrementFluid() {
         if (entities == null) return;
 
         // force applications
-        applyBidirectionInteractions(entities);
-        applyGravity(entities);
+        applyBidirectionInteractions();
+        applyGravity();
 
         mockFluidEntity.convertHeatTransferToAbsoluteChange();
         IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].convertHeatTransferToAbsoluteChange()));
@@ -42,10 +61,10 @@ public class FluidPhysics {
         IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].changeForce()));
 
         // check for border effect
-        checkBorder(entities);
+        checkBorder();
 
         // transfer logging
-        advection(entities);
+        advection();
 
         // transfer application
         mockFluidEntity.convertMassTransferToAbsoluteChange();
@@ -54,9 +73,9 @@ public class FluidPhysics {
     }
 
 
-    private static void applyBidirectionInteractions(FluidEntity[][] entities) {
+    private void applyBidirectionInteractions() {
         IntStream.range(-1, entities.length).parallel().forEach(i -> IntStream.range(-1, entities[0].length).forEach(j -> {
-            IFluidEntity entity = null;
+            FluidEntity entity = null;
             if (i == -1 || j == -1) {
                 if (!(i == -1 && j == -1)) {
                     if (i == -1 && leftBorderType.equals(BorderType.OPEN)) {
@@ -100,13 +119,13 @@ public class FluidPhysics {
 
     /**
      * If the two entities temperature difference, record a heat transfer from the one with the higher temperature to
-     * the lower. The ammount of heat trasferred is dependant upon the conductivity of the entities.
+     * the lower. The amount of heat transferred is dependant upon the conductivity of the entities.
      * <p>
      * https://en.wikipedia.org/wiki/Thermal_conductivity
      * <p>
      * TODO: Make this math cleaner and easier to understand.
      */
-    private static void applyConductionBetweenCells(IFluidEntity a, IFluidEntity b) {
+    private void applyConductionBetweenCells(FluidEntity a, FluidEntity b) {
         if (a == null || b == null) return;
         if (a.getTemperature() == b.getTemperature()) return;
 
@@ -118,13 +137,13 @@ public class FluidPhysics {
         double heatTransferToA = heatLossFromA + heatGainForA;
 
         if (heatTransferToA > 0) {
-            b.recordHeatTransfer(new IFluidEntity.HeatTransferRecord(a, heatTransferToA));
+            b.recordHeatTransfer(new FluidEntity.HeatTransferRecord(a, heatTransferToA));
         } else if (heatTransferToA < 0) {
-            a.recordHeatTransfer(new IFluidEntity.HeatTransferRecord(b, -heatTransferToA));
+            a.recordHeatTransfer(new FluidEntity.HeatTransferRecord(b, -heatTransferToA));
         }
     }
 
-    private static void applyPressureBetweenCells(IFluidEntity a, IFluidEntity b, boolean xOffset, boolean yOffset) {
+    private void applyPressureBetweenCells(FluidEntity a, FluidEntity b, boolean xOffset, boolean yOffset) {
         if (a == null || b == null) return;
         double pressureDifference = a.getPressure() - b.getPressure();
         if (pressureDifference > 0) {
@@ -142,7 +161,7 @@ public class FluidPhysics {
      * <p>
      * TODO: Make this math cleaner and easier to understand.
      */
-    private static void applyViscosityBetweenCells(IFluidEntity a, IFluidEntity b, boolean xOffset, boolean yOffset) {
+    private void applyViscosityBetweenCells(FluidEntity a, FluidEntity b, boolean xOffset, boolean yOffset) {
         if (a == null || b == null) return;
         double totalMass = a.getMass() + b.getMass();
 
@@ -153,8 +172,8 @@ public class FluidPhysics {
             double forceGainForA = ((a.getMass() / totalMass) * forceAvailableForTransfer);
             double forceTransfer = forceLossFromA + forceGainForA;
 
-            a.recordForceChange(new IFluidEntity.ForceChangeRecord(0, forceTransfer));
-            a.recordForceChange(new IFluidEntity.ForceChangeRecord(0, -forceTransfer));
+            a.recordForceChange(new FluidEntity.ForceChangeRecord(0, forceTransfer));
+            a.recordForceChange(new FluidEntity.ForceChangeRecord(0, -forceTransfer));
         }
         if (yOffset && a.getDeltaX() - b.getDeltaX() != 0) {
             double forceAvailableForTransfer = a.getForceX() * a.getViscosity() + b.getForceX() * b.getViscosity();
@@ -163,12 +182,12 @@ public class FluidPhysics {
             double forceGainForA = ((a.getMass() / totalMass) * forceAvailableForTransfer);
             double forceTransfer = forceLossFromA + forceGainForA;
 
-            a.recordForceChange(new IFluidEntity.ForceChangeRecord(forceTransfer, 0));
-            a.recordForceChange(new IFluidEntity.ForceChangeRecord(-forceTransfer, 0));
+            a.recordForceChange(new FluidEntity.ForceChangeRecord(forceTransfer, 0));
+            a.recordForceChange(new FluidEntity.ForceChangeRecord(-forceTransfer, 0));
         }
     }
 
-    private static void applyGravity(FluidEntity[][] entities) {
+    private void applyGravity() {
         final double[][] downwardPressure = new double[entities.length][entities[0].length];
 
         for (int i = 0; i < entities.length; i++) {
@@ -181,7 +200,7 @@ public class FluidPhysics {
         IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].addForceY(-downwardPressure[x][y])));
     }
 
-    private static void checkBorder(FluidEntity[][] entities) {
+    private void checkBorder() {
         // Presume everything is in grid for simplicty's sake
         // get max and min x and y for everything
         double minX = entities[0][0].getX();
@@ -232,17 +251,17 @@ public class FluidPhysics {
      * Advection moves the quantities from point to its connections/neighbors. Quantities include velocity/mass/heat/etc.
      * The amount moved from one point to another is based on the given point's velocity.
      */
-    private static void advection(FluidEntity[][] entities) {
+    private void advection() {
         IntStream.range(0, entities.length).parallel().forEach(i -> IntStream.range(0, entities[i].length).forEach(j -> {
-            forwardAdvectionCellTransfer(entities, i, j);
-            reverseAdvectionCellTransfer(entities, i, j);
+            forwardAdvectionCellTransfer(i, j);
+            reverseAdvectionCellTransfer(i, j);
         }));
     }
 
     /**
      * https://en.wikipedia.org/wiki/Bilinear_interpolation
      */
-    private static void forwardAdvectionCellTransfer(FluidEntity[][] entities, int xIndex, int yIndex) {
+    private void forwardAdvectionCellTransfer(int xIndex, int yIndex) {
         FluidEntity entity = entities[xIndex][yIndex];
         double deltaX = entity.getDeltaX();
         double deltaY = entity.getDeltaY();
@@ -276,18 +295,18 @@ public class FluidPhysics {
         // area of bottom left
         double topRightAreaInversion = xPosInCell * yPosInCell;
 
-        double bottomLeftRatio = bottomLeftAreaInversion / IFluidEntity.CELL_AREA;
-        double bottomRightRatio = bottomRightAreaInversion / IFluidEntity.CELL_AREA;
-        double topLeftRatio = topLeftAreaInversion / IFluidEntity.CELL_AREA;
-        double topRightRatio = topRightAreaInversion / IFluidEntity.CELL_AREA;
+        double bottomLeftRatio = bottomLeftAreaInversion / FluidEntity.CELL_AREA;
+        double bottomRightRatio = bottomRightAreaInversion / FluidEntity.CELL_AREA;
+        double topLeftRatio = topLeftAreaInversion / FluidEntity.CELL_AREA;
+        double topRightRatio = topRightAreaInversion / FluidEntity.CELL_AREA;
 
-        transferTo(entity, entities, t1x, t1y, bottomLeftRatio);
-        transferTo(entity, entities, t2x, t1y, bottomRightRatio);
-        transferTo(entity, entities, t1x, t2y, topLeftRatio);
-        transferTo(entity, entities, t2x, t2y, topRightRatio);
+        transferTo(entity, t1x, t1y, bottomLeftRatio);
+        transferTo(entity, t2x, t1y, bottomRightRatio);
+        transferTo(entity, t1x, t2y, topLeftRatio);
+        transferTo(entity, t2x, t2y, topRightRatio);
     }
 
-    private static void transferTo(FluidEntity originEntity, FluidEntity[][] entities, int targetXIndex, int targetYIndex, double ratio) {
+    private void transferTo(FluidEntity originEntity, int targetXIndex, int targetYIndex, double ratio) {
         FluidEntity targetEntity = null;
 
         // If this is true, the target entity is on screen.
@@ -301,7 +320,7 @@ public class FluidPhysics {
     /**
      * https://en.wikipedia.org/wiki/Bilinear_interpolation
      */
-    private static void reverseAdvectionCellTransfer(FluidEntity[][] entities, int xIndex, int yIndex) {
+    private void reverseAdvectionCellTransfer(int xIndex, int yIndex) {
 
         FluidEntity entity = entities[xIndex][yIndex];
         double negativeDeltaX = -entity.getDeltaX();
@@ -337,10 +356,10 @@ public class FluidPhysics {
         // area of bottom left
         double topRightAreaInversion = xPosInCell * yPosInCell;
 
-        double bottomLeftRatio = bottomLeftAreaInversion / IFluidEntity.CELL_AREA;
-        double bottomRightRatio = bottomRightAreaInversion / IFluidEntity.CELL_AREA;
-        double topLeftRatio = topLeftAreaInversion / IFluidEntity.CELL_AREA;
-        double topRightRatio = topRightAreaInversion / IFluidEntity.CELL_AREA;
+        double bottomLeftRatio = bottomLeftAreaInversion / FluidEntity.CELL_AREA;
+        double bottomRightRatio = bottomRightAreaInversion / FluidEntity.CELL_AREA;
+        double topLeftRatio = topLeftAreaInversion / FluidEntity.CELL_AREA;
+        double topRightRatio = topRightAreaInversion / FluidEntity.CELL_AREA;
 
         if (bottomLeftRatio > 1 || bottomRightRatio > 1 || topLeftRatio > 1 || topRightRatio > 1) {
             System.out.println("Math problem");
@@ -350,14 +369,14 @@ public class FluidPhysics {
             System.out.println("Math problem!");
         }
 
-        transferFrom(entity, entities, t1x, t1y, bottomLeftRatio);
-        transferFrom(entity, entities, t2x, t1y, bottomRightRatio);
-        transferFrom(entity, entities, t1x, t2y, topLeftRatio);
-        transferFrom(entity, entities, t2x, t2y, topRightRatio);
+        transferFrom(entity, t1x, t1y, bottomLeftRatio);
+        transferFrom(entity, t2x, t1y, bottomRightRatio);
+        transferFrom(entity, t1x, t2y, topLeftRatio);
+        transferFrom(entity, t2x, t2y, topRightRatio);
     }
 
-    private static void transferFrom(FluidEntity targetEntity, FluidEntity[][] entities, int originXIndex, int originYIndex, double ratio) {
-        IFluidEntity originEntity = null;
+    private void transferFrom(FluidEntity targetEntity, int originXIndex, int originYIndex, double ratio) {
+        FluidEntity originEntity = null;
 
         if (originXIndex < 0) {
             if (leftBorderType.equals(BorderType.OPEN)) {
@@ -384,7 +403,7 @@ public class FluidPhysics {
         }
     }
 
-    private static int getLesserTargetIndex(int sourceIndex, int indexOffset, boolean directionPositive) {
+    private int getLesserTargetIndex(int sourceIndex, int indexOffset, boolean directionPositive) {
         return sourceIndex + indexOffset + (directionPositive ? 0 : -1);
     }
 

@@ -1,7 +1,6 @@
 package fluid.physics;
 
 import fluid.entity.FluidEntity;
-import fluid.entity.IFluidEntity;
 import javafx.scene.paint.Color;
 
 /**
@@ -28,21 +27,21 @@ class ExternalInput {
     }
 
     private static void smallInput(FluidEntity[][] entities, int timestep) {
-        entities[entities.length / 2][0].addMass(5, IFluidEntity.DEFAULT_TEMPERATURE + 15, Color.RED);
+        entities[entities.length / 2][0].addMass(5, FluidEntity.DEFAULT_TEMPERATURE + 15, Color.RED);
     }
 
     private static void inputCandle(FluidEntity[][] entities) {
-        entities[79][0].addMass(12, IFluidEntity.DEFAULT_TEMPERATURE + 25, Color.ORANGERED, 0, 1);
-        entities[80][0].addMass(20, IFluidEntity.DEFAULT_TEMPERATURE + 30, Color.RED, 0, 1);
-        entities[81][0].addMass(12, IFluidEntity.DEFAULT_TEMPERATURE + 25, Color.ORANGERED, 0, 1);
+        entities[79][0].addMass(12, FluidEntity.DEFAULT_TEMPERATURE + 25, Color.ORANGERED, 0, 1);
+        entities[80][0].addMass(20, FluidEntity.DEFAULT_TEMPERATURE + 30, Color.RED, 0, 1);
+        entities[81][0].addMass(12, FluidEntity.DEFAULT_TEMPERATURE + 25, Color.ORANGERED, 0, 1);
     }
 
     private static void inputHeat(FluidEntity[][] entities, int step) {
-        entities[entities.length / 2 - 1][0].addHeat(IFluidEntity.DEFAULT_TEMPERATURE + 25);
+        entities[entities.length / 2 - 1][0].addHeat(FluidEntity.DEFAULT_TEMPERATURE + 25);
         entities[entities.length / 2 - 1][0].setColor(Color.ORANGERED);
-        entities[entities.length / 2][0].addHeat(IFluidEntity.DEFAULT_TEMPERATURE + 30);
+        entities[entities.length / 2][0].addHeat(FluidEntity.DEFAULT_TEMPERATURE + 30);
         entities[entities.length / 2][0].setColor(Color.RED);
-        entities[entities.length / 2 + 1][0].addHeat(IFluidEntity.DEFAULT_TEMPERATURE + 25);
+        entities[entities.length / 2 + 1][0].addHeat(FluidEntity.DEFAULT_TEMPERATURE + 25);
         entities[entities.length / 2 + 1][0].setColor(Color.ORANGERED);
     }
 
@@ -62,13 +61,13 @@ class ExternalInput {
     }
 
     private static void inputBreezeOnEntity(FluidEntity entity) {
-        //entity.addMass(1, IFluidEntity.DEFAULT_TEMPERATURE + 2, Color.RED, 6, 0);
+        //entity.addMass(1, FluidEntity.DEFAULT_TEMPERATURE + 2, Color.RED, 6, 0);
         entity.setDeltaX(3);
         entity.setColor(Color.WHITE);
     }
 
     private static void inputInverseBreezeOnEntity(FluidEntity entity) {
-        entity.addMass(2, IFluidEntity.DEFAULT_TEMPERATURE / 10, Color.BLUE, -2, 0);
+        entity.addMass(2, FluidEntity.DEFAULT_TEMPERATURE / 10, Color.BLUE, -2, 0);
 //        entity.setDeltaX(-3);
 //        entity.setColor(Color.BLUE);
     }
@@ -76,7 +75,7 @@ class ExternalInput {
     private static void inputExplosion(FluidEntity[][] entities, int timestep) {
         FluidEntity entity = entities[80][40];
         if (timestep < 3) {
-            entity.addMass(IFluidEntity.DEFAULT_MASS * 100, IFluidEntity.DEFAULT_TEMPERATURE * 10, Color.RED);
+            entity.addMass(FluidEntity.DEFAULT_MASS * 100, FluidEntity.DEFAULT_TEMPERATURE * 10, Color.RED);
         }
     }
 
@@ -85,13 +84,13 @@ class ExternalInput {
      */
     private static void inputHotplate(FluidEntity[][] entities, int timestep) {
         for (FluidEntity[] entityRow : entities) {
-            entityRow[0].setTemperature(IFluidEntity.DEFAULT_TEMPERATURE * 2);
+            entityRow[0].setTemperature(FluidEntity.DEFAULT_TEMPERATURE * 2);
         }
     }
 
     private static void coolUpperBorder(FluidEntity[][] entities) {
         for (FluidEntity[] entityRow : entities) {
-            entityRow[entityRow.length - 1].setTemperature(IFluidEntity.DEFAULT_TEMPERATURE / 2);
+            entityRow[entityRow.length - 1].setTemperature(FluidEntity.DEFAULT_TEMPERATURE / 2);
         }
     }
 
