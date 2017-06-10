@@ -14,7 +14,9 @@ class ExternalInput {
         //inputCandle(entities);
         //inputBreeze(entities);
 
-        inputHeat(entities, timestep);
+        if (timestep < 40) {
+            inputHeat(entities, timestep);
+        }
 
         //smallInput(entities, timestep);
 
@@ -37,11 +39,11 @@ class ExternalInput {
     }
 
     private static void inputHeat(FluidEntity[][] entities, int step) {
-        entities[entities.length / 2 - 1][1].addHeat(FluidEntity.DEFAULT_TEMPERATURE + 25);
+        entities[entities.length / 2 - 1][1].addHeat(.1);
         entities[entities.length / 2 - 1][0].setColor(Color.ORANGERED);
-        entities[entities.length / 2][1].addHeat(FluidEntity.DEFAULT_TEMPERATURE + 30);
+        entities[entities.length / 2][1].addHeat(.15);
         entities[entities.length / 2][1].setColor(Color.RED);
-        entities[entities.length / 2 + 1][1].addHeat(FluidEntity.DEFAULT_TEMPERATURE + 25);
+        entities[entities.length / 2 + 1][1].addHeat(.1);
         entities[entities.length / 2 + 1][1].setColor(Color.ORANGERED);
     }
 

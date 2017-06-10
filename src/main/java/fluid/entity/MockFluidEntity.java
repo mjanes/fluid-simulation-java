@@ -10,7 +10,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MockFluidEntity extends FluidEntity {
 
     private final ConcurrentHashMap<MassTransferRecord, Integer> massTransferRecords = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<HeatTransferRecord, Integer> heatTransferRecords = new ConcurrentHashMap<>();
 
     MockFluidEntity(double x, double y, double z) {
         super(x, y, z, DEFAULT_MASS, DEFAULT_TEMPERATURE);
@@ -74,25 +73,7 @@ public class MockFluidEntity extends FluidEntity {
     }
 
     @Override
-    public void recordHeatTransfer(HeatTransferRecord record) {
-        heatTransferRecords.put(record, 0);
-    }
-
-    @Override
-    public void convertHeatTransferToAbsoluteChange() {
-        heatTransferRecords.keySet().stream().filter(heatTransferRecord -> heatTransferRecord.getTargetEntity() != null).forEach(heatTransferRecord -> {
-            double heatTransfer = heatTransferRecord.getHeatChange();
-
-            if (heatTransferRecord.getTargetEntity() != null) {
-                heatTransferRecord.getTargetEntity().recordHeatChange(new HeatChangeRecord(heatTransfer));
-            }
-        });
-
-        heatTransferRecords.clear();
-    }
-
-    @Override
-    public void recordHeatChange(HeatChangeRecord record) {
+    public void recordHeatChange(double deltaHeat) {
     }
 
 }

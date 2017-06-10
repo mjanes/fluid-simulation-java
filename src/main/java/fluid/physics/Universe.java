@@ -10,11 +10,12 @@ import java.util.stream.IntStream;
  */
 public class Universe {
 
+
     /**
      * Maxiumum number of immediate neighbors that each {@link FluidEntity} may have bidirectional interactions with.
      * Used to ensure that an entity does not transfer more than 100% of its heat/pressure/etc to its neighbors
      */
-    private final int MAX_NEIGHBORS = 4;
+    public static final int MAX_NEIGHBORS = 4;
 
     private int step = 0;
 
@@ -30,7 +31,6 @@ public class Universe {
     public synchronized void updateUniverseState() {
         ExternalInput.applyInput(entities, step);
         incrementFluid();
-
         step++;
     }
 
@@ -45,7 +45,6 @@ public class Universe {
         applyBidirectionalInteractions();
         applyGravity();
 
-        IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].convertHeatTransferToAbsoluteChange()));
         IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].changeHeat()));
         IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].changeForce()));
 

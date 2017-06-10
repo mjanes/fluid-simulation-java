@@ -33,7 +33,7 @@ public class FluidEntity implements DimensionalEntity {
     private double deltaY;
     private double deltaZ;
     private double mass;
-    private double heat;
+    private double temperature;
     private Color color;
 
     private final ConcurrentHashMap<MassTransferRecord, Integer> massTransferRecords = new ConcurrentHashMap<>();
@@ -41,8 +41,7 @@ public class FluidEntity implements DimensionalEntity {
 
     private final ConcurrentHashMap<ForceChangeRecord, Integer> forceChangeRecords = new ConcurrentHashMap<>();
 
-    private final ConcurrentHashMap<HeatTransferRecord, Integer> heatTransferRecords = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<HeatChangeRecord, Integer> heatChangeRecords = new ConcurrentHashMap<>();
+    private double pendingDeltaHeat;
 
     public FluidEntity(double x, double y, double z, double mass, double temperature) {
         setX(x);
@@ -119,8 +118,6 @@ public class FluidEntity implements DimensionalEntity {
             return;
         }
 
-        // TODO: Probably need some efficiency thing here, if mass is too small, and force is too high, turn some energy
-        // into heat?
         addDeltaX(forceX / mass);
     }
 
@@ -151,8 +148,6 @@ public class FluidEntity implements DimensionalEntity {
             return;
         }
 
-        // TODO: Probably need some efficiency thing here, if mass is too small, and force is too high, turn some energy
-        // into heat?
         addDeltaY(forceY / mass);
     }
 
@@ -175,9 +170,6 @@ public class FluidEntity implements DimensionalEntity {
             return;
         }
 
-
-        // TODO: Probably need some efficiency thing here, if mass is too small, and force is too high, turn some energy
-        // into heat?
         addDeltaZ(forceZ / mass);
     }
 
@@ -264,14 +256,12 @@ public class FluidEntity implements DimensionalEntity {
     private void subtractMass(double deltaMass) {
         if (mass + deltaMass <= 0) {
             setMass(0);
-            setHeat(0);
+            setTemperature(0);
             setDeltaX(0);
             setDeltaY(0);
             setDeltaZ(0);
         } else {
-            double proportion = deltaMass / mass;
             setMass(mass + deltaMass);
-            addHeat(heat * proportion);
         }
     }
 
@@ -294,28 +284,24 @@ public class FluidEntity implements DimensionalEntity {
      */
 
     public synchronized void setTemperature(double temperature) {
-        heat = temperature * mass;
+        this.temperature = temperature;
     }
 
     public synchronized double getTemperature() {
-        if (mass <= 0) return 0;
-        return heat / mass;
-    }
-
-    private synchronized void setHeat(double heat) {
-        if (heat < 0) {
-            this.heat = 0;
-            return;
-        }
-        this.heat = heat;
+        return temperature;
     }
 
     public synchronized void addHeat(double deltaHeat) {
-        setHeat(heat + deltaHeat);
-    }
+        if (mass <= 0) {
+            return;
+        }
+        double deltaTemperature = deltaHeat / mass;
 
-    public synchronized double getHeat() {
-        return heat;
+        if (this.temperature + deltaTemperature < 0) {
+            return;
+            //throw new IllegalStateException("Error: Temperature cannot be negative");
+        }
+        this.temperature += deltaTemperature;
     }
 
 
@@ -435,61 +421,22 @@ public class FluidEntity implements DimensionalEntity {
 
     /**
      * Heat transfers
-     *
-     * This is done in two parts, similar to how mass transfers are done, because heat cannot go negative, and thus,
      */
 
-    /**
-     * Record heat transfer away from this entity, to target entity, in HeatTransferRecord.
-     */
-    public void recordHeatTransfer(HeatTransferRecord record) {
-        heatTransferRecords.put(record, 0);
-    }
-
-    public void convertHeatTransferToAbsoluteChange() {
-        double totalHeatTransfer = 0;
-        for (HeatTransferRecord heatChangeRecord : heatTransferRecords.keySet()) {
-            totalHeatTransfer += heatChangeRecord.getHeatChange();
-        }
-
-        for (HeatTransferRecord heatTransferRecord : heatTransferRecords.keySet()) {
-            double heatTransfer;
-            if (totalHeatTransfer - heat < 0) {
-                heatTransfer = heatTransferRecord.getHeatChange() / totalHeatTransfer;
-            } else {
-                heatTransfer = heatTransferRecord.getHeatChange();
-            }
-
-            recordHeatChange(new HeatChangeRecord(-heatTransfer));
-
-            if (heatTransferRecord.getTargetEntity() != null) {
-                heatTransferRecord.getTargetEntity().recordHeatChange(new HeatChangeRecord(heatTransfer));
-            }
-        }
-
-        heatTransferRecords.clear();
-    }
-
-    void recordHeatChange(HeatChangeRecord record) {
-        heatChangeRecords.put(record, 0);
+    public void recordHeatChange(double deltaHeat) {
+        pendingDeltaHeat += deltaHeat;
     }
 
     public void changeHeat() {
-        for (HeatChangeRecord heatChangeRecord : heatChangeRecords.keySet()) {
-            heatChangeRecord.transfer(this);
-        }
-
-        heatChangeRecords.clear();
+        addHeat(pendingDeltaHeat);
+        pendingDeltaHeat = 0;
     }
 
-    /*********************************************************************
-     *
-     */
 
     /**
      * https://en.wikipedia.org/wiki/Avogadro%27s_law
      */
-    double getMolarWeight() {
+    private double getMolarWeight() {
         return 1;
     }
 
@@ -574,40 +521,6 @@ public class FluidEntity implements DimensionalEntity {
         }
     }
 
-    public static class HeatTransferRecord {
-        final private FluidEntity targetEntity;
-        final private double heatChange;
-
-        /**
-         * @param targetEntity
-         * @param heatChange   Should always be positive.
-         */
-        public HeatTransferRecord(FluidEntity targetEntity, double heatChange) {
-            this.targetEntity = targetEntity;
-            this.heatChange = heatChange;
-        }
-
-        FluidEntity getTargetEntity() {
-            return targetEntity;
-        }
-
-        double getHeatChange() {
-            return heatChange;
-        }
-    }
-
-    public static class HeatChangeRecord {
-        final private double heatChange;
-
-        HeatChangeRecord(double heatChange) {
-            this.heatChange = heatChange;
-        }
-
-        void transfer(FluidEntity entity) {
-            entity.addHeat(heatChange);
-        }
-    }
-
 
     /****
      * Interactions
@@ -624,26 +537,33 @@ public class FluidEntity implements DimensionalEntity {
      * If the two entities temperature difference, record a heat transfer from the one with the higher temperature to
      * the lower. The amount of heat transferred is dependant upon the conductivity of the entities.
      * <p>
-     * https://en.wikipedia.org/wiki/Thermal_conductivity
+     * Newton's law of cooling states that the rate of heat loss of a body is proportional to the difference in temperatures between the body and its surroundings.
      * <p>
-     * TODO: Make this math cleaner and easier to understand.
+     * https://en.wikipedia.org/wiki/Thermal_conductivity
+     * https://en.wikipedia.org/wiki/Heat_equation
+     * https://en.wikipedia.org/wiki/Newton%27s_law_of_cooling
+     * <p>
+     * TODO: Actually use heat equation
      */
     private void applyConductionBetweenCells(FluidEntity other) {
         if (other == null) return;
         if (getTemperature() == other.getTemperature()) return;
 
-        double totalMass = getMass() + other.getMass();
-        double heatAvailableForTransfer = getHeat() * getConductivity() + other.getHeat() * other.getConductivity();
+        double temperatureDifference = getTemperature() - other.getTemperature();
 
-        double heatLossFromA = -(getHeat() * getConductivity());
-        double heatGainForA = ((getMass() / totalMass) * heatAvailableForTransfer);
-        double heatTransferToA = heatLossFromA + heatGainForA;
-
-        if (heatTransferToA > 0) {
-            other.recordHeatTransfer(new FluidEntity.HeatTransferRecord(this, heatTransferToA));
-        } else if (heatTransferToA < 0) {
-            recordHeatTransfer(new FluidEntity.HeatTransferRecord(other, -heatTransferToA));
+        // Transfer from a to b
+        if (temperatureDifference > 0) {
+            double heatAvailableForTransferFromA = (getMass() * temperatureDifference * getConductivity()) / Universe.MAX_NEIGHBORS;
+            recordHeatChange(-heatAvailableForTransferFromA);
+            other.recordHeatChange(heatAvailableForTransferFromA);
         }
+        // Transfer from b to a
+        else if (temperatureDifference < 0) {
+            double heatAvailableForTransferFromB = (other.getMass() * temperatureDifference * other.getConductivity()) / Universe.MAX_NEIGHBORS;
+            recordHeatChange(-heatAvailableForTransferFromB);
+            other.recordHeatChange(heatAvailableForTransferFromB);
+        }
+
     }
 
     private void applyPressureBetweenCells(FluidEntity other) {
@@ -688,4 +608,5 @@ public class FluidEntity implements DimensionalEntity {
             recordForceChange(new FluidEntity.ForceChangeRecord(-forceTransfer, 0));
         }
     }
+
 }

@@ -15,7 +15,7 @@ public class Setup {
 
     private static final double Z_DISTANCE = 5000;
 
-    private static final int SIZE = 160;
+    private static final int SIZE = 170;
 
     public static Universe create() {
         /**
