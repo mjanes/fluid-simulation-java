@@ -39,9 +39,9 @@ public class FluidEntity implements DimensionalEntity {
     private final ConcurrentHashMap<MassTransferRecord, Integer> massTransferRecords = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<MassChangeRecord, Integer> massChangeRecords = new ConcurrentHashMap<>();
 
-    private final ConcurrentHashMap<ForceChangeRecord, Integer> forceChangeRecords = new ConcurrentHashMap<>();
-
     private double pendingDeltaHeat;
+    private double pendingDeltaForceX;
+    private double pendingDeltaForceY;
 
     public FluidEntity(double x, double y, double z, double mass, double temperature) {
         setX(x);
@@ -407,16 +407,17 @@ public class FluidEntity implements DimensionalEntity {
      * Force transfers
      */
 
-    public void recordForceChange(ForceChangeRecord record) {
-        forceChangeRecords.put(record, 0);
+    public void recordForceChange(double deltaForceX, double deltaForceY) {
+        pendingDeltaForceX += deltaForceX;
+        pendingDeltaForceY += deltaForceY;
     }
 
     public void changeForce() {
-        for (ForceChangeRecord forceChangeRecord : forceChangeRecords.keySet()) {
-            forceChangeRecord.transfer(this);
-        }
+        deltaX += pendingDeltaForceX;
+        pendingDeltaForceX = 0;
 
-        forceChangeRecords.clear();
+        deltaY += pendingDeltaForceY;
+        pendingDeltaForceY = 0;
     }
 
     /**
@@ -506,22 +507,6 @@ public class FluidEntity implements DimensionalEntity {
         }
     }
 
-    public static class ForceChangeRecord {
-        final private double forceX;
-        final private double forceY;
-
-        public ForceChangeRecord(double forceX, double forceY) {
-            this.forceX = forceX;
-            this.forceY = forceY;
-        }
-
-        void transfer(FluidEntity entity) {
-            entity.addForceX(forceX);
-            entity.addForceY(forceY);
-        }
-    }
-
-
     /****
      * Interactions
      */
@@ -595,8 +580,8 @@ public class FluidEntity implements DimensionalEntity {
             double forceGainForA = ((getMass() / totalMass) * forceAvailableForTransfer);
             double forceTransfer = forceLossFromA + forceGainForA;
 
-            recordForceChange(new FluidEntity.ForceChangeRecord(0, forceTransfer));
-            recordForceChange(new FluidEntity.ForceChangeRecord(0, -forceTransfer));
+            recordForceChange(0, forceTransfer);
+            recordForceChange(0, -forceTransfer);
         } else if (getY() != other.getY() && getDeltaX() - other.getDeltaX() != 0) {
             double forceAvailableForTransfer = getForceX() * getViscosity() + other.getForceX() * other.getViscosity();
 
@@ -604,8 +589,8 @@ public class FluidEntity implements DimensionalEntity {
             double forceGainForA = ((getMass() / totalMass) * forceAvailableForTransfer);
             double forceTransfer = forceLossFromA + forceGainForA;
 
-            recordForceChange(new FluidEntity.ForceChangeRecord(forceTransfer, 0));
-            recordForceChange(new FluidEntity.ForceChangeRecord(-forceTransfer, 0));
+            recordForceChange(forceTransfer, 0);
+            recordForceChange(-forceTransfer, 0);
         }
     }
 

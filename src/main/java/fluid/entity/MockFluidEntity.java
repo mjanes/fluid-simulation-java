@@ -69,7 +69,7 @@ public class MockFluidEntity extends FluidEntity {
     }
 
     @Override
-    public void recordForceChange(ForceChangeRecord record) {
+    public void recordForceChange(double deltaForceX, double deltaForceY) {
     }
 
     @Override

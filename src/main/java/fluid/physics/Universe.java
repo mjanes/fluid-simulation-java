@@ -10,9 +10,8 @@ import java.util.stream.IntStream;
  */
 public class Universe {
 
-
     /**
-     * Maxiumum number of immediate neighbors that each {@link FluidEntity} may have bidirectional interactions with.
+     * Maximum number of immediate neighbors that each {@link FluidEntity} may have bidirectional interactions with.
      * Used to ensure that an entity does not transfer more than 100% of its heat/pressure/etc to its neighbors
      */
     public static final int MAX_NEIGHBORS = 4;
