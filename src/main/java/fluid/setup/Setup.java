@@ -25,7 +25,7 @@ public class Setup {
          * provide an instability until we tweak that.
          */
 
-        FluidEntity[][] entities = rectangle(240, 170);
+        FluidEntity[][] entities = rectangle(220, 175);
 
         // Set boundary conditions of the universe
         FluidEntity otherEntity;

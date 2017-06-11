@@ -199,10 +199,10 @@ public class FluidEntity implements DimensionalEntity {
     }
 
     public synchronized void addMass(double deltaMass, double massTemperature, Color color) {
-        addMass(deltaMass, massTemperature, color, 0, 0);
+        addMass(deltaMass, massTemperature, 0, 0, color);
     }
 
-    public synchronized void addMass(double deltaMass, double massTemperature, Color color, double incomingDeltaX, double incomingDeltaY) {
+    public synchronized void addMass(double deltaMass, double massTemperature, double incomingDeltaX, double incomingDeltaY, Color color) {
         if (deltaMass < 0) {
             System.out.println("Negative delta mass in addMass");
             return;
@@ -490,7 +490,7 @@ public class FluidEntity implements DimensionalEntity {
             if (massChange < 0) {
                 entity.subtractMass(massChange);
             } else if (massChange > 0) {
-                entity.addMass(massChange, massTemperature, inkColor, velocityX, velocityY);
+                entity.addMass(massChange, massTemperature, velocityX, velocityY, inkColor);
             }
         }
     }

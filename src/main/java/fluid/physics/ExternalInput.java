@@ -31,9 +31,9 @@ class ExternalInput {
     }
 
     private static void inputCandle(FluidEntity[][] entities) {
-        entities[entities.length / 2 - 1][1].addMass(1, FluidEntity.DEFAULT_TEMPERATURE + 25, Color.ORANGERED, 0, 1);
-        entities[entities.length / 2][1].addMass(2, FluidEntity.DEFAULT_TEMPERATURE + 30, Color.RED, 0, 1);
-        entities[entities.length / 2 + 1][1].addMass(1, FluidEntity.DEFAULT_TEMPERATURE + 25, Color.ORANGERED, 0, 1);
+        entities[entities.length / 2 - 1][1].addMass(2, FluidEntity.DEFAULT_TEMPERATURE + 25, 0, 1, Color.ORANGERED);
+        entities[entities.length / 2][1].addMass(2.5, FluidEntity.DEFAULT_TEMPERATURE + 30, 0, 1, Color.RED);
+        entities[entities.length / 2 + 1][1].addMass(2, FluidEntity.DEFAULT_TEMPERATURE + 25, 0, 1, Color.ORANGERED);
     }
 
     private static void inputHeat(FluidEntity[][] entities, int step) {
@@ -67,7 +67,7 @@ class ExternalInput {
     }
 
     private static void inputInverseBreezeOnEntity(FluidEntity entity) {
-        entity.addMass(2, FluidEntity.DEFAULT_TEMPERATURE / 10, Color.BLUE, -2, 0);
+        entity.addMass(2, FluidEntity.DEFAULT_TEMPERATURE / 10, -2, 0, Color.BLUE);
 //        entity.setDeltaX(-3);
 //        entity.setColor(Color.BLUE);
     }

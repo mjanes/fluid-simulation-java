@@ -36,7 +36,7 @@ public class MockFluidEntity extends FluidEntity {
     }
 
     @Override
-    public synchronized void addMass(double deltaMass, double massTemperature, Color color, double incomingDeltaX, double incomingDeltaY) {
+    public synchronized void addMass(double deltaMass, double massTemperature, double incomingDeltaX, double incomingDeltaY, Color color) {
     }
 
     @Override
