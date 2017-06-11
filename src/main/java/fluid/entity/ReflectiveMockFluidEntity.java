@@ -14,9 +14,9 @@ public class ReflectiveMockFluidEntity extends MockFluidEntity {
     }
 
     @Override
-    public void applyBidirectionalInteractions(FluidEntity other) {
+    public void applyNeighborInteractions(FluidEntity other) {
         checkReflection(other);
-        super.applyBidirectionalInteractions(other);
+        super.applyNeighborInteractions(other);
     }
 
     private void checkReflection(FluidEntity other) {

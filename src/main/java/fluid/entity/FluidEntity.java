@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class FluidEntity implements DimensionalEntity {
 
-    static final double FUZZ = .0000001;
+    public static final double FUZZ = .0000001;
 
     public static final int SPACE = 5; // spacing between entities, currently writing this that they must be placed on a grid
     static final double GAS_CONSTANT = .02;
@@ -34,8 +34,8 @@ public class FluidEntity implements DimensionalEntity {
     private double deltaX;
     private double deltaY;
     private double deltaZ;
-    private double mass;
-    private double temperature;
+    protected double mass;
+    protected double temperature;
     private Color color;
 
     private final ConcurrentHashMap<MassTransferRecord, Integer> massTransferRecords = new ConcurrentHashMap<>();
@@ -126,7 +126,7 @@ public class FluidEntity implements DimensionalEntity {
         addDeltaX(forceX / mass);
     }
 
-    public synchronized double getForceX() {
+    public double getForceX() {
         return deltaX * mass;
     }
 
@@ -135,7 +135,7 @@ public class FluidEntity implements DimensionalEntity {
         this.deltaY = deltaY;
     }
 
-    public synchronized double getForceY() {
+    public double getForceY() {
         return deltaY * mass;
     }
 
@@ -143,7 +143,7 @@ public class FluidEntity implements DimensionalEntity {
         setDeltaY(deltaY + deltaDeltaY);
     }
 
-    public synchronized double getDeltaY() {
+    public double getDeltaY() {
         return deltaY;
     }
 
@@ -168,7 +168,7 @@ public class FluidEntity implements DimensionalEntity {
         setDeltaZ(deltaZ + deltaDeltaZ);
     }
 
-    public synchronized double getDeltaZ() {
+    public double getDeltaZ() {
         return deltaZ;
     }
 
@@ -186,7 +186,7 @@ public class FluidEntity implements DimensionalEntity {
      * Mass
      */
 
-    private synchronized void setMass(double mass) {
+    public synchronized void setMass(double mass) {
         if (mass < 0) {
             this.mass = 0;
             return;
@@ -194,7 +194,7 @@ public class FluidEntity implements DimensionalEntity {
         this.mass = mass;
     }
 
-    public synchronized double getMass() {
+    public double getMass() {
         return mass;
     }
 
@@ -261,7 +261,7 @@ public class FluidEntity implements DimensionalEntity {
      * <p>
      * I suppose force is analogous to heat, and delta is analogous to temperature here.
      */
-    private void subtractMass(double deltaMass) {
+    private synchronized void subtractMass(double deltaMass) {
         if (mass + deltaMass < -FUZZ) {
             throw new IllegalStateException("Error: Mass cannot be less than 0");
         }
@@ -281,7 +281,7 @@ public class FluidEntity implements DimensionalEntity {
      * Ink
      */
 
-    public synchronized Color getColor() {
+    public Color getColor() {
         return color;
     }
 
@@ -298,7 +298,7 @@ public class FluidEntity implements DimensionalEntity {
         this.temperature = temperature;
     }
 
-    public synchronized double getTemperature() {
+    public double getTemperature() {
         return temperature;
     }
 
@@ -328,7 +328,7 @@ public class FluidEntity implements DimensionalEntity {
      * http://www.passmyexams.co.uk/GCSE/physics/pressure-temperature-relationship-of-gas-pressure-law.html
      * https://en.wikipedia.org/wiki/Charles%27s_Law
      */
-    public synchronized double getPressure() {
+    public double getPressure() {
         return GAS_CONSTANT * mass * getTemperature() / getMolarWeight();
     }
 
@@ -337,7 +337,7 @@ public class FluidEntity implements DimensionalEntity {
      * For display
      */
 
-    public synchronized FluidEntity getNextLocationAsFluidEntity(double velocityFactor) {
+    public FluidEntity getNextLocationAsFluidEntity(double velocityFactor) {
         return new FluidEntity(getX() + (getDeltaX() * velocityFactor),
                 getY() + (getDeltaY() * velocityFactor),
                 getZ() + (getDeltaZ() * velocityFactor),
@@ -345,9 +345,6 @@ public class FluidEntity implements DimensionalEntity {
                 getTemperature());
     }
 
-    /**
-     * Stepping from to the next increment of the simulation
-     */
 
     /**
      * Mass transfers
@@ -524,11 +521,18 @@ public class FluidEntity implements DimensionalEntity {
      * Interactions
      */
 
+    public void applySoloEffects() {
+        gravity();
+    }
 
-    public void applyBidirectionalInteractions(FluidEntity other) {
-        applyConductionBetweenCells(other);
-        applyPressureBetweenCells(other);
-        applyViscosityBetweenCells(other);
+    private void gravity() {
+        recordForceChange(0,getMass() * -Universe.GRAVITATIONAL_CONSTANT);
+    }
+
+    public void applyNeighborInteractions(FluidEntity other) {
+        applyHeatConduction(other);
+        applyPressure(other);
+        //applyViscosityBetweenCells(other);
     }
 
     /**
@@ -543,35 +547,20 @@ public class FluidEntity implements DimensionalEntity {
      * <p>
      * TODO: Actually use heat equation
      */
-    void applyConductionBetweenCells(FluidEntity other) {
-        if (other == null) return;
-        if (getTemperature() == other.getTemperature()) return;
-
+    void applyHeatConduction(FluidEntity other) {
         double temperatureDifference = getTemperature() - other.getTemperature();
-
-        // Transfer from a to b
         if (temperatureDifference > 0) {
-            double heatAvailableForTransferFromA = (getMass() * temperatureDifference * getConductivity()) / Universe.MAX_NEIGHBORS;
-            recordHeatChange(-heatAvailableForTransferFromA);
-            other.recordHeatChange(heatAvailableForTransferFromA);
-        }
-        // Transfer from b to a
-        else if (temperatureDifference < 0) {
-            double heatAvailableForTransferFromB = (other.getMass() * temperatureDifference * other.getConductivity()) / Universe.MAX_NEIGHBORS;
-            recordHeatChange(-heatAvailableForTransferFromB);
-            other.recordHeatChange(heatAvailableForTransferFromB);
+            double heatAvailableForTransfer = (getMass() * temperatureDifference * getConductivity()) / Universe.MAX_NEIGHBORS;
+            recordHeatChange(-heatAvailableForTransfer);
+            other.recordHeatChange(heatAvailableForTransfer);
         }
     }
 
-    private void applyPressureBetweenCells(FluidEntity other) {
-        if (other == null) return;
+    private void applyPressure(FluidEntity other) {
         double pressureDifference = getPressure() - other.getPressure();
         if (pressureDifference > 0) {
-            if (getX() != other.getX()) addForceX(pressureDifference);
-            if (getY() != other.getY()) addForceY(pressureDifference);
-        } else if (pressureDifference < 0) {
-            if (getX() != other.getX()) other.addForceX(pressureDifference);
-            if (getY() != other.getY()) other.addForceY(pressureDifference);
+            if (getX() != other.getX()) other.recordForceChange(pressureDifference, 0);
+            if (getY() != other.getY()) other.recordForceChange(0, pressureDifference);
         }
     }
 
@@ -580,6 +569,7 @@ public class FluidEntity implements DimensionalEntity {
      * https://en.wikipedia.org/wiki/Shear_stress
      * <p>
      * TODO: Make this math cleaner and easier to understand.
+     * TODO: Make this not redundant, since it's being applied twice
      */
     private void applyViscosityBetweenCells(FluidEntity other) {
         if (other == null) return;
@@ -594,7 +584,8 @@ public class FluidEntity implements DimensionalEntity {
 
             recordForceChange(0, forceTransfer);
             recordForceChange(0, -forceTransfer);
-        } else if (getY() != other.getY() && getDeltaX() - other.getDeltaX() != 0) {
+        }
+        else if (getY() != other.getY() && getDeltaX() - other.getDeltaX() != 0) {
             double forceAvailableForTransfer = getForceX() * getViscosity() + other.getForceX() * other.getViscosity();
 
             double forceLossFromA = -(getForceX() * getViscosity());

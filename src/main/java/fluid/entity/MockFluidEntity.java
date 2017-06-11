@@ -15,7 +15,6 @@ public class MockFluidEntity extends FluidEntity {
         super(x, y, z, DEFAULT_MASS, DEFAULT_TEMPERATURE);
     }
 
-
     @Override
     public synchronized void setDeltaX(double deltaX) {
     }
@@ -74,6 +73,19 @@ public class MockFluidEntity extends FluidEntity {
 
     @Override
     public void recordHeatChange(double deltaHeat) {
+    }
+
+    @Override
+    public void applyNeighborInteractions(FluidEntity other) {
+        matchNeighbor(other);
+        super.applyNeighborInteractions(other);
+    }
+
+    private void matchNeighbor(FluidEntity other) {
+        if (!(other instanceof MockFluidEntity)) {
+            this.mass = other.getMass();
+            this.temperature = other.getTemperature();
+        }
     }
 
 }

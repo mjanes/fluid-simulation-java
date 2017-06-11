@@ -37,17 +37,16 @@ public class Universe {
         return entities;
     }
 
-    private static final double GRAVITATIONAL_CONSTANT = .000001;
+    public static final double GRAVITATIONAL_CONSTANT = .000001;
 
     private void incrementFluid() {
         // force applications
-        applyBidirectionalInteractions();
-        applyGravity();
+        applySoloEffects();
+        applyNeighborInteractions();
 
         IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].changeHeat()));
         IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].changeForce()));
 
-        // transfer logging
         advection();
 
         // transfer application
@@ -55,31 +54,39 @@ public class Universe {
         IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].changeMass()));
     }
 
-
-    private void applyBidirectionalInteractions() {
-        IntStream.range(0, entities.length - 1).parallel().forEach(i -> IntStream.range(0, entities[i].length - 1).forEach(j -> {
-            FluidEntity entity = entities[i][j];
-
-            // Right entity
-            entity.applyBidirectionalInteractions(entities[i + 1][j]);
-
-            // Upper entity
-            entity.applyBidirectionalInteractions(entities[i][j + 1]);
+    void applySoloEffects() {
+        IntStream.range(0, entities.length).parallel().forEach(i -> IntStream.range(0, entities[i].length).forEach(j -> {
+            entities[i][j].applySoloEffects();
         }));
     }
 
-    private void applyGravity() {
-        final double[][] downwardPressure = new double[entities.length][entities[0].length];
+    void applyNeighborInteractions() {
 
-        for (int i = 0; i < entities.length; i++) {
-            for (int j = entities[i].length - 2; j >= 0; j--) {
-                downwardPressure[i][j] = downwardPressure[i][j + 1] + (entities[i][j].getMass() * GRAVITATIONAL_CONSTANT);
-            }
-        }
+        // Left entity
+        IntStream.range(1, entities.length).parallel().forEach(i -> IntStream.range(0, entities[i].length).forEach(j -> {
+            FluidEntity entity = entities[i][j];
+            entity.applyNeighborInteractions(entities[i - 1][j]);
+        }));
 
-        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].addForceY(-downwardPressure[x][y])));
+        // Right entity
+        IntStream.range(0, entities.length - 1).parallel().forEach(i -> IntStream.range(0, entities[i].length).forEach(j -> {
+            FluidEntity entity = entities[i][j];
+            entity.applyNeighborInteractions(entities[i + 1][j]);
+        }));
+
+        // Lower entity
+        IntStream.range(0, entities.length).parallel().forEach(i -> IntStream.range(1, entities[i].length).forEach(j -> {
+            FluidEntity entity = entities[i][j];
+            entity.applyNeighborInteractions(entities[i][j - 1]);
+        }));
+
+        // Upper entity
+        IntStream.range(0, entities.length).parallel().forEach(i -> IntStream.range(0, entities[i].length - 1).forEach(j -> {
+            FluidEntity entity = entities[i][j];
+            entity.applyNeighborInteractions(entities[i][j + 1]);
+        }));
     }
-    
+
     /**
      * Advection moves the quantities from point to its connections/neighbors. Quantities include velocity/mass/heat/etc.
      * The amount moved from one point to another is based on the given point's velocity.

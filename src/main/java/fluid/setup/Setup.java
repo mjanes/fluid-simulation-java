@@ -15,8 +15,6 @@ public class Setup {
 
     private static final double Z_DISTANCE = 5000;
 
-    private static final int SIZE = 170;
-
     public static Universe create() {
         /**
          * NOTE: Because of the possibly effect of gravity, causing pressure to increase downwards, and since all of
@@ -26,7 +24,7 @@ public class Setup {
          * provide an instability until we tweak that.
          */
 
-        FluidEntity[][] entities = rectangle(200, 170);
+        FluidEntity[][] entities = rectangle(260, 175);
         //FluidEntity[][] entities = rayleighTaylor(SIZE);
 
         // Set boundary conditions of the universe
@@ -57,7 +55,7 @@ public class Setup {
         //return rayleighTaylor(SIZE);
     }
 
-    private static FluidEntity[][] rectangle(int width, int height) {
+    public static FluidEntity[][] rectangle(int width, int height) {
         FluidEntity[][] entities = new FluidEntity[width][height];
 
         IntStream.range(0, width).forEach(i -> {
