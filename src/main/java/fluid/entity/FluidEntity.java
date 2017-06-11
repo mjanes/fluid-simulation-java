@@ -16,7 +16,7 @@ public class FluidEntity implements DimensionalEntity {
     public static final double FUZZ = .0000001;
 
     public static final int SPACE = 5; // spacing between entities, currently writing this that they must be placed on a grid
-    static final double GAS_CONSTANT = .02;
+    private static final double GAS_CONSTANT = .02;
 
     public static final double DEFAULT_TEMPERATURE = 10;
     public static final double DEFAULT_MASS = 10;
@@ -126,7 +126,7 @@ public class FluidEntity implements DimensionalEntity {
         addDeltaX(forceX / mass);
     }
 
-    public double getForceX() {
+    private double getForceX() {
         return deltaX * mass;
     }
 
@@ -135,7 +135,7 @@ public class FluidEntity implements DimensionalEntity {
         this.deltaY = deltaY;
     }
 
-    public double getForceY() {
+    private double getForceY() {
         return deltaY * mass;
     }
 
@@ -422,10 +422,10 @@ public class FluidEntity implements DimensionalEntity {
     }
 
     public void changeForce() {
-        deltaX += pendingDeltaForceX;
+        addForceX(pendingDeltaForceX);
         pendingDeltaForceX = 0;
 
-        deltaY += pendingDeltaForceY;
+        addForceY(pendingDeltaForceY);
         pendingDeltaForceY = 0;
     }
 

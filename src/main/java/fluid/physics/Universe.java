@@ -55,9 +55,7 @@ public class Universe {
     }
 
     void applySoloEffects() {
-        IntStream.range(0, entities.length).parallel().forEach(i -> IntStream.range(0, entities[i].length).forEach(j -> {
-            entities[i][j].applySoloEffects();
-        }));
+        IntStream.range(0, entities.length).parallel().forEach(i -> IntStream.range(0, entities[i].length).forEach(j -> entities[i][j].applySoloEffects()));
     }
 
     void applyNeighborInteractions() {
