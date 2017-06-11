@@ -213,20 +213,21 @@ public class FluidEntity implements DimensionalEntity {
 
         double oldDeltaX = getDeltaX();
         double oldDeltaY = getDeltaY();
+        double oldTemperature = getTemperature();
 
         setMass(mass + deltaMass);
 
+        // TODO: Simplify and add force and heat instead of setting delta and temp?
         double oldProportion = (mass - deltaMass) / mass;
         double newProportion = deltaMass / mass;
 
         double newDeltaX = oldDeltaX * oldProportion + incomingDeltaX * newProportion;
         double newDeltaY = oldDeltaY * oldProportion + incomingDeltaY * newProportion;
+        double newTemperature = oldTemperature * oldProportion + massTemperature * newProportion;
 
         setDeltaX(newDeltaX);
         setDeltaY(newDeltaY);
-
-        // Unlike force, heat is independent of mass.
-        addHeat(deltaMass * massTemperature);
+        setTemperature(newTemperature);
 
         if (!(color == null || color.equals(this.color))) {
             // Ink - doing this in a separate block
@@ -321,8 +322,8 @@ public class FluidEntity implements DimensionalEntity {
     /**
      * Pressure
      * <p>
-     * We are presuming that the volume of of a fluid entity cell is constant, but the amount of mass, and
-     * the temperature of that mass may change.
+     * We are presuming that the volume of a fluid entity cell is constant, but the amount of mass, and the temperature
+     * of that mass may change.
      * <p>
      * https://en.wikipedia.org/wiki/Pressure
      * http://www.passmyexams.co.uk/GCSE/physics/pressure-temperature-relationship-of-gas-pressure-law.html
@@ -572,7 +573,6 @@ public class FluidEntity implements DimensionalEntity {
      * TODO: Make this not redundant, since it's being applied twice
      */
     private void applyViscosityBetweenCells(FluidEntity other) {
-        if (other == null) return;
         double totalMass = getMass() + other.getMass();
 
         if (getX() != other.getX() && getDeltaY() - other.getDeltaY() != 0) {

@@ -77,7 +77,7 @@ public class MockFluidEntity extends FluidEntity {
 
     @Override
     public void applyNeighborInteractions(FluidEntity other) {
-        matchNeighbor(other);
+        //matchNeighbor(other);
         super.applyNeighborInteractions(other);
     }
 

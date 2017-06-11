@@ -24,13 +24,12 @@ public class Setup {
          * provide an instability until we tweak that.
          */
 
-        FluidEntity[][] entities = rectangle(260, 175);
-        //FluidEntity[][] entities = rayleighTaylor(SIZE);
+        FluidEntity[][] entities = rectangle(240, 170);
 
         // Set boundary conditions of the universe
         FluidEntity otherEntity;
         // Right border
-        for (int y = 0; y < entities[entities.length - 1].length; y++) {
+        for (int y = 0; y < entities[0].length; y++) {
             otherEntity = entities[entities.length - 1][y];
             entities[entities.length - 1][y] = new OpenMockFluidEntity(otherEntity.getX(), otherEntity.getY(), otherEntity.getZ());
         }
