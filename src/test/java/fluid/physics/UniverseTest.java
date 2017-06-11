@@ -1,5 +1,8 @@
 package fluid.physics;
 
+import fluid.entity.FluidEntity;
+import org.junit.Test;
+
 import static org.junit.Assert.*;
 
 /**

@@ -13,6 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class FluidEntity implements DimensionalEntity {
 
+    static final double FUZZ = .0000001;
+
     public static final int SPACE = 5; // spacing between entities, currently writing this that they must be placed on a grid
     static final double GAS_CONSTANT = .02;
 
@@ -113,6 +115,9 @@ public class FluidEntity implements DimensionalEntity {
     }
 
     public synchronized void addForceX(double forceX) {
+        if (mass < -FUZZ) {
+            throw new IllegalStateException("Error: Mass cannot be less than 0");
+        }
         if (mass <= 0) {
             setDeltaX(0);
             return;
@@ -143,6 +148,9 @@ public class FluidEntity implements DimensionalEntity {
     }
 
     public synchronized void addForceY(double forceY) {
+        if (mass < -FUZZ) {
+            throw new IllegalStateException("Error: Mass cannot be less than 0");
+        }
         if (mass <= 0) {
             setDeltaY(0);
             return;
@@ -254,7 +262,10 @@ public class FluidEntity implements DimensionalEntity {
      * I suppose force is analogous to heat, and delta is analogous to temperature here.
      */
     private void subtractMass(double deltaMass) {
-        if (mass + deltaMass <= 0) {
+        if (mass + deltaMass < -FUZZ) {
+            throw new IllegalStateException("Error: Mass cannot be less than 0");
+        }
+        if (mass + deltaMass <= FUZZ) {
             setMass(0);
             setTemperature(0);
             setDeltaX(0);
@@ -292,14 +303,16 @@ public class FluidEntity implements DimensionalEntity {
     }
 
     public synchronized void addHeat(double deltaHeat) {
+        if (mass < -FUZZ) {
+            throw new IllegalStateException("Error: Mass cannot be negative");
+        }
         if (mass <= 0) {
             return;
         }
         double deltaTemperature = deltaHeat / mass;
 
-        if (this.temperature + deltaTemperature < 0) {
-            return;
-            //throw new IllegalStateException("Error: Temperature cannot be negative");
+        if (this.temperature + deltaTemperature < FUZZ) {
+            throw new IllegalStateException("Error: Temperature cannot be negative");
         }
         this.temperature += deltaTemperature;
     }
@@ -530,7 +543,7 @@ public class FluidEntity implements DimensionalEntity {
      * <p>
      * TODO: Actually use heat equation
      */
-    private void applyConductionBetweenCells(FluidEntity other) {
+    void applyConductionBetweenCells(FluidEntity other) {
         if (other == null) return;
         if (getTemperature() == other.getTemperature()) return;
 
@@ -548,7 +561,6 @@ public class FluidEntity implements DimensionalEntity {
             recordHeatChange(-heatAvailableForTransferFromB);
             other.recordHeatChange(heatAvailableForTransferFromB);
         }
-
     }
 
     private void applyPressureBetweenCells(FluidEntity other) {

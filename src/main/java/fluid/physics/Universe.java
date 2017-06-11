@@ -37,7 +37,7 @@ public class Universe {
         return entities;
     }
 
-    private static final double GRAVITATIONAL_CONSTANT = .00001;
+    private static final double GRAVITATIONAL_CONSTANT = .000001;
 
     private void incrementFluid() {
         // force applications

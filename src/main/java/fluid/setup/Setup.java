@@ -26,7 +26,7 @@ public class Setup {
          * provide an instability until we tweak that.
          */
 
-        FluidEntity[][] entities = rectangle(SIZE, SIZE);
+        FluidEntity[][] entities = rectangle(200, 170);
         //FluidEntity[][] entities = rayleighTaylor(SIZE);
 
         // Set boundary conditions of the universe
