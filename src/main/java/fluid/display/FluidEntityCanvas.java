@@ -16,6 +16,8 @@ public class FluidEntityCanvas extends Canvas {
 
     private static final int EYE_DISTANCE = 5000;
 
+    Array2DRowRealMatrix vector = new Array2DRowRealMatrix(new double[]{0, 0, 0, 1});
+
     public enum DrawType {
         INK, TEMPERATURE, VELOCITY, MASS
     }
@@ -67,7 +69,7 @@ public class FluidEntityCanvas extends Canvas {
             return;
         }
 
-        Point2D.Double point = getCanvasLocation(camera, canvasWidth, canvasHeight, entity);
+        Point2D.Double point = getCanvasLocation(camera, canvasWidth, canvasHeight, entity.getR4Matrix());
         if (point == null) return;
 
         double xP = point.getX();
@@ -80,8 +82,9 @@ public class FluidEntityCanvas extends Canvas {
         gc.fillOval((int) xP - radius / 2, (int) yP - radius / 2, radius, radius);
 
         // Drawing where the entity is moving towards
+
         if (drawType.equals(DrawType.VELOCITY)) {
-            FluidEntity vector = entity.getNextLocationAsFluidEntity(20); // TODO: Make this factor parameter a user controlled variable
+            entity.getNextLocationAsFluidEntity(vector, 20); // TODO: Make this factor parameter a user controlled variable
             Point2D.Double vectorPoint = getCanvasLocation(camera, canvasWidth, canvasHeight, vector);
             gc.setStroke(Color.RED);
             gc.strokeLine(xP, yP, vectorPoint.getX(), vectorPoint.getY());
@@ -98,8 +101,10 @@ public class FluidEntityCanvas extends Canvas {
      * @param canvasHeight
      * @return
      */
-    private static Point2D.Double getCanvasLocation(Camera camera, final double canvasWidth, final double canvasHeight, FluidEntity entity) {
-        if (entity == null) return null;
+    private static Point2D.Double getCanvasLocation(Camera camera,
+                                                    final double canvasWidth,
+                                                    final double canvasHeight,
+                                                    Array2DRowRealMatrix entityMatrix) {
 
         /* Starting offset from camera
          * This is to set the camera at the center of things
@@ -110,7 +115,7 @@ public class FluidEntityCanvas extends Canvas {
          * be in the lower right quadrant. 1, -1 would be in the upper right.
          * May want to undo that later...
          */
-        Array2DRowRealMatrix matrix = camera.translate(entity);
+        Array2DRowRealMatrix matrix = camera.translate(entityMatrix);
 
 
         // Perform the rotations on the various axes

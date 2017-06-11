@@ -338,12 +338,10 @@ public class FluidEntity implements DimensionalEntity {
      * For display
      */
 
-    public FluidEntity getNextLocationAsFluidEntity(double velocityFactor) {
-        return new FluidEntity(getX() + (getDeltaX() * velocityFactor),
-                getY() + (getDeltaY() * velocityFactor),
-                getZ() + (getDeltaZ() * velocityFactor),
-                getMass(),
-                getTemperature());
+    public void getNextLocationAsFluidEntity(Array2DRowRealMatrix vector, double velocityFactor) {
+        vector.setEntry(0, 0, getX() + getDeltaX() * velocityFactor);
+        vector.setEntry(1, 0, getY() + getDeltaY() * velocityFactor);
+        vector.setEntry(2, 0, getZ() + getDeltaZ() * velocityFactor);
     }
 
 

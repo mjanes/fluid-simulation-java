@@ -368,8 +368,8 @@ public class Camera implements MobileDimensionalEntity {
      * Translation and rotation functions to take an entity and create output for use by the camera
      ***************************************************************************************************/
 
-    public Array2DRowRealMatrix translate(DimensionalEntity dimensionalEntity) {
-        return translationMatrix.multiply(dimensionalEntity.getR4Matrix());
+    public Array2DRowRealMatrix translate(Array2DRowRealMatrix matrix) {
+        return translationMatrix.multiply(matrix);
     }
 
     public Array2DRowRealMatrix performXRotation(Array2DRowRealMatrix matrix) {
