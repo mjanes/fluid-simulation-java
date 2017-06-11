@@ -38,7 +38,7 @@ public class FluidEntity implements DimensionalEntity {
     protected double temperature;
     private Color color;
 
-    private final ConcurrentHashMap<MassTransferRecord, Integer> massTransferRecords = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<FluidEntity, Double> massTransferRecords = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<MassChangeRecord, Integer> massChangeRecords = new ConcurrentHashMap<>();
 
     private double pendingDeltaHeat;
@@ -366,7 +366,10 @@ public class FluidEntity implements DimensionalEntity {
         // Do not record transfers to self.
         if (this.equals(targetEntity)) return;
 
-        massTransferRecords.put(new MassTransferRecord(targetEntity, proportion), 0);
+        if (massTransferRecords.get(targetEntity) != null) {
+            proportion += massTransferRecords.get(targetEntity);
+        }
+        massTransferRecords.put(targetEntity, proportion);
     }
 
     /**
@@ -374,23 +377,21 @@ public class FluidEntity implements DimensionalEntity {
      */
     public void convertMassTransferToAbsoluteChange() {
         double totalRatio = 0;
-        for (MassTransferRecord massTransferRecord : massTransferRecords.keySet()) {
-            totalRatio += massTransferRecord.getProportion();
+        for (Double proportion : massTransferRecords.values()) {
+            totalRatio += proportion;
         }
 
-        for (MassTransferRecord massTransferRecord : massTransferRecords.keySet()) {
+        for (FluidEntity targetEntity : massTransferRecords.keySet()) {
             double massTransfer;
             if (totalRatio > 1) {
-                massTransfer = getMass() * massTransferRecord.getProportion() / totalRatio;
+                massTransfer = getMass() * massTransferRecords.get(targetEntity) / totalRatio;
             } else {
-                massTransfer = getMass() * massTransferRecord.getProportion();
+                massTransfer = getMass() * massTransferRecords.get(targetEntity);
             }
 
             recordMassChange(new MassChangeRecord(-massTransfer, getTemperature(), getDeltaX(), getDeltaY(), color));
 
-            if (massTransferRecord.getTargetEntity() != null) {
-                massTransferRecord.getTargetEntity().recordMassChange(new MassChangeRecord(massTransfer, getTemperature(), getDeltaX(), getDeltaY(), color));
-            }
+            targetEntity.recordMassChange(new MassChangeRecord(massTransfer, getTemperature(), getDeltaX(), getDeltaY(), color));
         }
 
         massTransferRecords.clear();
@@ -468,28 +469,6 @@ public class FluidEntity implements DimensionalEntity {
     /*********************************************************************
      * Record classes
      */
-
-    /**
-     * A {@link MassTransferRecord} is a record of what proportion of this entity should be transferred to the target
-     * entity.
-     */
-    class MassTransferRecord {
-        final private FluidEntity targetEntity;
-        final private double proportion;
-
-        MassTransferRecord(FluidEntity targetEntity, double proportion) {
-            this.targetEntity = targetEntity;
-            this.proportion = proportion;
-        }
-
-        FluidEntity getTargetEntity() {
-            return targetEntity;
-        }
-
-        double getProportion() {
-            return proportion;
-        }
-    }
 
     static class MassChangeRecord {
 

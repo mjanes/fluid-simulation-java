@@ -2,14 +2,10 @@ package fluid.entity;
 
 import javafx.scene.paint.Color;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
  * Immutable mock entity to function as entity off the edge of the simulation.
  */
 public class MockFluidEntity extends FluidEntity {
-
-    private final ConcurrentHashMap<MassTransferRecord, Integer> massTransferRecords = new ConcurrentHashMap<>();
 
     MockFluidEntity(double x, double y, double z) {
         super(x, y, z, DEFAULT_MASS, DEFAULT_TEMPERATURE);
@@ -44,22 +40,11 @@ public class MockFluidEntity extends FluidEntity {
     }
 
     @Override
-    public void recordMassTransferTo(FluidEntity targetEntity, double proportion) {
-        if (proportion < 0 || proportion > 1) {
-            System.out.println("Error, proportion = " + proportion);
-            return;
-        }
-
-        massTransferRecords.put(new MassTransferRecord(targetEntity, proportion), 0);
-    }
-
-    @Override
     public void convertMassTransferToAbsoluteChange() {
-        massTransferRecords.keySet().stream().filter(massTransferRecord -> massTransferRecord.getTargetEntity() != null).forEach(massTransferRecord -> {
-            double massTransfer = massTransferRecord.getProportion() * getMass();
-            massTransferRecord.getTargetEntity().recordMassChange(new MassChangeRecord(massTransfer, getTemperature(), getDeltaX(), getDeltaY(), DEFAULT_COLOR));
-        });
-
+        for(FluidEntity fluidEntity : massTransferRecords.keySet()) {
+            double massTransfer = massTransferRecords.get(fluidEntity) * getMass();
+            fluidEntity.recordMassChange(new MassChangeRecord(massTransfer, getTemperature(), getDeltaX(), getDeltaY(), DEFAULT_COLOR));
+        }
         massTransferRecords.clear();
     }
 
