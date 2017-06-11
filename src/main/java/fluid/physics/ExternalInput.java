@@ -11,12 +11,10 @@ class ExternalInput {
     static void applyInput(FluidEntity[][] entities, int timestep) {
         //inputExplosion(entities, timestep);
 
-        //inputCandle(entities);
+        inputCandle(entities);
         //inputBreeze(entities);
 
-        if (timestep < 40) {
-            inputHeat(entities, timestep);
-        }
+        //inputHeat(entities, timestep);
 
         //smallInput(entities, timestep);
 
@@ -33,17 +31,17 @@ class ExternalInput {
     }
 
     private static void inputCandle(FluidEntity[][] entities) {
-        entities[79][0].addMass(12, FluidEntity.DEFAULT_TEMPERATURE + 25, Color.ORANGERED, 0, 1);
-        entities[80][0].addMass(20, FluidEntity.DEFAULT_TEMPERATURE + 30, Color.RED, 0, 1);
-        entities[81][0].addMass(12, FluidEntity.DEFAULT_TEMPERATURE + 25, Color.ORANGERED, 0, 1);
+        entities[entities.length / 2 - 1][1].addMass(1, FluidEntity.DEFAULT_TEMPERATURE + 25, Color.ORANGERED, 0, 1);
+        entities[entities.length / 2][1].addMass(2, FluidEntity.DEFAULT_TEMPERATURE + 30, Color.RED, 0, 1);
+        entities[entities.length / 2 + 1][1].addMass(1, FluidEntity.DEFAULT_TEMPERATURE + 25, Color.ORANGERED, 0, 1);
     }
 
     private static void inputHeat(FluidEntity[][] entities, int step) {
-        entities[entities.length / 2 - 1][1].addHeat(.1);
-        entities[entities.length / 2 - 1][0].setColor(Color.ORANGERED);
-        entities[entities.length / 2][1].addHeat(.15);
+        entities[entities.length / 2 - 1][1].addHeat(20);
+        entities[entities.length / 2 - 1][1].setColor(Color.ORANGERED);
+        entities[entities.length / 2][1].addHeat(25);
         entities[entities.length / 2][1].setColor(Color.RED);
-        entities[entities.length / 2 + 1][1].addHeat(.1);
+        entities[entities.length / 2 + 1][1].addHeat(20);
         entities[entities.length / 2 + 1][1].setColor(Color.ORANGERED);
     }
 

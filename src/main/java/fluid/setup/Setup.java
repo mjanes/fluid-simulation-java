@@ -1,6 +1,7 @@
 package fluid.setup;
 
 import fluid.entity.FluidEntity;
+import fluid.entity.MatchingMockFluidEntity;
 import fluid.entity.OpenMockFluidEntity;
 import fluid.entity.ReflectiveMockFluidEntity;
 import fluid.physics.Universe;
@@ -41,7 +42,7 @@ public class Setup {
         // Top border
         for (int x = 0; x < entities.length; x++) {
             otherEntity = entities[x][entities[x].length - 1];
-            entities[x][entities[x].length - 1] = new OpenMockFluidEntity(otherEntity.getX(), otherEntity.getY(), otherEntity.getZ());
+            entities[x][entities[x].length - 1] = new MatchingMockFluidEntity(otherEntity.getX(), otherEntity.getY(), otherEntity.getZ());
         }
         // Bottom border
         for (int x = 0; x < entities.length; x++) {

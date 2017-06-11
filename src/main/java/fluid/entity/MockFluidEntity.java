@@ -75,17 +75,4 @@ public class MockFluidEntity extends FluidEntity {
     public void recordHeatChange(double deltaHeat) {
     }
 
-    @Override
-    public void applyNeighborInteractions(FluidEntity other) {
-        //matchNeighbor(other);
-        super.applyNeighborInteractions(other);
-    }
-
-    private void matchNeighbor(FluidEntity other) {
-        if (!(other instanceof MockFluidEntity)) {
-            this.mass = other.getMass();
-            this.temperature = other.getTemperature();
-        }
-    }
-
 }

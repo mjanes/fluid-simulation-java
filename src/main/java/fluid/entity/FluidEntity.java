@@ -525,7 +525,7 @@ public class FluidEntity implements DimensionalEntity {
     }
 
     private void gravity() {
-        recordForceChange(0,getMass() * -Universe.GRAVITATIONAL_CONSTANT);
+        recordForceChange(0, getMass() * -Universe.GRAVITATIONAL_CONSTANT);
     }
 
     public void applyNeighborInteractions(FluidEntity other) {
@@ -548,7 +548,7 @@ public class FluidEntity implements DimensionalEntity {
      */
     void applyHeatConduction(FluidEntity other) {
         double temperatureDifference = getTemperature() - other.getTemperature();
-        if (temperatureDifference > 0) {
+        if (temperatureDifference > FUZZ) {
             double heatAvailableForTransfer = (getMass() * temperatureDifference * getConductivity()) / Universe.MAX_NEIGHBORS;
             recordHeatChange(-heatAvailableForTransfer);
             other.recordHeatChange(heatAvailableForTransfer);
@@ -558,8 +558,20 @@ public class FluidEntity implements DimensionalEntity {
     private void applyPressure(FluidEntity other) {
         double pressureDifference = getPressure() - other.getPressure();
         if (pressureDifference > 0) {
-            if (getX() != other.getX()) other.recordForceChange(pressureDifference, 0);
-            if (getY() != other.getY()) other.recordForceChange(0, pressureDifference);
+            if (Math.abs(getX() - other.getX()) > FUZZ) {
+                if (getX() > other.getX()) {
+                    other.recordForceChange(-pressureDifference, 0);
+                } else {
+                    other.recordForceChange(pressureDifference, 0);
+                }
+            }
+            if (Math.abs(getY() - other.getY()) > FUZZ) {
+                if (getY() > other.getY()) {
+                    other.recordForceChange(0, -pressureDifference);
+                } else {
+                    other.recordForceChange(0, pressureDifference);
+                }
+            }
         }
     }
 
@@ -582,8 +594,7 @@ public class FluidEntity implements DimensionalEntity {
 
             recordForceChange(0, forceTransfer);
             recordForceChange(0, -forceTransfer);
-        }
-        else if (getY() != other.getY() && getDeltaX() - other.getDeltaX() != 0) {
+        } else if (getY() != other.getY() && getDeltaX() - other.getDeltaX() != 0) {
             double forceAvailableForTransfer = getForceX() * getViscosity() + other.getForceX() * other.getViscosity();
 
             double forceLossFromA = -(getForceX() * getViscosity());
