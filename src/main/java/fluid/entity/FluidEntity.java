@@ -42,10 +42,11 @@ public class FluidEntity implements DimensionalEntity {
             DEFAULT_COLOR.getBlue(),
             DEFAULT_COLOR.getOpacity());
 
-    private double red;
-    private double green;
-    private double blue;
-    private double opacity;
+    // Values not 0 - 1, but proportional to mass
+    private double redInk;
+    private double greenInk;
+    private double blueInk;
+    private double opacityInk;
 
     private final ConcurrentHashMap<FluidEntity, Double> massTransferRecords = new ConcurrentHashMap<>();
 
@@ -53,10 +54,10 @@ public class FluidEntity implements DimensionalEntity {
     private double pendingDeltaHeat;
     private double pendingDeltaForceX;
     private double pendingDeltaForceY;
-    private double pendingDeltaRed;
-    private double pendingDeltaGreen;
-    private double pendingDeltaBlue;
-    private double pendingDeltaAlpha;
+    private double pendingDeltaRedInk;
+    private double pendingDeltaGreenInk;
+    private double pendingDeltaBlueInk;
+    private double pendingDeltaAlphaInk;
 
 
     public FluidEntity(double x, double y, double z, double mass, double temperature) {
@@ -186,29 +187,45 @@ public class FluidEntity implements DimensionalEntity {
 
     public synchronized void setColor(Color color) {
         this.color = color;
+        this.redInk = color.getRed() * mass;
+        this.greenInk = color.getGreen() * mass;
+        this.blueInk = color.getBlue() * mass;
     }
 
-    synchronized void changeColor() {
-        double newRed = color.getRed() + pendingDeltaRed;
-        double newGreen = color.getGreen() + pendingDeltaGreen;
-        double newBlue = color.getBlue() + pendingDeltaBlue;
-        double newAlpha = color.getOpacity() + pendingDeltaAlpha;
+    private synchronized void recordColorChange(double deltaRed, double deltaGreen, double deltaBlue, double deltaOpacity) {
+        this.pendingDeltaRedInk += deltaRed;
+        this.pendingDeltaGreenInk += deltaGreen;
+        this.pendingDeltaBlueInk += deltaBlue;
+        this.pendingDeltaAlphaInk += deltaOpacity;
+    }
 
-        pendingDeltaRed = 0;
-        pendingDeltaGreen = 0;
-        pendingDeltaBlue = 0;
-        pendingDeltaAlpha = 0;
+    private synchronized void changeColor() {
 
-        if (newRed < 0) newRed = 0;
-        if (newGreen < 0) newGreen = 0;
-        if (newBlue < 0) newBlue = 0;
-        if (newAlpha < 0) newAlpha = 0;
-        if (newRed > 1) newRed = 1;
-        if (newGreen > 1) newGreen = 1;
-        if (newBlue > 1) newBlue = 1;
-        if (newAlpha > 1) newAlpha = 1;
+        redInk += pendingDeltaRedInk;
+        greenInk += pendingDeltaGreenInk;
+        blueInk += pendingDeltaBlueInk;
+        opacityInk += pendingDeltaAlphaInk;
 
-        setColor(new Color(newRed, newGreen, newBlue, newAlpha));
+        pendingDeltaRedInk = 0;
+        pendingDeltaGreenInk = 0;
+        pendingDeltaBlueInk = 0;
+        pendingDeltaAlphaInk = 0;
+
+        double actualRed = redInk / mass;
+        double actualGreen = greenInk / mass;
+        double actualBlue = blueInk / mass;
+        double actualOpacity = opacityInk / mass;
+
+        if (actualRed < 0) actualRed = 0;
+        if (actualGreen < 0) actualGreen = 0;
+        if (actualBlue < 0) actualBlue = 0;
+        if (actualOpacity < 0) actualOpacity = 0;
+        if (actualRed > 1) actualRed = 1;
+        if (actualGreen > 1) actualGreen = 1;
+        if (actualBlue > 1) actualBlue = 1;
+        if (actualOpacity > 1) actualOpacity = 1;
+
+        setColor(new Color(actualRed, actualGreen, actualBlue, actualOpacity));
     }
 
 
@@ -238,7 +255,6 @@ public class FluidEntity implements DimensionalEntity {
         heat += pendingDeltaHeat;
         pendingDeltaHeat = 0;
     }
-
 
 
     /**
@@ -311,35 +327,18 @@ public class FluidEntity implements DimensionalEntity {
             recordMassChange(-massTransfer);
             recordHeatChange(-massTransfer * getTemperature());
             targetEntity.recordForceChange(-massTransfer * getDeltaX(), -massTransfer * getDeltaY());
+            targetEntity.recordColorChange(-massTransfer * redInk,
+                    -massTransfer * greenInk,
+                    -massTransfer * blueInk,
+                    -massTransfer * opacityInk);
 
             targetEntity.recordMassChange(massTransfer);
             targetEntity.recordHeatChange(massTransfer * getTemperature());
             targetEntity.recordForceChange(massTransfer * getDeltaX(), massTransfer * getDeltaY());
-
-            /*
-            // TODO: Color here
-
-            // Ink - doing this in a separate block
-            double prevRed = this.color.getRed();
-            double prevGreen = this.color.getGreen();
-            double prevBlue = this.color.getBlue();
-            double prevAlpha = this.color.getOpacity();
-
-            double newRed = prevRed * oldProportion + color.getRed() * newProportion;
-            double newGreen = prevGreen * oldProportion + color.getGreen() * newProportion;
-            double newBlue = prevBlue * oldProportion + color.getBlue() * newProportion;
-            double newAlpha = prevAlpha * oldProportion + color.getOpacity() * newProportion;
-
-            if (newRed < 0) newRed = 0;
-            if (newGreen < 0) newGreen = 0;
-            if (newBlue < 0) newBlue = 0;
-            if (newAlpha < 0) newAlpha = 0;
-            if (newRed > 1) newRed = 1;
-            if (newGreen > 1) newGreen = 1;
-            if (newBlue > 1) newBlue = 1;
-            if (newAlpha > 1) newAlpha = 1;
-            */
-
+            targetEntity.recordColorChange(massTransfer * redInk,
+                    massTransfer * greenInk,
+                    massTransfer * blueInk,
+                    massTransfer * opacityInk);
         }
 
         massTransferRecords.clear();
@@ -372,7 +371,6 @@ public class FluidEntity implements DimensionalEntity {
     private double getMolarWeight() {
         return 1;
     }
-
 
     /**
      * https://en.wikipedia.org/wiki/Thermal_conductivity
