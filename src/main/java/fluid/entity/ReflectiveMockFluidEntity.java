@@ -21,16 +21,12 @@ public class ReflectiveMockFluidEntity extends MockFluidEntity {
 
     private void checkReflection(FluidEntity other) {
         if (getX() != other.getX()) {
-            if (getX() > other.getX() && other.getDeltaX() > 0) {
-                other.setDeltaX(-other.getDeltaX());
-            } else if (getX() < other.getX() && other.getDeltaX() < 0) {
-                other.setDeltaX(-other.getDeltaX());
+            if (getX() > other.getX() && other.getDeltaX() > 0 || getX() < other.getX() && other.getDeltaX() < 0) {
+                other.recordForceChange(-other.forceX * 2, 0);
             }
         } else if (getY() != other.getY()) {
-            if (getY() > other.getY() && other.getDeltaY() > 0) {
-                other.setDeltaY(-other.getDeltaY());
-            } else if (getY() < other.getY() && other.getDeltaY() < 0) {
-                other.setDeltaY(-other.getDeltaY());
+            if (getY() > other.getY() && other.getDeltaY() > 0 || getY() < other.getY() && other.getDeltaY() < 0) {
+                other.recordForceChange(0, -other.forceY * 2);
             }
         }
     }

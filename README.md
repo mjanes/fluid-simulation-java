@@ -11,7 +11,7 @@ Bear in mind I've never taken a physics class.
 -   Allow different types of fluids/gasses/etc such as air and water. At the moment we have some constants that define 
     fluid behavior, make them come from the fluid entity, and the proportion of the fluid entity that is whatever type
     of material.
--   Allow phase transitions (This will probably depend upon the above, but changes those variables based on temperature.)
+-   Allow phase transitions (This will probably depend upon the above, but changes those variables based on heat.)
 -   Ability to model surface tension in liquids
 -   Fix issue that is preventing Rayleigh-Taylor and Kelvin-Helmholtz instabilities from arising. Or at least learn how
     to make them more visible, if they are.

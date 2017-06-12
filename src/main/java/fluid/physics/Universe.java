@@ -40,18 +40,14 @@ public class Universe {
     public static final double GRAVITATIONAL_CONSTANT = .0001;
 
     private void incrementFluid() {
-        // force applications
+        forceChanges();
+        massTransfers();
+    }
+
+    private void forceChanges() {
         applySoloEffects();
         applyNeighborInteractions();
-
-        IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].changeHeat()));
-        IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].changeForce()));
-
-        advection();
-
-        // transfer application
-        IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].convertMassTransferToAbsoluteChange()));
-        IntStream.range(0, entities.length).parallel().forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].changeMass()));
+        IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].executePendingEnergy()));
     }
 
     void applySoloEffects() {
@@ -83,6 +79,12 @@ public class Universe {
             FluidEntity entity = entities[i][j];
             entity.applyNeighborInteractions(entities[i][j + 1]);
         }));
+    }
+
+    void massTransfers() {
+        // Mass transfers
+        advection();
+        IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].executePendingMass()));
     }
 
     /**

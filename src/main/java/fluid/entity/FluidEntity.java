@@ -31,20 +31,32 @@ public class FluidEntity implements DimensionalEntity {
 
     private final Array2DRowRealMatrix r4Matrix = new Array2DRowRealMatrix(new double[]{0, 0, 0, 1});
 
-    private double deltaX;
-    private double deltaY;
-    private double deltaZ;
-    protected double mass;
-    protected double temperature;
-    private Color color;
 
-    final ConcurrentHashMap<FluidEntity, Double> massTransferRecords = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<MassChangeRecord, Integer> massChangeRecords = new ConcurrentHashMap<>();
+    double forceX;
+    double forceY;
+    private double forceZ;
+    double mass;
+    double heat;
+    private Color color = new Color(DEFAULT_COLOR.getRed(),
+            DEFAULT_COLOR.getGreen(),
+            DEFAULT_COLOR.getBlue(),
+            DEFAULT_COLOR.getOpacity());
+
+    private double red;
+    private double green;
+    private double blue;
+    private double opacity;
+
+    private final ConcurrentHashMap<FluidEntity, Double> massTransferRecords = new ConcurrentHashMap<>();
 
     private double pendingDeltaMass;
     private double pendingDeltaHeat;
     private double pendingDeltaForceX;
     private double pendingDeltaForceY;
+    private double pendingDeltaRed;
+    private double pendingDeltaGreen;
+    private double pendingDeltaBlue;
+    private double pendingDeltaAlpha;
 
 
     public FluidEntity(double x, double y, double z, double mass, double temperature) {
@@ -52,7 +64,7 @@ public class FluidEntity implements DimensionalEntity {
         setY(y);
         setZ(z);
         setMass(mass);
-        setTemperature(temperature);
+        heat = temperature * mass;
         setColor(Color.TRANSPARENT);
     }
 
@@ -63,7 +75,7 @@ public class FluidEntity implements DimensionalEntity {
     }
 
     @Override
-    public synchronized double getX() {
+    public double getX() {
         return x;
     }
 
@@ -74,7 +86,7 @@ public class FluidEntity implements DimensionalEntity {
     }
 
     @Override
-    public synchronized double getY() {
+    public double getY() {
         return y;
     }
 
@@ -85,7 +97,7 @@ public class FluidEntity implements DimensionalEntity {
     }
 
     @Override
-    public synchronized double getZ() {
+    public double getZ() {
         return z;
     }
 
@@ -101,88 +113,51 @@ public class FluidEntity implements DimensionalEntity {
 
 
     /**
-     * Velocity
+     * Velocity/Force
      */
 
-    public synchronized void setDeltaX(double deltaX) {
-        this.deltaX = deltaX;
-    }
-
-    private synchronized void addDeltaX(double deltaDeltaX) {
-        setDeltaX(deltaX + deltaDeltaX);
-    }
-
-    public synchronized double getDeltaX() {
-        return deltaX;
-    }
-
-    public synchronized void addForceX(double forceX) {
+    public double getDeltaX() {
         if (mass < -FUZZ) {
-            throw new IllegalStateException("Error: Mass cannot be less than 0");
+            throw new IllegalStateException("Error: Mass cannot be negative");
         }
         if (mass <= 0) {
-            setDeltaX(0);
-            return;
+            return 0;
         }
-
-        addDeltaX(forceX / mass);
-    }
-
-    private double getForceX() {
-        return deltaX * mass;
-    }
-
-
-    public synchronized void setDeltaY(double deltaY) {
-        this.deltaY = deltaY;
-    }
-
-    private double getForceY() {
-        return deltaY * mass;
-    }
-
-    private synchronized void addDeltaY(double deltaDeltaY) {
-        setDeltaY(deltaY + deltaDeltaY);
+        return forceX / mass;
     }
 
     public double getDeltaY() {
-        return deltaY;
-    }
-
-    public synchronized void addForceY(double forceY) {
         if (mass < -FUZZ) {
-            throw new IllegalStateException("Error: Mass cannot be less than 0");
+            throw new IllegalStateException("Error: Mass cannot be negative");
         }
         if (mass <= 0) {
-            setDeltaY(0);
-            return;
+            return 0;
         }
-
-        addDeltaY(forceY / mass);
+        return forceY / mass;
     }
 
-
-    private synchronized void setDeltaZ(double deltaZ) {
-        this.deltaZ = deltaZ;
-    }
-
-    private synchronized void addDeltaZ(double deltaDeltaZ) {
-        setDeltaZ(deltaZ + deltaDeltaZ);
-    }
-
-    public double getDeltaZ() {
-        return deltaZ;
-    }
-
-    public synchronized void addForceZ(double forceZ) {
+    private double getDeltaZ() {
+        if (mass < -FUZZ) {
+            throw new IllegalStateException("Error: Mass cannot be negative");
+        }
         if (mass <= 0) {
-            setDeltaZ(0);
-            return;
+            return 0;
         }
-
-        addDeltaZ(forceZ / mass);
+        return forceZ / mass;
     }
 
+    public synchronized void recordForceChange(double deltaForceX, double deltaForceY) {
+        pendingDeltaForceX += deltaForceX;
+        pendingDeltaForceY += deltaForceY;
+    }
+
+    private synchronized void changeForce() {
+        forceX += pendingDeltaForceX;
+        pendingDeltaForceX = 0;
+
+        forceY += pendingDeltaForceY;
+        pendingDeltaForceY = 0;
+    }
 
     /**
      * Mass
@@ -200,61 +175,6 @@ public class FluidEntity implements DimensionalEntity {
         return mass;
     }
 
-    public synchronized void addMass(double deltaMass, double massTemperature, Color color) {
-        addMass(deltaMass, massTemperature, 0, 0, color);
-    }
-
-    public synchronized void addMass(double deltaMass, double massTemperature, double incomingDeltaX, double incomingDeltaY, Color color) {
-        if (deltaMass < 0) {
-            System.out.println("Negative delta mass in addMass");
-            return;
-        }
-
-        // We know that deltaMass > 0
-        // Order that these are done in is important. Must set delta after setting mass.
-
-        double oldDeltaX = getDeltaX();
-        double oldDeltaY = getDeltaY();
-        double oldTemperature = getTemperature();
-
-        setMass(mass + deltaMass);
-
-        // TODO: Simplify and add force and heat instead of setting delta and temp?
-        double oldProportion = (mass - deltaMass) / mass;
-        double newProportion = deltaMass / mass;
-
-        double newDeltaX = oldDeltaX * oldProportion + incomingDeltaX * newProportion;
-        double newDeltaY = oldDeltaY * oldProportion + incomingDeltaY * newProportion;
-        double newTemperature = oldTemperature * oldProportion + massTemperature * newProportion;
-
-        setDeltaX(newDeltaX);
-        setDeltaY(newDeltaY);
-        setTemperature(newTemperature);
-
-        if (!(color == null || color.equals(this.color))) {
-            // Ink - doing this in a separate block
-            double prevRed = this.color.getRed();
-            double prevGreen = this.color.getGreen();
-            double prevBlue = this.color.getBlue();
-            double prevAlpha = this.color.getOpacity();
-
-            double newRed = prevRed * oldProportion + color.getRed() * newProportion;
-            double newGreen = prevGreen * oldProportion + color.getGreen() * newProportion;
-            double newBlue = prevBlue * oldProportion + color.getBlue() * newProportion;
-            double newAlpha = prevAlpha * oldProportion + color.getOpacity() * newProportion;
-
-            if (newRed < 0) newRed = 0;
-            if (newGreen < 0) newGreen = 0;
-            if (newBlue < 0) newBlue = 0;
-            if (newAlpha < 0) newAlpha = 0;
-            if (newRed > 1) newRed = 1;
-            if (newGreen > 1) newGreen = 1;
-            if (newBlue > 1) newBlue = 1;
-            if (newAlpha > 1) newAlpha = 1;
-
-            setColor(new Color(newRed, newGreen, newBlue, newAlpha));
-        }
-    }
 
     /**
      * Ink
@@ -268,39 +188,63 @@ public class FluidEntity implements DimensionalEntity {
         this.color = color;
     }
 
+    synchronized void changeColor() {
+        double newRed = color.getRed() + pendingDeltaRed;
+        double newGreen = color.getGreen() + pendingDeltaGreen;
+        double newBlue = color.getBlue() + pendingDeltaBlue;
+        double newAlpha = color.getOpacity() + pendingDeltaAlpha;
+
+        pendingDeltaRed = 0;
+        pendingDeltaGreen = 0;
+        pendingDeltaBlue = 0;
+        pendingDeltaAlpha = 0;
+
+        if (newRed < 0) newRed = 0;
+        if (newGreen < 0) newGreen = 0;
+        if (newBlue < 0) newBlue = 0;
+        if (newAlpha < 0) newAlpha = 0;
+        if (newRed > 1) newRed = 1;
+        if (newGreen > 1) newGreen = 1;
+        if (newBlue > 1) newBlue = 1;
+        if (newAlpha > 1) newAlpha = 1;
+
+        setColor(new Color(newRed, newGreen, newBlue, newAlpha));
+    }
+
 
     /**
-     * Heat
+     * Heat/temperature
      */
 
-    public synchronized void setTemperature(double temperature) {
-        this.temperature = temperature;
+    public synchronized void setHeat(double heat) {
+        this.heat = heat;
     }
 
     public double getTemperature() {
-        return temperature;
-    }
-
-    public synchronized void addHeat(double deltaHeat) {
         if (mass < -FUZZ) {
             throw new IllegalStateException("Error: Mass cannot be negative");
         }
         if (mass <= 0) {
-            return;
+            return 0;
         }
-        double deltaTemperature = deltaHeat / mass;
-
-        if (this.temperature + deltaTemperature < FUZZ) {
-            throw new IllegalStateException("Error: Temperature cannot be negative");
-        }
-        this.temperature += deltaTemperature;
+        return heat / mass;
     }
+
+    public synchronized void recordHeatChange(double deltaHeat) {
+        pendingDeltaHeat += deltaHeat;
+    }
+
+    synchronized void changeHeat() {
+        heat += pendingDeltaHeat;
+        pendingDeltaHeat = 0;
+    }
+
 
 
     /**
      * Pressure
      * <p>
-     * We are presuming that the volume of a fluid entity cell is constant, but the amount of mass, and the temperature
+     * We are presuming that the volume of a fluid entity cell is constant, but the amount of mass, and the heat
      * of that mass may change.
      * <p>
      * https://en.wikipedia.org/wiki/Pressure
@@ -350,10 +294,7 @@ public class FluidEntity implements DimensionalEntity {
         massTransferRecords.put(targetEntity, proportion);
     }
 
-    /**
-     * Stage 1 of the mass transfer steps.
-     */
-    public void convertMassTransferToAbsoluteChange() {
+    private void convertMassTransfer() {
         double totalRatio = 0;
         for (Double proportion : massTransferRecords.values()) {
             totalRatio += proportion;
@@ -367,73 +308,61 @@ public class FluidEntity implements DimensionalEntity {
                 massTransfer = getMass() * massTransferRecords.get(targetEntity);
             }
 
-            //recordMassChange(new MassChangeRecord(-massTransfer, getTemperature(), getDeltaX(), getDeltaY(), color));
-            pendingDeltaMass += -massTransfer;
+            recordMassChange(-massTransfer);
+            recordHeatChange(-massTransfer * getTemperature());
+            targetEntity.recordForceChange(-massTransfer * getDeltaX(), -massTransfer * getDeltaY());
 
-            targetEntity.recordMassChange(new MassChangeRecord(massTransfer, getTemperature(), getDeltaX(), getDeltaY(), color));
+            targetEntity.recordMassChange(massTransfer);
+            targetEntity.recordHeatChange(massTransfer * getTemperature());
+            targetEntity.recordForceChange(massTransfer * getDeltaX(), massTransfer * getDeltaY());
+
+            /*
+            // TODO: Color here
+
+            // Ink - doing this in a separate block
+            double prevRed = this.color.getRed();
+            double prevGreen = this.color.getGreen();
+            double prevBlue = this.color.getBlue();
+            double prevAlpha = this.color.getOpacity();
+
+            double newRed = prevRed * oldProportion + color.getRed() * newProportion;
+            double newGreen = prevGreen * oldProportion + color.getGreen() * newProportion;
+            double newBlue = prevBlue * oldProportion + color.getBlue() * newProportion;
+            double newAlpha = prevAlpha * oldProportion + color.getOpacity() * newProportion;
+
+            if (newRed < 0) newRed = 0;
+            if (newGreen < 0) newGreen = 0;
+            if (newBlue < 0) newBlue = 0;
+            if (newAlpha < 0) newAlpha = 0;
+            if (newRed > 1) newRed = 1;
+            if (newGreen > 1) newGreen = 1;
+            if (newBlue > 1) newBlue = 1;
+            if (newAlpha > 1) newAlpha = 1;
+            */
+
         }
 
         massTransferRecords.clear();
     }
 
-    /**
-     * Transferring mass to a fluid entity
-     */
-    void recordMassChange(MassChangeRecord record) {
-        massChangeRecords.put(record, 0);
+    public synchronized void recordMassChange(double deltaMass) {
+        pendingDeltaMass += deltaMass;
     }
 
-    public void changeMass() {
+    protected synchronized void changeMass() {
         if (mass + pendingDeltaMass < -FUZZ) {
             throw new IllegalStateException("Error: Mass cannot be less than 0");
         }
         if (mass + pendingDeltaMass <= FUZZ) {
-            setMass(0);
-            setTemperature(0);
-            setDeltaX(0);
-            setDeltaY(0);
-            setDeltaZ(0);
+            mass = 0;
+            heat = 0;
+            forceX = 0;
+            forceY = 0;
+            forceZ = 0;
         } else {
-            setMass(mass + pendingDeltaMass);
+            mass += pendingDeltaMass;
         }
         pendingDeltaMass = 0;
-
-        for (MassChangeRecord transferRecord : massChangeRecords.keySet()) {
-            transferRecord.transfer(this);
-        }
-
-        massChangeRecords.clear();
-    }
-
-
-    /**
-     * Force transfers
-     */
-
-    public void recordForceChange(double deltaForceX, double deltaForceY) {
-        pendingDeltaForceX += deltaForceX;
-        pendingDeltaForceY += deltaForceY;
-    }
-
-    public void changeForce() {
-        addForceX(pendingDeltaForceX);
-        pendingDeltaForceX = 0;
-
-        addForceY(pendingDeltaForceY);
-        pendingDeltaForceY = 0;
-    }
-
-    /**
-     * Heat transfers
-     */
-
-    public void recordHeatChange(double deltaHeat) {
-        pendingDeltaHeat += deltaHeat;
-    }
-
-    public void changeHeat() {
-        addHeat(pendingDeltaHeat);
-        pendingDeltaHeat = 0;
     }
 
 
@@ -459,29 +388,22 @@ public class FluidEntity implements DimensionalEntity {
         return .1;
     }
 
-    /*********************************************************************
-     * Record classes
+
+    /**
+     * Incrementing from one step to the next
      */
 
-    static class MassChangeRecord {
+    public synchronized void executePendingEnergy() {
+        changeHeat();
+        changeForce();
+    }
 
-        final private double massChange;
-        final private double massTemperature;
-        final private double velocityX;
-        final private double velocityY;
-        final private Color inkColor;
-
-        MassChangeRecord(double massChange, double massTemperature, double velocityX, double velocityY, Color inkColor) {
-            this.massChange = massChange;
-            this.massTemperature = massTemperature;
-            this.velocityX = velocityX;
-            this.velocityY = velocityY;
-            this.inkColor = inkColor;
-        }
-
-        void transfer(FluidEntity entity) {
-            entity.addMass(massChange, massTemperature, velocityX, velocityY, inkColor);
-        }
+    public synchronized void executePendingMass() {
+        convertMassTransfer();
+        changeMass();
+        changeHeat();
+        changeForce();
+        changeColor();
     }
 
     /****
@@ -503,7 +425,7 @@ public class FluidEntity implements DimensionalEntity {
     }
 
     /**
-     * If the two entities temperature difference, record a heat transfer from the one with the higher temperature to
+     * If the two entities heat difference, record a heat transfer from the one with the higher heat to
      * the lower. The amount of heat transferred is dependant upon the conductivity of the entities.
      * <p>
      * Newton's law of cooling states that the rate of heat loss of a body is proportional to the difference in temperatures between the body and its surroundings.
@@ -554,18 +476,18 @@ public class FluidEntity implements DimensionalEntity {
         double totalMass = getMass() + other.getMass();
 
         if (getX() != other.getX() && getDeltaY() - other.getDeltaY() != 0) {
-            double forceAvailableForTransfer = getForceY() * getViscosity() + other.getForceY() * other.getViscosity();
+            double forceAvailableForTransfer = getDeltaY() * getViscosity() + other.getDeltaY() * other.getViscosity();
 
-            double forceLossFromA = -(getForceY() * getViscosity());
+            double forceLossFromA = -(getDeltaY() * getViscosity());
             double forceGainForA = ((getMass() / totalMass) * forceAvailableForTransfer);
             double forceTransfer = forceLossFromA + forceGainForA;
 
             recordForceChange(0, forceTransfer);
             recordForceChange(0, -forceTransfer);
-        } else if (getY() != other.getY() && getDeltaX() - other.getDeltaX() != 0) {
-            double forceAvailableForTransfer = getForceX() * getViscosity() + other.getForceX() * other.getViscosity();
+        } else if (getY() != other.getY() && getDeltaX() - other.forceX != 0) {
+            double forceAvailableForTransfer = getDeltaX() * getViscosity() + other.getDeltaX() * other.getViscosity();
 
-            double forceLossFromA = -(getForceX() * getViscosity());
+            double forceLossFromA = -(getDeltaX() * getViscosity());
             double forceGainForA = ((getMass() / totalMass) * forceAvailableForTransfer);
             double forceTransfer = forceLossFromA + forceGainForA;
 

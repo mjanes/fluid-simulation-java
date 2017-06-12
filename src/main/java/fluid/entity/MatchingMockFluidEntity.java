@@ -23,7 +23,7 @@ public class MatchingMockFluidEntity extends MockFluidEntity {
     private void matchNeighbor(FluidEntity other) {
         if (!(other instanceof MockFluidEntity)) {
             this.mass = other.getMass();
-            this.temperature = other.getTemperature();
+            this.heat = other.getTemperature();
         }
     }
 

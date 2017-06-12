@@ -94,7 +94,7 @@ public class Setup {
                     entity = new FluidEntity(x, y, z, FluidEntity.DEFAULT_MASS * 4, FluidEntity.DEFAULT_TEMPERATURE);
                     entity.setColor(Color.BLUE);
                     if (Math.random() < .01) {
-                        entity.addMass(FluidEntity.DEFAULT_MASS, FluidEntity.DEFAULT_MASS, Color.BLACK);
+                        entity.recordMassChange(FluidEntity.DEFAULT_MASS);
                     }
                 } else {
                     entity = new FluidEntity(x, y, z, FluidEntity.DEFAULT_MASS / 4, FluidEntity.DEFAULT_TEMPERATURE);

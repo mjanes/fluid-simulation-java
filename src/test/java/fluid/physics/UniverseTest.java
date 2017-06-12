@@ -8,11 +8,6 @@ import org.mockito.Mockito;
 
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.*;
-
-/**
- * Created by mjanes on 6/10/17.
- */
 public class UniverseTest {
 
     @Test
@@ -47,27 +42,17 @@ public class UniverseTest {
     }
 
     @Test
-    public void testHeatConstanceAndSymmetryOfConduction() {
+    public void testHeatConstanceAndSymmetryOfHeatConduction() {
         FluidEntity[][] entities = Setup.rectangle(3, 3);
-        entities[1][1].setTemperature(entities[1][1].getTemperature() * 4);
+        entities[1][1].setHeat(entities[1][1].getTemperature() * 4);
 
-        double totalUniverseHeat = 0;
-        for (FluidEntity[] entityColumn : entities) {
-            for (FluidEntity entity : entityColumn) {
-                totalUniverseHeat += entity.getTemperature() * entity.getMass();
-            }
-        }
+        double totalUniverseHeat = getUniverseHeat(entities);
 
         Universe universe = new Universe(entities);
         universe.applyNeighborInteractions();
-        IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].changeHeat()));
+        IntStream.range(0, entities.length).forEach(x -> IntStream.range(0, entities[x].length).forEach(y -> entities[x][y].executePendingEnergy()));
 
-        double totalUniverseHeatAfter = 0;
-        for (FluidEntity[] entityColumn : entities) {
-            for (FluidEntity entity : entityColumn) {
-                totalUniverseHeatAfter += entity.getTemperature() * entity.getMass();
-            }
-        }
+        double totalUniverseHeatAfter = getUniverseHeat(entities);
 
         Assert.assertEquals(totalUniverseHeat, totalUniverseHeatAfter, FluidEntity.FUZZ);
 
@@ -89,7 +74,7 @@ public class UniverseTest {
     @Test
     public void verifyNoChangeUntilPendingProcessed() {
         FluidEntity[][] entities = Setup.rectangle(3, 3);
-        entities[1][1].setTemperature(entities[1][1].getTemperature() * 4);
+        entities[1][1].setHeat(entities[1][1].getTemperature() * 4);
         entities[1][2].setMass(entities[1][2].getMass() * 4);
         entities[0][2].setMass(entities[1][2].getMass() * 5);
         entities[1][0].setMass(entities[1][2].getMass() * 12);
@@ -106,6 +91,42 @@ public class UniverseTest {
         Assert.assertEquals(entity00mass, entities[0][0].getMass(), FluidEntity.FUZZ);
         Assert.assertEquals(entity11Pressure, entities[1][1].getPressure(), FluidEntity.FUZZ);
         Assert.assertEquals(entity22DeltaX, entities[2][2].getDeltaY(), FluidEntity.FUZZ);
-        Assert.assertEquals(entity20DeltaY, entities[2][0].getDeltaY(), FluidEntity.FUZZ);
+        Assert.assertEquals(entity20DeltaY, entities[2][0].getDeltaX(), FluidEntity.FUZZ);
+    }
+
+    @Test
+    public void verifyIncrementLeavesMassAndForceConstant() {
+        FluidEntity[][] entities = Setup.rectangle(3, 3);
+        entities[1][1].addForceX(5);
+        entities[1][1].addForceY(5);
+
+        Universe universe = new Universe(entities);
+        double universeMassBefore = getUniverseMass(entities);
+        double universeHeatBefore = getUniverseHeat(entities);
+        universe.massTransfers();
+        double universeMassAfter = getUniverseMass(entities);
+        double universeHeatAfter = getUniverseHeat(entities);
+        Assert.assertEquals(universeMassBefore, universeMassAfter, .01);
+        Assert.assertEquals(universeHeatBefore, universeHeatAfter, .01);
+    }
+
+    private double getUniverseHeat(FluidEntity[][] entities) {
+        double totalUniverseHeat = 0;
+        for (FluidEntity[] entityColumn : entities) {
+            for (FluidEntity entity : entityColumn) {
+                totalUniverseHeat += entity.getTemperature() * entity.getMass();
+            }
+        }
+        return totalUniverseHeat;
+    }
+
+    private double getUniverseMass(FluidEntity[][] entities) {
+        double totalUniverseMass = 0;
+        for (FluidEntity[] entityColumn : entities) {
+            for (FluidEntity entity : entityColumn) {
+                totalUniverseMass += entity.getMass();
+            }
+        }
+        return totalUniverseMass;
     }
 }
