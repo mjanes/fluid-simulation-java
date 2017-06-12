@@ -38,12 +38,14 @@ public class FluidEntity implements DimensionalEntity {
     protected double temperature;
     private Color color;
 
-    protected final ConcurrentHashMap<FluidEntity, Double> massTransferRecords = new ConcurrentHashMap<>();
+    final ConcurrentHashMap<FluidEntity, Double> massTransferRecords = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<MassChangeRecord, Integer> massChangeRecords = new ConcurrentHashMap<>();
 
+    private double pendingDeltaMass;
     private double pendingDeltaHeat;
     private double pendingDeltaForceX;
     private double pendingDeltaForceY;
+
 
     public FluidEntity(double x, double y, double z, double mass, double temperature) {
         setX(x);
@@ -255,30 +257,6 @@ public class FluidEntity implements DimensionalEntity {
     }
 
     /**
-     * If the change in mass is negative, then the delta of the remaining mass will be the same, though the force
-     * of that mass will be correspondingly lessened.
-     * <p>
-     * Heat though will be decreased.
-     * <p>
-     * I suppose force is analogous to heat, and delta is analogous to temperature here.
-     */
-    private synchronized void subtractMass(double deltaMass) {
-        if (mass + deltaMass < -FUZZ) {
-            throw new IllegalStateException("Error: Mass cannot be less than 0");
-        }
-        if (mass + deltaMass <= FUZZ) {
-            setMass(0);
-            setTemperature(0);
-            setDeltaX(0);
-            setDeltaY(0);
-            setDeltaZ(0);
-        } else {
-            setMass(mass + deltaMass);
-        }
-    }
-
-
-    /**
      * Ink
      */
 
@@ -389,7 +367,8 @@ public class FluidEntity implements DimensionalEntity {
                 massTransfer = getMass() * massTransferRecords.get(targetEntity);
             }
 
-            recordMassChange(new MassChangeRecord(-massTransfer, getTemperature(), getDeltaX(), getDeltaY(), color));
+            //recordMassChange(new MassChangeRecord(-massTransfer, getTemperature(), getDeltaX(), getDeltaY(), color));
+            pendingDeltaMass += -massTransfer;
 
             targetEntity.recordMassChange(new MassChangeRecord(massTransfer, getTemperature(), getDeltaX(), getDeltaY(), color));
         }
@@ -405,6 +384,20 @@ public class FluidEntity implements DimensionalEntity {
     }
 
     public void changeMass() {
+        if (mass + pendingDeltaMass < -FUZZ) {
+            throw new IllegalStateException("Error: Mass cannot be less than 0");
+        }
+        if (mass + pendingDeltaMass <= FUZZ) {
+            setMass(0);
+            setTemperature(0);
+            setDeltaX(0);
+            setDeltaY(0);
+            setDeltaZ(0);
+        } else {
+            setMass(mass + pendingDeltaMass);
+        }
+        pendingDeltaMass = 0;
+
         for (MassChangeRecord transferRecord : massChangeRecords.keySet()) {
             transferRecord.transfer(this);
         }
@@ -455,14 +448,14 @@ public class FluidEntity implements DimensionalEntity {
     /**
      * https://en.wikipedia.org/wiki/Thermal_conductivity
      */
-    public double getConductivity() {
+    private double getConductivity() {
         return .0001;
     }
 
     /**
      * https://en.wikipedia.org/wiki/Viscosity
      */
-    public double getViscosity() {
+    private double getViscosity() {
         return .1;
     }
 
@@ -487,11 +480,7 @@ public class FluidEntity implements DimensionalEntity {
         }
 
         void transfer(FluidEntity entity) {
-            if (massChange < 0) {
-                entity.subtractMass(massChange);
-            } else if (massChange > 0) {
-                entity.addMass(massChange, massTemperature, velocityX, velocityY, inkColor);
-            }
+            entity.addMass(massChange, massTemperature, velocityX, velocityY, inkColor);
         }
     }
 

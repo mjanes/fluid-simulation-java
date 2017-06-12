@@ -11,7 +11,9 @@ class ExternalInput {
     static void applyInput(FluidEntity[][] entities, int timestep) {
         //inputExplosion(entities, timestep);
 
-        inputCandle(entities);
+        if (timestep > 100) {
+            inputCandle(entities);
+        }
         //inputBreeze(entities);
 
         //inputHeat(entities, timestep);
@@ -31,9 +33,9 @@ class ExternalInput {
     }
 
     private static void inputCandle(FluidEntity[][] entities) {
-        entities[entities.length / 2 - 1][1].addMass(2, FluidEntity.DEFAULT_TEMPERATURE + 25, 0, 1, Color.ORANGERED);
-        entities[entities.length / 2][1].addMass(2.5, FluidEntity.DEFAULT_TEMPERATURE + 30, 0, 1, Color.RED);
-        entities[entities.length / 2 + 1][1].addMass(2, FluidEntity.DEFAULT_TEMPERATURE + 25, 0, 1, Color.ORANGERED);
+        entities[entities.length / 2 - 1][1].addMass(2, FluidEntity.DEFAULT_TEMPERATURE + 25, 0, 0, Color.ORANGERED);
+        entities[entities.length / 2][1].addMass(2.5, FluidEntity.DEFAULT_TEMPERATURE + 30, 0, 0, Color.RED);
+        entities[entities.length / 2 + 1][1].addMass(2, FluidEntity.DEFAULT_TEMPERATURE + 25, 0, 0, Color.ORANGERED);
     }
 
     private static void inputHeat(FluidEntity[][] entities, int step) {
