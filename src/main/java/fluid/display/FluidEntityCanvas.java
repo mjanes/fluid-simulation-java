@@ -16,7 +16,7 @@ public class FluidEntityCanvas extends Canvas {
 
     private static final int EYE_DISTANCE = 5000;
 
-    Array2DRowRealMatrix vector = new Array2DRowRealMatrix(new double[]{0, 0, 0, 1});
+    final Array2DRowRealMatrix vector = new Array2DRowRealMatrix(new double[]{0, 0, 0, 1});
 
     public enum DrawType {
         INK, TEMPERATURE, VELOCITY, MASS
